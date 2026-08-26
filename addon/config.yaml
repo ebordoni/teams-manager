@@ -1,0 +1,23 @@
+name: "GIPS Calcio"
+description: "Gestionale squadra calcio: calendario, giocatori, convocazioni e comunicazioni per i genitori"
+version: "0.1.0"
+slug: "gips_calcio"
+init: false
+arch:
+  - aarch64
+  - amd64
+startup: services
+boot: auto
+ingress: true
+ingress_port: 8101
+ingress_entry: /
+panel_icon: "mdi:soccer"
+panel_title: "GIPS Calcio"
+options:
+  google_client_id: ""
+  google_client_secret: ""
+schema:
+  google_client_id: "str?"
+  google_client_secret: "password?"
+map:
+  - data:rw
