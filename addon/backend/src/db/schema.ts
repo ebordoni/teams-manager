@@ -48,6 +48,17 @@ const SCHEMA_V1 = `
   CREATE INDEX IF NOT EXISTS idx_callups_event  ON callups(event_id);
   CREATE INDEX IF NOT EXISTS idx_callups_player ON callups(player_id);
 
+  CREATE TABLE IF NOT EXISTS attendance (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id    INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    player_id   INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    status      TEXT    NOT NULL DEFAULT 'present', -- present | absent | excused
+    UNIQUE(event_id, player_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_attendance_event  ON attendance(event_id);
+  CREATE INDEX IF NOT EXISTS idx_attendance_player ON attendance(player_id);
+
   INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 `;
 

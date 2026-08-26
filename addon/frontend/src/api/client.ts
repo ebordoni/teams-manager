@@ -1,5 +1,7 @@
 import axios from "axios";
 import type {
+  Attendance,
+  AttendanceStatus,
   Callup,
   EventFilters,
   Player,
@@ -46,5 +48,17 @@ export const api = {
     apiClient.put<{ eventId: number; callupCount: number }>(
       `/events/${eventId}/callups`,
       { playerIds },
+    ),
+
+  // ── Attendance ─────────────────────────────────────────────────────────
+  getAttendance: (eventId: number) =>
+    apiClient.get<Attendance[]>(`/events/${eventId}/attendance`),
+  setAttendance: (
+    eventId: number,
+    records: { playerId: number; status: AttendanceStatus }[],
+  ) =>
+    apiClient.put<{ eventId: number; recordCount: number }>(
+      `/events/${eventId}/attendance`,
+      { records },
     ),
 };

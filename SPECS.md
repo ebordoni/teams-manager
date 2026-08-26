@@ -53,13 +53,13 @@ condivisione** della comunicazione verso i genitori, non lo storage principale.
 
 ### 2.1 Stack tecnico
 
-| Layer    | Tecnologia                                                                 |
-| -------- | --------------------------------------------------------------------------- |
-| Frontend | React 18, Vite 5, Tailwind CSS 3, React Router 6 (HashRouter), Zustand 4    |
-| Backend  | Node.js 24, TypeScript, Express                                            |
-| Storage  | SQLite (`node:sqlite`), file system persistente (`/data`)                  |
-| Google   | Google Docs API + Google Drive API (OAuth 2.0), Fase 5                     |
-| Hosting  | Home Assistant Addon (Docker), Ingress                                     |
+| Layer    | Tecnologia                                                               |
+| -------- | ------------------------------------------------------------------------ |
+| Frontend | React 18, Vite 5, Tailwind CSS 3, React Router 6 (HashRouter), Zustand 4 |
+| Backend  | Node.js 24, TypeScript, Express                                          |
+| Storage  | SQLite (`node:sqlite`), file system persistente (`/data`)                |
+| Google   | Google Docs API + Google Drive API (OAuth 2.0), Fase 5                   |
+| Hosting  | Home Assistant Addon (Docker), Ingress                                   |
 
 ```
 addon/
@@ -89,28 +89,30 @@ addon/
 
 ### 3.1 Funzionalità Core (MVP)
 
-| ID  | Funzionalità                | Descrizione                                                                                                    | Stato |
-| --- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----- |
-| F01 | **Anagrafica giocatori**    | CRUD giocatori: nome, ruolo, ruoli secondari, note. Statistiche (presenze, gol) di base.                          | WIP   |
-| F02 | **Calendario eventi**       | CRUD eventi (allenamento/partita/torneo): data, ora, luogo, indirizzo, avversario, ritrovo, note, stato.          | WIP   |
-| F03 | **Convocazioni**            | Per ogni evento, selezione dei giocatori convocati (checklist).                                                  | WIP   |
-| F04 | **Presenze**                | Registrazione presenze effettive per allenamenti/partite (base per statistiche future).                          | TODO  |
-| F05 | **Dashboard**                | Prossimi eventi, numero giocatori, riepilogo rapido.                                                              | WIP   |
-| F06 | **App Home Assistant**      | Addon con Ingress, persistenza dati in `/data`, healthcheck.                                                     | WIP   |
+| ID  | Funzionalità             | Descrizione                                                                                              | Stato |
+| --- | ------------------------ | -------------------------------------------------------------------------------------------------------- | ----- |
+| F01 | **Anagrafica giocatori** | CRUD giocatori: nome, ruolo, ruoli secondari, note. Statistiche (presenze, gol) di base.                 | WIP   |
+| F02 | **Calendario eventi**    | CRUD eventi (allenamento/partita/torneo): data, ora, luogo, indirizzo, avversario, ritrovo, note, stato. | WIP   |
+| F03 | **Convocazioni**         | Per ogni evento, selezione dei giocatori convocati (checklist).                                          | WIP   |
+| F04 | **Presenze**             | Registrazione presenze effettive per allenamenti/partite (base per statistiche future).                  | DONE  |
+| F05 | **Dashboard**            | Prossimi eventi, numero giocatori, riepilogo rapido.                                                     | WIP   |
+| F06 | **App Home Assistant**   | Addon con Ingress, persistenza dati in `/data`, healthcheck.                                             | WIP   |
+| F13 | **Validazione stato evento** — note obbligatorie quando un evento è modificato/annullato; badge di stato in calendario e dettaglio. | DONE  |
+| F14 | **UI responsive**        | Nav a hamburger su mobile, form a colonna singola su schermi piccoli.                                     | DONE  |
 
 > Nota: le funzionalità marcate `WIP` hanno lo **scheletro** (API + UI di base) già presente nel
 > boilerplate ma vanno rifinite, validate e testate.
 
 ### 3.2 Funzionalità Post-MVP (da roadmap)
 
-| ID  | Funzionalità                                                                                          | Stato |
-| --- | -------------------------------------------------------------------------------------------------------- | ----- |
+| ID  | Funzionalità                                                                                                                                                                           | Stato |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
 | F07 | **Generazione comunicazione Google Docs** — pulsante "Genera comunicazione", copia template, sostituzione placeholder tramite `batchUpdate`, salvataggio su Drive, link condivisibile. | TODO  |
-| F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).       | TODO  |
-| F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico). | TODO  |
-| F10 | **Storico comunicazioni** — elenco dei documenti generati con link.                                     | TODO  |
-| F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                | TODO  |
-| F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                  | TODO  |
+| F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                      | TODO  |
+| F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico).                                                               | TODO  |
+| F10 | **Storico comunicazioni** — elenco dei documenti generati con link.                                                                                                                    | TODO  |
+| F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                              | TODO  |
+| F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                | TODO  |
 
 ---
 
@@ -148,12 +150,12 @@ event_id
 player_id
 called_up           -- boolean
 
-attendance           -- presenze effettive (F04, post-MVP)
+attendance           -- presenze effettive (F04)
 ----------
 id
 event_id
 player_id
-status
+status               -- present | absent | excused
 ```
 
 ### Modello dati futuro (Fase Google, F07-F10)
@@ -195,6 +197,9 @@ DELETE /api/events/:id
 
 GET    /api/events/:id/callups
 PUT    /api/events/:id/callups     -- body: { playerIds: number[] }
+
+GET    /api/events/:id/attendance
+PUT    /api/events/:id/attendance  -- body: { records: { playerId, status }[] }
 ```
 
 Endpoint futuri (Fase Google — F07/F08, non ancora implementati):
@@ -236,11 +241,11 @@ primo consenso e riutilizzato per le operazioni successive.
 - pagina giocatori
 - dettaglio evento + convocazioni
 
-## Fase 4 — Rifinitura MVP
+## Fase 4 — Rifinitura MVP (completata)
 
-- presenze
-- validazioni e stati evento (annullato/modificato)
-- responsive/mobile
+- presenze (tabella `attendance`, endpoint `GET/PUT /api/events/:id/attendance`, UI in dettaglio evento)
+- validazioni e stati evento: note obbligatorie su annullamento/modifica (backend + frontend)
+- responsive/mobile: nav a hamburger, form a colonna singola su schermi piccoli
 
 ## Fase 5 — Google
 

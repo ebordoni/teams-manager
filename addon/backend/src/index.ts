@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { config } from "./config";
 import { initDb } from "./db/schema";
+import attendanceRouter from "./routes/attendance";
 import callupsRouter from "./routes/callups";
 import eventsRouter from "./routes/events";
 import playersRouter from "./routes/players";
@@ -41,6 +42,7 @@ if (process.env.NODE_ENV !== "production") {
 app.use("/api/players", playersRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/events/:id/callups", callupsRouter);
+app.use("/api/events/:id/attendance", attendanceRouter);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({

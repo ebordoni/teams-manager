@@ -61,3 +61,18 @@ export interface Callup {
   playerName: string;
   calledUp: boolean;
 }
+
+export type AttendanceStatus = "present" | "absent" | "excused";
+
+export interface AttendanceRow {
+  id: number;
+  event_id: number;
+  player_id: number;
+  status: AttendanceStatus;
+}
+
+export interface Attendance {
+  playerId: number;
+  playerName: string;
+  status: AttendanceStatus;
+}

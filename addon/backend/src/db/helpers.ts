@@ -1,4 +1,4 @@
-import type { EventRow, Event, PlayerRow, Player } from "../types";
+import type { Event, EventRow, Player, PlayerRow } from "../types";
 
 export function rowToPlayer(row: PlayerRow): Player {
   return {

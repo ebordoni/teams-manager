@@ -28,9 +28,9 @@ con i genitori tramite WhatsApp. Vedi [`SPECS.md`](../SPECS.md) per i dettagli d
 
 ## Configurazione
 
-| Opzione                 | Descrizione                                              |
-| ------------------------ | ------------------------------------------------------- |
-| `google_client_id`      | Client ID OAuth 2.0 Google (Fase 5, opzionale)          |
-| `google_client_secret`  | Client Secret OAuth 2.0 Google (Fase 5, opzionale)      |
+| Opzione                | Descrizione                                        |
+| ---------------------- | -------------------------------------------------- |
+| `google_client_id`     | Client ID OAuth 2.0 Google (Fase 5, opzionale)     |
+| `google_client_secret` | Client Secret OAuth 2.0 Google (Fase 5, opzionale) |
 
 I dati (SQLite) sono salvati in `/data` e inclusi nei backup di Home Assistant.

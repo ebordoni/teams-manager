@@ -53,9 +53,7 @@ router.get("/", (req: Request, res: Response) => {
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const rows = db
-    .prepare(
-      `SELECT * FROM events ${where} ORDER BY date ASC, start_time ASC`,
-    )
+    .prepare(`SELECT * FROM events ${where} ORDER BY date ASC, start_time ASC`)
     .all(...params) as unknown as EventRow[];
 
   res.json(rows.map(rowToEvent));
@@ -125,6 +123,18 @@ router.put("/:id", (req: Request, res: Response) => {
   }
 
   const e = parse.data;
+  const nextStatus = e.status ?? existing.status;
+  const nextNotes = e.notes !== undefined ? e.notes : existing.notes;
+  // Un evento modificato/annullato deve riportare in "notes" il motivo, così
+  // i genitori vedono sempre perché l'appuntamento è cambiato.
+  if (nextStatus !== "scheduled" && !nextNotes?.trim()) {
+    res.status(400).json({
+      error:
+        "Le note sono obbligatorie quando l'evento è modificato o annullato",
+    });
+    return;
+  }
+
   db.prepare(
     `UPDATE events SET
       type = ?, date = ?, start_time = ?, end_time = ?, location = ?,

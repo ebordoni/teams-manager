@@ -66,7 +66,7 @@ export default function Calendar() {
           onSubmit={handleSubmit}
           className="bg-white rounded-lg shadow p-4 space-y-3"
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="flex flex-col text-sm">
               Tipo
               <select
@@ -107,9 +107,7 @@ export default function Calendar() {
               <input
                 type="text"
                 value={form.location}
-                onChange={(e) =>
-                  setForm({ ...form, location: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
                 className="border rounded px-2 py-1"
               />
             </label>

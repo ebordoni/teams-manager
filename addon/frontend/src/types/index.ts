@@ -31,6 +31,14 @@ export interface Callup {
   calledUp: boolean;
 }
 
+export type AttendanceStatus = "present" | "absent" | "excused";
+
+export interface Attendance {
+  playerId: number;
+  playerName: string;
+  status: AttendanceStatus;
+}
+
 export interface EventFilters {
   from?: string;
   to?: string;
