@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1] - 2026-08-26
+
+### Fixed
+
+- Tipi di evento: la chiave non viene più richiesta/validata manualmente ma generata automaticamente (slugify) dal nome inserito, sia nel backend (`event-types.ts`) che nel form di Impostazioni, evitando il rifiuto di caratteri come accenti o spazi
+
 ## [0.2.0] - 2026-08-26
 
 ### Added

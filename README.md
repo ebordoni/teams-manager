@@ -4,7 +4,7 @@
 
 **Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le convocazioni della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](addon/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.1-blue)](addon/CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Home%20Assistant-41BDF5)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20aarch64-lightgrey)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
