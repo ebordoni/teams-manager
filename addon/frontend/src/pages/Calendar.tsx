@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -17,6 +18,7 @@ import {
 import { DateInput, TimeInput } from "@mantine/dates";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
+import { IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
@@ -120,7 +122,28 @@ export default function Calendar() {
   async function handleCopyWhatsapp() {
     if (!generated) return;
     await navigator.clipboard.writeText(generated.whatsappMessage);
-    notifications.show({ message: "Messaggio copiato negli appunti", color: "green" });
+    notifications.show({
+      message: "Messaggio copiato negli appunti",
+      color: "green",
+    });
+  }
+
+  async function handleDelete(event: TeamEvent) {
+    const type = typeOf(event.type);
+    if (
+      !window.confirm(
+        `Eliminare l'evento "${type?.label ?? event.type}" del ${event.date}? Verranno eliminate anche convocazioni e presenze collegate.`,
+      )
+    ) {
+      return;
+    }
+    await api.deleteEvent(event.id);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(event.id);
+      return next;
+    });
+    loadEvents();
   }
 
   return (
@@ -220,7 +243,11 @@ export default function Calendar() {
             >
               🔗 Apri documento
             </Text>
-            <Button variant="subtle" onClick={handleCopyWhatsapp} style={{ alignSelf: "flex-start" }}>
+            <Button
+              variant="subtle"
+              onClick={handleCopyWhatsapp}
+              style={{ alignSelf: "flex-start" }}
+            >
               📋 Copia messaggio WhatsApp
             </Button>
           </Stack>
@@ -244,14 +271,25 @@ export default function Calendar() {
                   />
                   <Link
                     to={`/events/${event.id}`}
-                    style={{ flex: 1, textDecoration: "none", color: "inherit" }}
+                    style={{
+                      flex: 1,
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
                   >
                     <Group justify="space-between">
                       <Text truncate>
-                        {type?.icon} <Text span fw={600}>{type?.label ?? event.type}</Text>{" "}
+                        {type?.icon}{" "}
+                        <Text span fw={600}>
+                          {type?.label ?? event.type}
+                        </Text>{" "}
                         {event.opponent ? `vs ${event.opponent}` : ""}
                         {event.status !== "scheduled" && (
-                          <Badge ml="xs" size="sm" color={STATUS_COLOR[event.status]}>
+                          <Badge
+                            ml="xs"
+                            size="sm"
+                            color={STATUS_COLOR[event.status]}
+                          >
                             {event.status}
                           </Badge>
                         )}
@@ -261,6 +299,14 @@ export default function Calendar() {
                       </Badge>
                     </Group>
                   </Link>
+                  <ActionIcon
+                    color="red"
+                    variant="subtle"
+                    onClick={() => handleDelete(event)}
+                    aria-label="Elimina"
+                  >
+                    <IconTrash size={18} />
+                  </ActionIcon>
                 </Group>
               </Card>
             );

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.2] - 2026-08-26
+
+### Added
+
+- Possibilità di eliminare un evento dal Calendario (icona cestino nella lista e nel dettaglio evento), con conferma ed eliminazione a cascata di convocazioni e presenze collegate
+
 ## [0.2.1] - 2026-08-26
 
 ### Fixed

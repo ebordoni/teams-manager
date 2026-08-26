@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -13,8 +14,9 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import type {
   Attendance,
@@ -45,6 +47,7 @@ const ATTENDANCE_LABEL: Record<AttendanceStatus, string> = {
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const eventId = Number(id);
   const [event, setEvent] = useState<TeamEvent | null>(null);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
@@ -143,6 +146,19 @@ export default function EventDetail() {
     }
   }
 
+  async function handleDelete() {
+    if (!event) return;
+    if (
+      !window.confirm(
+        `Eliminare questo evento del ${event.date}? Verranno eliminate anche convocazioni e presenze collegate.`,
+      )
+    ) {
+      return;
+    }
+    await api.deleteEvent(eventId);
+    navigate("/calendar");
+  }
+
   if (loading) return <Loader />;
   if (!event) return <Text c="dimmed">Evento non trovato.</Text>;
 
@@ -157,16 +173,30 @@ export default function EventDetail() {
               {type?.icon} {type?.label ?? event.type}
               {event.opponent ? ` vs ${event.opponent}` : ""}
             </Title>
-            <Badge color={STATUS_COLOR[event.status]}>
-              {EVENT_STATUS_LABEL[event.status]}
-            </Badge>
+            <Group gap="xs" wrap="nowrap">
+              <Badge color={STATUS_COLOR[event.status]}>
+                {EVENT_STATUS_LABEL[event.status]}
+              </Badge>
+              <ActionIcon
+                color="red"
+                variant="subtle"
+                onClick={handleDelete}
+                aria-label="Elimina evento"
+              >
+                <IconTrash size={18} />
+              </ActionIcon>
+            </Group>
           </Group>
           <Text size="sm" c="dimmed">
             {event.date} {event.startTime ?? ""}
             {event.location ? ` · ${event.location}` : ""}
           </Text>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }} pt="sm" style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}>
+          <SimpleGrid
+            cols={{ base: 1, sm: 2 }}
+            pt="sm"
+            style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}
+          >
             <Select
               label="Stato evento"
               data={[
@@ -175,7 +205,9 @@ export default function EventDetail() {
                 { value: "cancelled", label: "Annullato" },
               ]}
               value={statusDraft}
-              onChange={(value) => setStatusDraft((value ?? "scheduled") as EventStatus)}
+              onChange={(value) =>
+                setStatusDraft((value ?? "scheduled") as EventStatus)
+              }
               allowDeselect={false}
             />
             <TextInput
