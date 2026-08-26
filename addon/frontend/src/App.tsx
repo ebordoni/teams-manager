@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import Calendar from "./pages/Calendar";
+import Communications from "./pages/Communications";
 import Dashboard from "./pages/Dashboard";
 import EventDetail from "./pages/EventDetail";
 import Players from "./pages/Players";
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/players" element={<Players />} />
           <Route path="/events/:id" element={<EventDetail />} />
+          <Route path="/communications" element={<Communications />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>

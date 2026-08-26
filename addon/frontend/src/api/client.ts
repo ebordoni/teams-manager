@@ -5,6 +5,7 @@ import type {
   Callup,
   Communication,
   EventFilters,
+  EventTypeDef,
   GeneratedCommunication,
   GoogleStatus,
   Player,
@@ -75,5 +76,21 @@ export const api = {
     apiClient.post<GeneratedCommunication>("/communications", { eventIds }),
   getCommunications: () =>
     apiClient.get<Communication[]>("/communications"),
+  deleteCommunication: (id: number) =>
+    apiClient.delete(`/communications/${id}`),
+
+  // ── Tipi evento ────────────────────────────────────────────────────────
+  getEventTypes: () => apiClient.get<EventTypeDef[]>("/event-types"),
+  createEventType: (data: Partial<EventTypeDef>) =>
+    apiClient.post<EventTypeDef>("/event-types", data),
+  updateEventType: (id: number, data: Partial<EventTypeDef>) =>
+    apiClient.put<EventTypeDef>(`/event-types/${id}`, data),
+  deleteEventType: (id: number) => apiClient.delete(`/event-types/${id}`),
+
+  // ── Impostazioni app ───────────────────────────────────────────────────
+  getSettings: () =>
+    apiClient.get<{ googleTemplateDocId: string | null }>("/settings"),
+  updateSettings: (data: { googleTemplateDocId?: string | null }) =>
+    apiClient.put<{ googleTemplateDocId: string | null }>("/settings", data),
 };
 

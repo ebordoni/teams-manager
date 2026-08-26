@@ -1,17 +1,44 @@
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Checkbox,
+  Collapse,
+  Group,
+  Loader,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
+import { DateInput, TimeInput } from "@mantine/dates";
+import { useDisclosure } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import type { EventType, GeneratedCommunication, TeamEvent } from "../types";
+import type { EventTypeDef, GeneratedCommunication, TeamEvent } from "../types";
 
-const EVENT_TYPE_LABEL: Record<EventType, string> = {
-  training: "Allenamento",
-  match: "Partita",
-  tournament: "Torneo",
+const STATUS_COLOR: Record<TeamEvent["status"], string> = {
+  scheduled: "green",
+  modified: "orange",
+  cancelled: "red",
 };
 
-const EMPTY_FORM = {
-  type: "training" as EventType,
-  date: "",
+interface FormState {
+  type: string;
+  date: Date | null;
+  startTime: string;
+  location: string;
+  opponent: string;
+}
+
+const EMPTY_FORM: FormState = {
+  type: "",
+  date: null,
   startTime: "",
   location: "",
   opponent: "",
@@ -19,9 +46,11 @@ const EMPTY_FORM = {
 
 export default function Calendar() {
   const [events, setEvents] = useState<TeamEvent[]>([]);
+  const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [showForm, { toggle: toggleForm, close: closeForm }] =
+    useDisclosure(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -31,9 +60,12 @@ export default function Calendar() {
 
   function loadEvents() {
     setLoading(true);
-    api
-      .getEvents()
-      .then((res) => setEvents(res.data))
+    Promise.all([api.getEvents(), api.getEventTypes()])
+      .then(([eventsRes, typesRes]) => {
+        setEvents(eventsRes.data);
+        setEventTypes(typesRes.data);
+        setForm((f) => ({ ...f, type: f.type || typesRes.data[0]?.key || "" }));
+      })
       .finally(() => setLoading(false));
   }
 
@@ -41,17 +73,21 @@ export default function Calendar() {
     loadEvents();
   }, []);
 
+  const selectedType = eventTypes.find((t) => t.key === form.type);
+  const typeOf = (key: string) => eventTypes.find((t) => t.key === key);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.date) return;
     await api.createEvent({
       type: form.type,
-      date: form.date,
+      date: form.date.toISOString().slice(0, 10),
       startTime: form.startTime || null,
       location: form.location || null,
-      opponent: form.type === "match" ? form.opponent || null : null,
+      opponent: selectedType?.hasOpponent ? form.opponent || null : null,
     });
-    setForm(EMPTY_FORM);
-    setShowForm(false);
+    setForm({ ...EMPTY_FORM, type: form.type });
+    closeForm();
     loadEvents();
   }
 
@@ -84,165 +120,153 @@ export default function Calendar() {
   async function handleCopyWhatsapp() {
     if (!generated) return;
     await navigator.clipboard.writeText(generated.whatsappMessage);
+    notifications.show({ message: "Messaggio copiato negli appunti", color: "green" });
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Calendario</h2>
-        <button
-          className="bg-gips-green text-white text-sm px-3 py-1.5 rounded"
-          onClick={() => setShowForm((v) => !v)}
-        >
+    <Stack gap="md">
+      <Group justify="space-between">
+        <Title order={4}>Calendario</Title>
+        <Button onClick={toggleForm}>
           {showForm ? "Annulla" : "+ Nuovo evento"}
-        </button>
-      </div>
+        </Button>
+      </Group>
 
-      {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-lg shadow p-4 space-y-3"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label className="flex flex-col text-sm">
-              Tipo
-              <select
-                value={form.type}
-                onChange={(e) =>
-                  setForm({ ...form, type: e.target.value as EventType })
-                }
-                className="border rounded px-2 py-1"
-              >
-                <option value="training">Allenamento</option>
-                <option value="match">Partita</option>
-                <option value="tournament">Torneo</option>
-              </select>
-            </label>
-            <label className="flex flex-col text-sm">
-              Data
-              <input
-                type="date"
-                required
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="border rounded px-2 py-1"
-              />
-            </label>
-            <label className="flex flex-col text-sm">
-              Ora
-              <input
-                type="time"
-                value={form.startTime}
-                onChange={(e) =>
-                  setForm({ ...form, startTime: e.target.value })
-                }
-                className="border rounded px-2 py-1"
-              />
-            </label>
-            <label className="flex flex-col text-sm">
-              Luogo
-              <input
-                type="text"
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-                className="border rounded px-2 py-1"
-              />
-            </label>
-            {form.type === "match" && (
-              <label className="flex flex-col text-sm col-span-2">
-                Avversario
-                <input
-                  type="text"
-                  value={form.opponent}
-                  onChange={(e) =>
-                    setForm({ ...form, opponent: e.target.value })
-                  }
-                  className="border rounded px-2 py-1"
+      <Collapse expanded={showForm}>
+        <Card withBorder padding="md" radius="md">
+          <form onSubmit={handleSubmit}>
+            <Stack gap="sm">
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <Select
+                  label="Tipo"
+                  data={eventTypes.map((t) => ({
+                    value: t.key,
+                    label: `${t.icon} ${t.label}`,
+                  }))}
+                  value={form.type}
+                  onChange={(value) => setForm({ ...form, type: value ?? "" })}
+                  allowDeselect={false}
                 />
-              </label>
-            )}
-          </div>
-          <button
-            type="submit"
-            className="bg-gips-green text-white text-sm px-3 py-1.5 rounded"
-          >
-            Salva
-          </button>
-        </form>
-      )}
+                <DateInput
+                  label="Data"
+                  required
+                  value={form.date}
+                  onChange={(value) =>
+                    setForm({
+                      ...form,
+                      date: value ? new Date(value) : null,
+                    })
+                  }
+                  valueFormat="DD/MM/YYYY"
+                />
+                <TimeInput
+                  label="Ora"
+                  value={form.startTime}
+                  onChange={(e) =>
+                    setForm({ ...form, startTime: e.currentTarget.value })
+                  }
+                />
+                <TextInput
+                  label="Luogo"
+                  value={form.location}
+                  onChange={(e) =>
+                    setForm({ ...form, location: e.currentTarget.value })
+                  }
+                />
+                {selectedType?.hasOpponent && (
+                  <TextInput
+                    label="Avversario"
+                    value={form.opponent}
+                    onChange={(e) =>
+                      setForm({ ...form, opponent: e.currentTarget.value })
+                    }
+                    style={{ gridColumn: "1 / -1" }}
+                  />
+                )}
+              </SimpleGrid>
+              <Button type="submit" style={{ alignSelf: "flex-start" }}>
+                Salva
+              </Button>
+            </Stack>
+          </form>
+        </Card>
+      </Collapse>
 
       {selectedIds.size > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between gap-3">
-          <span className="text-sm">
-            {selectedIds.size} evento/i selezionato/i
-          </span>
-          <button
-            onClick={handleGenerateCommunication}
-            disabled={generating}
-            className="bg-gips-green text-white text-sm px-3 py-1.5 rounded disabled:opacity-50"
-          >
-            {generating ? "Generazione…" : "📄 Genera comunicazione"}
-          </button>
-        </div>
+        <Card withBorder padding="md" radius="md">
+          <Group justify="space-between">
+            <Text size="sm">{selectedIds.size} evento/i selezionato/i</Text>
+            <Button onClick={handleGenerateCommunication} loading={generating}>
+              📄 Genera comunicazione
+            </Button>
+          </Group>
+        </Card>
       )}
-      {generateError && <p className="text-sm text-red-600">{generateError}</p>}
+      {generateError && (
+        <Alert color="red" title="Errore">
+          {generateError}
+        </Alert>
+      )}
       {generated && (
-        <div className="bg-white rounded-lg shadow p-4 space-y-2">
-          <p className="font-medium">✅ Comunicazione generata</p>
-          <a
-            href={generated.googleDocUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:underline block"
-          >
-            🔗 Apri documento
-          </a>
-          <button
-            onClick={handleCopyWhatsapp}
-            className="text-sm text-gips-green hover:underline"
-          >
-            📋 Copia messaggio WhatsApp
-          </button>
-        </div>
+        <Card withBorder padding="md" radius="md">
+          <Stack gap="xs">
+            <Text fw={600}>✅ Comunicazione generata</Text>
+            <Text
+              component="a"
+              href={generated.googleDocUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              c="blue"
+            >
+              🔗 Apri documento
+            </Text>
+            <Button variant="subtle" onClick={handleCopyWhatsapp} style={{ alignSelf: "flex-start" }}>
+              📋 Copia messaggio WhatsApp
+            </Button>
+          </Stack>
+        </Card>
       )}
 
       {loading ? (
-        <p className="text-gray-500">Caricamento…</p>
+        <Loader />
       ) : events.length === 0 ? (
-        <p className="text-gray-500">Nessun evento in calendario.</p>
+        <Text c="dimmed">Nessun evento in calendario.</Text>
       ) : (
-        <ul className="divide-y bg-white rounded-lg shadow">
-          {events.map((event) => (
-            <li key={event.id} className="p-3 flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={selectedIds.has(event.id)}
-                onChange={() => toggleSelected(event.id)}
-                className="w-5 h-5 shrink-0"
-              />
-              <Link
-                to={`/events/${event.id}`}
-                className="flex-1 flex justify-between items-center"
-              >
-                <span>
-                  <span className="font-medium">
-                    {EVENT_TYPE_LABEL[event.type]}
-                  </span>{" "}
-                  {event.opponent ? `vs ${event.opponent}` : ""}
-                  {event.status !== "scheduled" && (
-                    <span className="ml-2 text-xs text-orange-600">
-                      ({event.status})
-                    </span>
-                  )}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {event.date} {event.startTime ?? ""}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <Stack gap="xs">
+          {events.map((event) => {
+            const type = typeOf(event.type);
+            return (
+              <Card key={event.id} withBorder padding="sm" radius="md">
+                <Group wrap="nowrap" gap="sm">
+                  <Checkbox
+                    checked={selectedIds.has(event.id)}
+                    onChange={() => toggleSelected(event.id)}
+                  />
+                  <Link
+                    to={`/events/${event.id}`}
+                    style={{ flex: 1, textDecoration: "none", color: "inherit" }}
+                  >
+                    <Group justify="space-between">
+                      <Text truncate>
+                        {type?.icon} <Text span fw={600}>{type?.label ?? event.type}</Text>{" "}
+                        {event.opponent ? `vs ${event.opponent}` : ""}
+                        {event.status !== "scheduled" && (
+                          <Badge ml="xs" size="sm" color={STATUS_COLOR[event.status]}>
+                            {event.status}
+                          </Badge>
+                        )}
+                      </Text>
+                      <Badge variant="light" color="gray">
+                        {event.date} {event.startTime ?? ""}
+                      </Badge>
+                    </Group>
+                  </Link>
+                </Group>
+              </Card>
+            );
+          })}
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

@@ -1,9 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-08-26
 
 ### Added
 
+- **Migrazione UI a Mantine 9** (React 19): AppShell con navbar responsive, form, tabelle e notifiche con Mantine al posto di Tailwind
+- **Tipi di evento configurabili**: tabella `event_types`, endpoint `GET/POST/PUT/DELETE /api/event-types`, sezione "Tipi di evento" nelle Impostazioni (crea/elimina, flag "ha avversario"). Il campo "Tipo" nel Calendario è ora popolato dinamicamente
+- **Generazione documento da template Google Doc** (opzionale): impostabile in Impostazioni incollando il link del documento; supporta i placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}` sostituiti via `batchUpdate`. Se non configurato, si usa la generazione automatica esistente
+- **Pagina "Comunicazioni"**: storico dei documenti generati con apertura e **eliminazione** (rimuove anche il file da Google Drive tramite `DELETE /api/communications/:id`)
 - Fase 5 (Google): OAuth 2.0 con account personale (`services/google/auth.ts`), Google Drive API (cartella "GIPS Calcio/Comunicazioni", condivisione link), Google Docs API (creazione documento con appuntamenti formattati)
 - Endpoint `GET /api/google/status`, `GET /api/google/oauth/url`, `GET /api/google/oauth/callback`, `POST /api/google/disconnect`
 - Endpoint `GET/POST /api/communications` per generare e storicizzare le comunicazioni ai genitori
@@ -13,6 +17,10 @@
 - Presenze (F04): tabella `attendance`, endpoint `GET/PUT /api/events/:id/attendance`, UI di registrazione presenze nel dettaglio evento
 - Validazione stato evento: le note sono obbligatorie quando un evento viene segnato come modificato o annullato, con badge di stato in calendario e dettaglio
 - UI responsive: menu a hamburger su mobile, form del calendario a colonna singola su schermi piccoli
+
+### Changed
+
+- Aggiornato React da 18 a 19 per compatibilità con Mantine 9
 
 ## [0.1.0] - 2026-08-26
 

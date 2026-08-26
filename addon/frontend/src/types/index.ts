@@ -1,5 +1,16 @@
-export type EventType = "training" | "match" | "tournament";
+// Il tipo evento fa riferimento alla chiave (`key`) di un EventTypeDef,
+// configurabile dall'utente nelle Impostazioni.
+export type EventType = string;
 export type EventStatus = "scheduled" | "modified" | "cancelled";
+
+export interface EventTypeDef {
+  id: number;
+  key: string;
+  label: string;
+  icon: string;
+  hasOpponent: boolean;
+  sortOrder: number;
+}
 
 export interface Player {
   id: number;

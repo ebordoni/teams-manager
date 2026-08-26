@@ -1,62 +1,58 @@
-import { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { AppShell, Burger, Group, NavLink as MantineNavLink, Title } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import {
+  IconCalendarEvent,
+  IconFileText,
+  IconLayoutDashboard,
+  IconSettings,
+  IconUsers,
+} from "@tabler/icons-react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const navItems = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/calendar", label: "Calendario" },
-  { to: "/players", label: "Giocatori" },
-  { to: "/settings", label: "Impostazioni" },
+  { to: "/dashboard", label: "Dashboard", icon: IconLayoutDashboard },
+  { to: "/calendar", label: "Calendario", icon: IconCalendarEvent },
+  { to: "/players", label: "Giocatori", icon: IconUsers },
+  { to: "/communications", label: "Comunicazioni", icon: IconFileText },
+  { to: "/settings", label: "Impostazioni", icon: IconSettings },
 ];
 
 export default function Layout() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [opened, { toggle, close }] = useDisclosure();
+  const location = useLocation();
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-gips-green text-white px-4 py-3 shadow">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-semibold">⚽ GIPS Calcio</h1>
-          <nav className="hidden sm:flex gap-4">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `text-sm font-medium ${isActive ? "underline" : "opacity-80 hover:opacity-100"}`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-          <button
-            className="sm:hidden text-2xl leading-none"
-            aria-label="Menu"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            ☰
-          </button>
-        </div>
-        {menuOpen && (
-          <nav className="sm:hidden mt-3 flex flex-col gap-2">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }) =>
-                  `text-sm font-medium ${isActive ? "underline" : "opacity-80 hover:opacity-100"}`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        )}
-      </header>
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4">
+    <AppShell
+      header={{ height: 56 }}
+      navbar={{ width: 230, breakpoint: "sm", collapsed: { mobile: !opened } }}
+      padding="md"
+    >
+      <AppShell.Header>
+        <Group h="100%" px="md" justify="space-between">
+          <Group gap="xs">
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+            <Title order={3}>⚽ GIPS Calcio</Title>
+          </Group>
+        </Group>
+      </AppShell.Header>
+      <AppShell.Navbar p="md">
+        {navItems.map((item) => (
+          <MantineNavLink
+            key={item.to}
+            component={NavLink}
+            to={item.to}
+            label={item.label}
+            leftSection={<item.icon size={18} />}
+            active={location.pathname.startsWith(item.to)}
+            onClick={close}
+            variant="filled"
+            style={{ borderRadius: 6 }}
+          />
+        ))}
+      </AppShell.Navbar>
+      <AppShell.Main>
         <Outlet />
-      </main>
-    </div>
+      </AppShell.Main>
+    </AppShell>
   );
 }

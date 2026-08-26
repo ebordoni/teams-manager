@@ -89,7 +89,7 @@ TEAMS_MANAGER/
 │   ├── CHANGELOG.md
 │   ├── translations/
 │   ├── backend/          # Node.js + TypeScript + Express + SQLite
-│   └── frontend/         # React + TypeScript + Vite + Tailwind
+│   └── frontend/         # React + TypeScript + Vite + Mantine UI
 ├── docker-compose.yml    # ambiente di sviluppo
 ├── repository.json       # descrittore per l'Add-on Store di HA
 └── SPECS.md              # specifiche funzionali (documento vivo)

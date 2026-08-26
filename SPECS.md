@@ -55,11 +55,11 @@ condivisione** della comunicazione verso i genitori, non lo storage principale.
 
 | Layer    | Tecnologia                                                               |
 | -------- | ------------------------------------------------------------------------ |
-| Frontend | React 18, Vite 5, Tailwind CSS 3, React Router 6 (HashRouter), Zustand 4 |
+| Frontend | React 19, Vite 5, Mantine UI 9 (`@mantine/core`, `dates`, `notifications`, `form`), React Router 6 (HashRouter) |
 | Backend  | Node.js 24, TypeScript, Express                                          |
 | Storage  | SQLite (`node:sqlite`), file system persistente (`/data`)                |
-| Google   | Google Docs API + Google Drive API (OAuth 2.0), Fase 5                   |
-| Hosting  | Home Assistant Addon (Docker), Ingress                                   |
+| Google   | Google Docs API + Google Drive API (OAuth 2.0)                           |
+| Hosting  | Home Assistant Addon (Docker), Ingress + porta diretta (redirect OAuth)  |
 
 ```
 addon/
@@ -68,13 +68,18 @@ addon/
 │   │   ├── config.ts
 │   │   ├── index.ts
 │   │   ├── db/
-│   │   ├── routes/
+│   │   ├── routes/            # players, events, callups, attendance,
+│   │   │                      # event-types, settings, google, communications
 │   │   ├── services/
-│   │   │   └── google/        # auth.ts, docs.ts, drive.ts (Fase 5)
+│   │   │   ├── communication.service.ts
+│   │   │   ├── settings.service.ts
+│   │   │   └── google/        # auth.ts, docs.ts, drive.ts
 │   │   └── types/
 │   └── package.json
 ├── frontend/
 │   ├── src/
+│   │   └── pages/              # Dashboard, Calendar, Players, EventDetail,
+│   │                            # Communications, Settings
 │   └── package.json
 ├── config.yaml
 ├── build.yaml
@@ -95,10 +100,11 @@ addon/
 | F02 | **Calendario eventi**    | CRUD eventi (allenamento/partita/torneo): data, ora, luogo, indirizzo, avversario, ritrovo, note, stato. | WIP   |
 | F03 | **Convocazioni**         | Per ogni evento, selezione dei giocatori convocati (checklist).                                          | WIP   |
 | F04 | **Presenze**             | Registrazione presenze effettive per allenamenti/partite (base per statistiche future).                  | DONE  |
-| F05 | **Dashboard**            | Prossimi eventi, numero giocatori, riepilogo rapido.                                                     | WIP   |
-| F06 | **App Home Assistant**   | Addon con Ingress, persistenza dati in `/data`, healthcheck.                                             | WIP   |
+| F05 | **Dashboard**            | Prossimi eventi, numero giocatori, riepilogo rapido.                                                     | DONE  |
+| F06 | **App Home Assistant**   | Addon con Ingress, persistenza dati in `/data`, healthcheck.                                             | DONE  |
 | F13 | **Validazione stato evento** — note obbligatorie quando un evento è modificato/annullato; badge di stato in calendario e dettaglio. | DONE  |
-| F14 | **UI responsive**        | Nav a hamburger su mobile, form a colonna singola su schermi piccoli.                                     | DONE  |
+| F14 | **UI responsive (Mantine)** | Interfaccia basata su Mantine UI 9 (AppShell, form, tabelle), nav a hamburger su mobile. | DONE  |
+| F15 | **Tipi di evento configurabili** — gestione (crea/modifica/elimina) dei tipi evento (Allenamento, Partita, Torneo, …) dalle Impostazioni, con flag "ha avversario". | DONE  |
 
 > Nota: le funzionalità marcate `WIP` hanno lo **scheletro** (API + UI di base) già presente nel
 > boilerplate ma vanno rifinite, validate e testate.
@@ -107,10 +113,11 @@ addon/
 
 | ID  | Funzionalità                                                                                                                                                                           | Stato |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| F07 | **Generazione comunicazione Google Docs** — pulsante "Genera comunicazione", creazione documento via `documents.batchUpdate`, salvataggio su Drive, link condivisibile. | WIP (infra pronta, in attesa di credenziali Google) |
-| F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                      | WIP (infra pronta, in attesa di credenziali Google) |
+| F07 | **Generazione comunicazione Google Docs** — pulsante "Genera comunicazione", creazione documento (da zero o da template con placeholder), salvataggio su Drive, link condivisibile. | DONE  |
+| F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                      | DONE  |
 | F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico).                                                               | DONE  |
-| F10 | **Storico comunicazioni** — elenco dei documenti generati con link.                                                                                                                    | WIP (endpoint pronto, manca UI storico) |
+| F10 | **Storico comunicazioni** — pagina "Comunicazioni": elenco dei documenti generati, apertura e **eliminazione** (rimuove anche il file da Drive).                                       | DONE  |
+| F16 | **Template Google Doc** — documento personalizzato con placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`, configurabile dalle Impostazioni. Se non impostato, si usa la generazione automatica. | DONE  |
 | F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                              | TODO  |
 | F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                | TODO  |
 
@@ -131,17 +138,26 @@ created_at
 events
 ------
 id
-type                -- training | match | tournament
+type                -- chiave (key) di un event_types, non più enum fisso
 date
 start_time
 end_time
 location
 address
-opponent            -- solo per match
+opponent            -- solo se il tipo ha "has_opponent"
 meeting_time
 notes
 status              -- scheduled | modified | cancelled
 created_at
+
+event_types          -- tipi di evento configurabili (F15)
+-----------
+id
+key                  -- es. "training", "match", "friendly"...
+label                -- es. "Allenamento"
+icon                 -- emoji
+has_opponent         -- boolean: mostra avversario + convocazioni
+sort_order
 
 callups             -- convocazioni per evento
 -------
@@ -158,7 +174,7 @@ player_id
 status               -- present | absent | excused
 ```
 
-### Modello dati — Fase Google (F07-F10, implementato)
+### Modello dati — Fase Google (F07-F10, F16, implementato)
 
 ```
 communications
@@ -177,6 +193,11 @@ refresh_token
 scope
 token_type
 expiry_date
+
+app_settings          -- coppie chiave/valore (es. google_template_doc_id)
+------------
+key
+value
 ```
 
 ---
@@ -203,9 +224,14 @@ PUT    /api/events/:id/callups     -- body: { playerIds: number[] }
 
 GET    /api/events/:id/attendance
 PUT    /api/events/:id/attendance  -- body: { records: { playerId, status }[] }
+
+GET    /api/event-types
+POST   /api/event-types             -- body: { key, label, icon, hasOpponent, sortOrder }
+PUT    /api/event-types/:id
+DELETE /api/event-types/:id         -- rifiutata (409) se il tipo è ancora usato da eventi
 ```
 
-Endpoint Google e comunicazioni (Fase 5, implementati — richiedono client id/secret configurati):
+Endpoint Google e comunicazioni (implementati):
 
 ```
 GET    /api/google/status           -- { configured, connected }
@@ -215,6 +241,10 @@ POST   /api/google/disconnect
 
 GET    /api/communications           -- storico comunicazioni generate
 POST   /api/communications           -- body: { eventIds: number[] } — genera il Google Doc
+DELETE /api/communications/:id       -- elimina il file da Drive e dallo storico
+
+GET    /api/settings                 -- { googleTemplateDocId }
+PUT    /api/settings                 -- body: { googleTemplateDocId } (accetta anche URL completo)
 ```
 
 ---
@@ -276,18 +306,24 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 - validazioni e stati evento: note obbligatorie su annullamento/modifica (backend + frontend)
 - responsive/mobile: nav a hamburger, form a colonna singola su schermi piccoli
 
-## Fase 5 — Google (infrastruttura pronta, in attesa di credenziali)
+## Fase 5 — Google (completata, verificata end-to-end dall'utente)
 
 - ✅ OAuth 2.0 (`services/google/auth.ts`, token persistiti in `google_tokens`)
-- ✅ Google Drive API (`services/google/drive.ts`: cartella "GIPS Calcio/Comunicazioni", condivisione)
-- ✅ Google Docs API (`services/google/docs.ts`: creazione documento con contenuto formattato)
+- ✅ Google Drive API (`services/google/drive.ts`: cartella "GIPS Calcio/Comunicazioni", condivisione, copia/eliminazione file)
+- ✅ Google Docs API (`services/google/docs.ts`: creazione documento con contenuto formattato o da template + `batchUpdate` sui placeholder)
 - ✅ pulsante "Genera comunicazione" (Calendario) + messaggio WhatsApp precompilato
-- ✅ endpoint storico (`GET /api/communications`)
-- ⏳ da fare non appena disponibili client id/secret: test end-to-end del flusso OAuth reale
-- ⏳ TODO: pagina/UI dedicata allo storico comunicazioni (F10)
+- ✅ pagina "Comunicazioni": storico, apertura documento, eliminazione (F10)
+- ✅ collegamento OAuth testato con successo sull'istanza reale dell'utente
 
-## Fase 6 — Estensioni future
+## Fase 6 — UI Mantine e configurabilità (completata)
+
+- ✅ Migrazione UI a Mantine 9 (React 19): AppShell, form, tabelle, notifiche
+- ✅ Tipi di evento configurabili dalle Impostazioni (F15), con flag "ha avversario"
+- ✅ Generazione documento basata su template Google Doc opzionale (F16), con fallback automatico
+
+## Fase 7 — Estensioni future
 
 - statistiche avanzate (formazioni, minutaggio, risultati)
 - archivio allenamenti (temi, esercizi)
 - gestione tornei e classifiche
+- code-splitting del bundle frontend (bundle attuale >500kB, vedi warning build Vite)
