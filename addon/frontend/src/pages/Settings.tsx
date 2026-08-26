@@ -25,6 +25,17 @@ function apiErrorMessage(err: unknown, fallback: string): string {
   );
 }
 
+/** Rispecchia la normalizzazione applicata dal backend (vedi routes/event-types.ts). */
+function slugify(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export default function Settings() {
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +44,6 @@ export default function Settings() {
 
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [newType, setNewType] = useState({
-    key: "",
     label: "",
     icon: "⚽",
     hasOpponent: false,
@@ -87,15 +97,21 @@ export default function Settings() {
   async function handleAddType(e: React.FormEvent) {
     e.preventDefault();
     setTypeError(null);
+    const label = newType.label.trim();
+    const key = slugify(label);
+    if (!key) {
+      setTypeError("Inserisci un nome valido");
+      return;
+    }
     try {
       await api.createEventType({
-        key: newType.key.trim(),
-        label: newType.label.trim(),
+        key,
+        label,
         icon: newType.icon.trim() || "⚽",
         hasOpponent: newType.hasOpponent,
         sortOrder: eventTypes.length,
       });
-      setNewType({ key: "", label: "", icon: "⚽", hasOpponent: false });
+      setNewType({ label: "", icon: "⚽", hasOpponent: false });
       loadAll();
     } catch (err) {
       setTypeError(apiErrorMessage(err, "Errore durante la creazione del tipo"));
@@ -264,17 +280,12 @@ export default function Settings() {
           <form onSubmit={handleAddType}>
             <Group align="flex-end">
               <TextInput
-                label="Chiave"
-                placeholder="es. friendly"
-                required
-                value={newType.key}
-                onChange={(e) =>
-                  setNewType({ ...newType, key: e.currentTarget.value })
-                }
-                style={{ width: 130 }}
-              />
-              <TextInput
                 label="Nome"
+                description={
+                  newType.label.trim()
+                    ? `Chiave: ${slugify(newType.label)}`
+                    : undefined
+                }
                 placeholder="es. Amichevole"
                 required
                 value={newType.label}

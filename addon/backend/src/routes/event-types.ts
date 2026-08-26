@@ -6,12 +6,24 @@ import type { EventTypeDefRow } from "../types";
 
 const router = Router();
 
+/** Normalizza un testo libero in una chiave valida (minuscolo, solo [a-z0-9_-]). */
+function slugify(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // rimuove gli accenti
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 const EventTypeSchema = z.object({
   key: z
     .string()
     .trim()
     .min(1)
-    .regex(/^[a-z0-9_-]+$/, "Usa solo lettere minuscole, numeri, - e _"),
+    .transform(slugify)
+    .refine((v) => v.length > 0, "Inserisci un nome valido per la chiave"),
   label: z.string().trim().min(1),
   icon: z.string().trim().min(1).default("⚽"),
   hasOpponent: z.boolean().default(false),
