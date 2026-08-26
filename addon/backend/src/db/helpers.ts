@@ -3,6 +3,8 @@ import type {
   CommunicationRow,
   Event,
   EventRow,
+  EventTypeDef,
+  EventTypeDefRow,
   Player,
   PlayerRow,
 } from "../types";
@@ -43,5 +45,16 @@ export function rowToCommunication(row: CommunicationRow): Communication {
     googleDocId: row.google_doc_id,
     googleDocUrl: row.google_doc_url,
     createdAt: row.created_at,
+  };
+}
+
+export function rowToEventTypeDef(row: EventTypeDefRow): EventTypeDef {
+  return {
+    id: row.id,
+    key: row.key,
+    label: row.label,
+    icon: row.icon,
+    hasOpponent: row.has_opponent === 1,
+    sortOrder: row.sort_order,
   };
 }

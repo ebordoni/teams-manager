@@ -83,3 +83,30 @@ export async function makeShareableAndGetLink(
   }
   return data.webViewLink;
 }
+
+/** Copia un file Drive esistente (es. un template) e ne restituisce il nuovo id. */
+export async function copyFile(
+  auth: OAuth2Client,
+  fileId: string,
+  newName: string,
+): Promise<string> {
+  const drive = google.drive({ version: "v3", auth });
+  const { data } = await drive.files.copy({
+    fileId,
+    requestBody: { name: newName },
+    fields: "id",
+  });
+  if (!data.id) {
+    throw new Error("Google Drive non ha restituito l'id del file copiato");
+  }
+  return data.id;
+}
+
+/** Elimina definitivamente un file Drive (usato per rimuovere una comunicazione). */
+export async function deleteFile(
+  auth: OAuth2Client,
+  fileId: string,
+): Promise<void> {
+  const drive = google.drive({ version: "v3", auth });
+  await drive.files.delete({ fileId });
+}

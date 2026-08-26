@@ -1,19 +1,30 @@
 import { getAuthorizedClient } from "./google/auth";
-import { createDocumentWithText } from "./google/docs";
+import { createDocumentWithText, replacePlaceholders } from "./google/docs";
 import {
+  copyFile,
+  deleteFile,
   ensureCommunicationsFolder,
   makeShareableAndGetLink,
   moveFileToFolder,
 } from "./google/drive";
+import { getSetting, SETTINGS_KEYS } from "./settings.service";
 import { getDb } from "../db/schema";
-import { rowToEvent } from "../db/helpers";
-import type { CommunicationRow, Event, EventRow, EventType } from "../types";
+import { rowToEvent, rowToEventTypeDef } from "../db/helpers";
+import type {
+  CommunicationRow,
+  Event,
+  EventRow,
+  EventTypeDef,
+  EventTypeDefRow,
+} from "../types";
 
-const EVENT_TYPE_LABEL: Record<EventType, string> = {
-  training: "ALLENAMENTO",
-  match: "PARTITA",
-  tournament: "TORNEO",
-};
+function loadEventTypes(): Map<string, EventTypeDef> {
+  const db = getDb();
+  const rows = db
+    .prepare("SELECT * FROM event_types")
+    .all() as unknown as EventTypeDefRow[];
+  return new Map(rows.map((r) => [r.key, rowToEventTypeDef(r)]));
+}
 
 const WEEKDAYS = [
   "Domenica",
@@ -59,9 +70,10 @@ function getCallupNames(eventId: number): string[] {
   return rows.map((r) => r.name);
 }
 
-function formatEvent(event: Event): string {
+function formatEvent(event: Event, eventTypes: Map<string, EventTypeDef>): string {
+  const typeDef = eventTypes.get(event.type);
   const lines: string[] = [];
-  const header = `${formatDateIt(event.date)} — ${EVENT_TYPE_LABEL[event.type]}`;
+  const header = `${formatDateIt(event.date)} — ${(typeDef?.label ?? event.type).toUpperCase()}`;
   lines.push(header);
 
   if (event.status !== "scheduled") {
@@ -72,7 +84,7 @@ function formatEvent(event: Event): string {
     );
   }
 
-  if (event.type === "match" && event.opponent) {
+  if (typeDef?.hasOpponent && event.opponent) {
     lines.push(`⚽ GIPS Salizzole – ${event.opponent}`);
   }
   if (event.location) lines.push(`📍 ${event.location}`);
@@ -84,7 +96,7 @@ function formatEvent(event: Event): string {
   }
   if (event.notes && event.status === "scheduled") lines.push(event.notes);
 
-  if (event.type !== "training") {
+  if (typeDef?.hasOpponent) {
     const callups = getCallupNames(event.id);
     if (callups.length > 0) {
       lines.push("");
@@ -96,18 +108,50 @@ function formatEvent(event: Event): string {
   return lines.join("\n");
 }
 
-function buildDocumentText(events: Event[]): { title: string; body: string } {
+function buildDocumentText(
+  events: Event[],
+  eventTypes: Map<string, EventTypeDef>,
+): { title: string; body: string } {
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
   const title = `GIPS Salizzole – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
   const body = [
     "GIPS SALIZZOLE – APPUNTAMENTI",
     "",
     ...sorted.flatMap((event, i) => [
-      formatEvent(event),
+      formatEvent(event, eventTypes),
       ...(i < sorted.length - 1 ? ["", "---", ""] : []),
     ]),
   ].join("\n");
   return { title, body };
+}
+
+/** Costruisce i placeholder `{{CHIAVE}}` usati dal template Google Docs. */
+function buildTemplatePlaceholders(
+  events: Event[],
+  eventTypes: Map<string, EventTypeDef>,
+): { title: string; replacements: Record<string, string> } {
+  const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
+  const title = `GIPS Salizzole – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
+
+  const matches = sorted.filter((e) => eventTypes.get(e.type)?.hasOpponent);
+  const trainings = sorted.filter((e) => !eventTypes.get(e.type)?.hasOpponent);
+
+  const partite = matches.length
+    ? matches.map((e) => formatEvent(e, eventTypes)).join("\n\n---\n\n")
+    : "Nessuna partita/torneo in programma.";
+  const allenamenti = trainings.length
+    ? trainings.map((e) => formatEvent(e, eventTypes)).join("\n\n---\n\n")
+    : "Nessun allenamento in programma.";
+
+  return {
+    title,
+    replacements: {
+      TITOLO: title,
+      SETTIMANA: formatDateIt(sorted[0].date),
+      PARTITE: partite,
+      ALLENAMENTI: allenamenti,
+    },
+  };
 }
 
 function buildWhatsappMessage(url: string): string {
@@ -139,11 +183,25 @@ export async function generateCommunication(
     throw new Error("Nessun evento trovato per gli id forniti");
   }
   const events = rows.map(rowToEvent);
+  const eventTypes = loadEventTypes();
 
   const auth = getAuthorizedClient();
-  const { title, body } = buildDocumentText(events);
+  const templateDocId = getSetting(SETTINGS_KEYS.googleTemplateDocId);
 
-  const documentId = await createDocumentWithText(auth, title, body);
+  let documentId: string;
+  let title: string;
+
+  if (templateDocId) {
+    const built = buildTemplatePlaceholders(events, eventTypes);
+    title = built.title;
+    documentId = await copyFile(auth, templateDocId, title);
+    await replacePlaceholders(auth, documentId, built.replacements);
+  } else {
+    const built = buildDocumentText(events, eventTypes);
+    title = built.title;
+    documentId = await createDocumentWithText(auth, title, built.body);
+  }
+
   const folderId = await ensureCommunicationsFolder(auth);
   await moveFileToFolder(auth, documentId, folderId);
   const url = await makeShareableAndGetLink(auth, documentId);
@@ -169,4 +227,26 @@ export function listCommunications(): CommunicationRow[] {
   return db
     .prepare("SELECT * FROM communications ORDER BY created_at DESC")
     .all() as unknown as CommunicationRow[];
+}
+
+/** Elimina la comunicazione: rimuove il file da Drive e la riga dallo storico. */
+export async function deleteCommunication(id: number): Promise<void> {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM communications WHERE id = ?")
+    .get(id) as CommunicationRow | undefined;
+  if (!row) {
+    throw new Error("Comunicazione non trovata");
+  }
+
+  const auth = getAuthorizedClient();
+  try {
+    await deleteFile(auth, row.google_doc_id);
+  } catch (err) {
+    // Il file potrebbe essere già stato rimosso manualmente da Drive: non
+    // bloccare la pulizia dello storico locale in quel caso.
+    console.warn("[communications] Impossibile eliminare il file Drive", err);
+  }
+
+  db.prepare("DELETE FROM communications WHERE id = ?").run(id);
 }

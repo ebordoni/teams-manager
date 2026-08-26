@@ -79,6 +79,22 @@ const SCHEMA_V1 = `
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  -- Tipi di evento configurabili dall'utente (sostituisce l'enum fisso iniziale).
+  CREATE TABLE IF NOT EXISTS event_types (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    key          TEXT    NOT NULL UNIQUE,
+    label        TEXT    NOT NULL,
+    icon         TEXT    NOT NULL DEFAULT '\u26bd',
+    has_opponent INTEGER NOT NULL DEFAULT 0,
+    sort_order   INTEGER NOT NULL DEFAULT 0
+  );
+
+  -- Coppie chiave/valore per impostazioni runtime (es. id del template Google Doc).
+  CREATE TABLE IF NOT EXISTS app_settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+  );
+
   INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 `;
 
@@ -89,8 +105,24 @@ export function initDb(): void {
   db = new DatabaseSync(dbPath);
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA_V1);
+  seedDefaultEventTypes();
 
   console.log(`[db] SQLite ready at ${dbPath}`);
+}
+
+function seedDefaultEventTypes(): void {
+  const count = db.prepare("SELECT COUNT(*) AS n FROM event_types").get() as {
+    n: number;
+  };
+  if (count.n > 0) return;
+
+  const insert = db.prepare(
+    `INSERT INTO event_types (key, label, icon, has_opponent, sort_order)
+     VALUES (?, ?, ?, ?, ?)`,
+  );
+  insert.run("training", "Allenamento", "🏃", 0, 0);
+  insert.run("match", "Partita", "⚽", 1, 1);
+  insert.run("tournament", "Torneo", "🏆", 1, 2);
 }
 
 export function getDb(): DatabaseSync {

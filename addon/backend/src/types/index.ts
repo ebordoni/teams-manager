@@ -1,4 +1,6 @@
-export type EventType = "training" | "match" | "tournament";
+// Il tipo evento non è più un enum fisso: fa riferimento alla chiave (`key`)
+// di una riga in `event_types`, configurabile dall'utente (vedi EventTypeDef).
+export type EventType = string;
 export type EventStatus = "scheduled" | "modified" | "cancelled";
 
 export interface Player {
@@ -103,4 +105,27 @@ export interface Communication {
   googleDocId: string;
   googleDocUrl: string;
   createdAt: string;
+}
+
+export interface EventTypeDefRow {
+  id: number;
+  key: string;
+  label: string;
+  icon: string;
+  has_opponent: number;
+  sort_order: number;
+}
+
+export interface EventTypeDef {
+  id: number;
+  key: string;
+  label: string;
+  icon: string;
+  hasOpponent: boolean;
+  sortOrder: number;
+}
+
+export interface AppSettingRow {
+  key: string;
+  value: string | null;
 }

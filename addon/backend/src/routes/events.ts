@@ -7,7 +7,7 @@ import type { EventRow } from "../types";
 const router = Router();
 
 const EventSchema = z.object({
-  type: z.enum(["training", "match", "tournament"]),
+  type: z.string().trim().min(1),
   date: z.string().trim().min(1), // YYYY-MM-DD
   startTime: z.string().trim().optional().nullable(),
   endTime: z.string().trim().optional().nullable(),
@@ -22,8 +22,14 @@ const EventSchema = z.object({
 const FiltersSchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
-  type: z.enum(["training", "match", "tournament"]).optional(),
+  type: z.string().optional(),
 });
+
+function isKnownEventType(type: string): boolean {
+  const db = getDb();
+  const row = db.prepare("SELECT 1 FROM event_types WHERE key = ?").get(type);
+  return Boolean(row);
+}
 
 // GET /api/events?from=YYYY-MM-DD&to=YYYY-MM-DD&type=match
 router.get("/", (req: Request, res: Response) => {
@@ -80,6 +86,10 @@ router.post("/", (req: Request, res: Response) => {
     return;
   }
   const e = parse.data;
+  if (!isKnownEventType(e.type)) {
+    res.status(400).json({ error: `Tipo evento sconosciuto: "${e.type}"` });
+    return;
+  }
   const db = getDb();
   const result = db
     .prepare(
@@ -123,6 +133,10 @@ router.put("/:id", (req: Request, res: Response) => {
   }
 
   const e = parse.data;
+  if (e.type !== undefined && !isKnownEventType(e.type)) {
+    res.status(400).json({ error: `Tipo evento sconosciuto: "${e.type}"` });
+    return;
+  }
   const nextStatus = e.status ?? existing.status;
   const nextNotes = e.notes !== undefined ? e.notes : existing.notes;
   // Un evento modificato/annullato deve riportare in "notes" il motivo, così

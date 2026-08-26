@@ -31,3 +31,29 @@ export async function createDocumentWithText(
 
   return documentId;
 }
+
+/**
+ * Sostituisce nel documento indicato tutti i placeholder `{{CHIAVE}}` con i
+ * valori forniti (usato dopo aver copiato un documento-template da Drive).
+ */
+export async function replacePlaceholders(
+  auth: OAuth2Client,
+  documentId: string,
+  replacements: Record<string, string>,
+): Promise<void> {
+  const docs = google.docs({ version: "v1", auth });
+
+  const requests = Object.entries(replacements).map(([key, value]) => ({
+    replaceAllText: {
+      containsText: { text: `{{${key}}}`, matchCase: true },
+      replaceText: value,
+    },
+  }));
+
+  if (requests.length === 0) return;
+
+  await docs.documents.batchUpdate({
+    documentId,
+    requestBody: { requests },
+  });
+}
