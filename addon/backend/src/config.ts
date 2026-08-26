@@ -15,6 +15,7 @@ interface AppConfig {
   dataDir: string;
   googleClientId: string;
   googleClientSecret: string;
+  googleRedirectUri: string;
 }
 
 function loadConfig(): AppConfig {
@@ -22,9 +23,16 @@ function loadConfig(): AppConfig {
     process.env.DATA_DIR ??
     (process.env.NODE_ENV === "production" ? "/data" : "./data");
 
+  const port = parseInt(process.env.PORT ?? "3002", 10);
+
   // In HA addon context, options are written by Supervisor to /data/options.json
   let googleClientId = process.env.GOOGLE_CLIENT_ID ?? "";
   let googleClientSecret = process.env.GOOGLE_CLIENT_SECRET ?? "";
+  // Default assumes access via the addon's direct (non-ingress) port — Google's
+  // redirect_uri must be reachable directly from the browser, Ingress won't work.
+  let googleRedirectUri =
+    process.env.GOOGLE_REDIRECT_URI ??
+    `http://localhost:${port}/api/google/oauth/callback`;
 
   const optionsPath = path.join(dataDir, "options.json");
   if (fs.existsSync(optionsPath)) {
@@ -35,6 +43,7 @@ function loadConfig(): AppConfig {
       googleClientId = options["google_client_id"] ?? googleClientId;
       googleClientSecret =
         options["google_client_secret"] ?? googleClientSecret;
+      googleRedirectUri = options["google_redirect_uri"] || googleRedirectUri;
     } catch {
       console.warn(
         "[config] Could not parse options.json — falling back to environment variables",
@@ -43,10 +52,11 @@ function loadConfig(): AppConfig {
   }
 
   return {
-    port: parseInt(process.env.PORT ?? "3002", 10),
+    port,
     dataDir,
     googleClientId,
     googleClientSecret,
+    googleRedirectUri,
   };
 }
 

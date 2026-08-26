@@ -5,6 +5,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/calendar", label: "Calendario" },
   { to: "/players", label: "Giocatori" },
+  { to: "/settings", label: "Impostazioni" },
 ];
 
 export default function Layout() {

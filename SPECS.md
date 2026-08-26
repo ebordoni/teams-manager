@@ -107,10 +107,10 @@ addon/
 
 | ID  | Funzionalità                                                                                                                                                                           | Stato |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| F07 | **Generazione comunicazione Google Docs** — pulsante "Genera comunicazione", copia template, sostituzione placeholder tramite `batchUpdate`, salvataggio su Drive, link condivisibile. | TODO  |
-| F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                      | TODO  |
-| F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico).                                                               | TODO  |
-| F10 | **Storico comunicazioni** — elenco dei documenti generati con link.                                                                                                                    | TODO  |
+| F07 | **Generazione comunicazione Google Docs** — pulsante "Genera comunicazione", creazione documento via `documents.batchUpdate`, salvataggio su Drive, link condivisibile. | WIP (infra pronta, in attesa di credenziali Google) |
+| F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                      | WIP (infra pronta, in attesa di credenziali Google) |
+| F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico).                                                               | DONE  |
+| F10 | **Storico comunicazioni** — elenco dei documenti generati con link.                                                                                                                    | WIP (endpoint pronto, manca UI storico) |
 | F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                              | TODO  |
 | F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                | TODO  |
 
@@ -158,22 +158,25 @@ player_id
 status               -- present | absent | excused
 ```
 
-### Modello dati futuro (Fase Google, F07-F10)
+### Modello dati — Fase Google (F07-F10, implementato)
 
 ```
 communications
 --------------
 id
 event_ids            -- JSON array degli eventi inclusi
+title
 google_doc_id
 google_doc_url
 created_at
 
-google_tokens         -- token OAuth persistiti
+google_tokens         -- token OAuth persistiti (riga singola, id = 1)
 --------------
 access_token
 refresh_token
-expiry
+scope
+token_type
+expiry_date
 ```
 
 ---
@@ -202,21 +205,47 @@ GET    /api/events/:id/attendance
 PUT    /api/events/:id/attendance  -- body: { records: { playerId, status }[] }
 ```
 
-Endpoint futuri (Fase Google — F07/F08, non ancora implementati):
+Endpoint Google e comunicazioni (Fase 5, implementati — richiedono client id/secret configurati):
 
 ```
-GET    /api/google/oauth/url
-GET    /api/google/oauth/callback
-POST   /api/events/communication    -- genera il Google Doc per gli eventi selezionati
+GET    /api/google/status           -- { configured, connected }
+GET    /api/google/oauth/url        -- URL di consenso Google
+GET    /api/google/oauth/callback   -- callback OAuth (porta diretta, non Ingress)
+POST   /api/google/disconnect
+
+GET    /api/communications           -- storico comunicazioni generate
+POST   /api/communications           -- body: { eventIds: number[] } — genera il Google Doc
 ```
 
 ---
 
-## 6. Autenticazione Google (Fase 5, non MVP)
+## 6. Autenticazione Google (Fase 5)
 
-Soluzione consigliata: **OAuth 2.0** con l'account Google personale (non Service Account), così i
-documenti generati appartengono al proprio Google Drive. Il token viene salvato in `/data` dopo il
-primo consenso e riutilizzato per le operazioni successive.
+Soluzione adottata: **OAuth 2.0** con l'account Google personale (non Service Account), così i
+documenti generati appartengono al proprio Google Drive. Il token (incluso il `refresh_token`) è
+persistito nella tabella `google_tokens` e riutilizzato/rinnovato automaticamente dalle chiamate
+successive.
+
+### Perché una porta diretta (non solo Ingress)
+
+Il redirect URI di Google deve essere un URL raggiungibile direttamente dal browser dell'utente.
+L'iframe Ingress di Home Assistant inietta un token di sessione nel path e non è adatto come
+redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **porta diretta**
+(`8101`, vedi `config.yaml`) da usare solo per il redirect URI di Google.
+
+### Setup richiesto su Google Cloud Console
+
+1. Crea un progetto (o riusa uno esistente) su [Google Cloud Console](https://console.cloud.google.com/).
+2. Abilita le API **Google Docs API** e **Google Drive API**.
+3. Configura la **schermata di consenso OAuth** (tipo "Esterno" va bene per un uso personale; puoi
+   aggiungere il tuo account come utente di test se l'app resta in modalità "Testing").
+4. Crea una **credenziale OAuth 2.0 Client ID** di tipo "Applicazione web".
+5. In **URI di reindirizzamento autorizzati** aggiungi:
+   `http://<IP-O-HOST-HOME-ASSISTANT>:8101/api/google/oauth/callback`
+6. Copia **Client ID** e **Client secret** e impostali nelle opzioni dell'addon
+   (`google_client_id`, `google_client_secret`) oppure nel file `.env` in sviluppo
+   (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`).
+7. Dalla pagina **Impostazioni** dell'app, clicca **Collega Google** e completa il consenso.
 
 ---
 
@@ -247,16 +276,18 @@ primo consenso e riutilizzato per le operazioni successive.
 - validazioni e stati evento: note obbligatorie su annullamento/modifica (backend + frontend)
 - responsive/mobile: nav a hamburger, form a colonna singola su schermi piccoli
 
-## Fase 5 — Google
+## Fase 5 — Google (infrastruttura pronta, in attesa di credenziali)
 
-- OAuth 2.0
-- Google Drive API (template, copia, permessi)
-- Google Docs API (`batchUpdate` sui placeholder)
-- pulsante "Genera comunicazione" + storico
+- ✅ OAuth 2.0 (`services/google/auth.ts`, token persistiti in `google_tokens`)
+- ✅ Google Drive API (`services/google/drive.ts`: cartella "GIPS Calcio/Comunicazioni", condivisione)
+- ✅ Google Docs API (`services/google/docs.ts`: creazione documento con contenuto formattato)
+- ✅ pulsante "Genera comunicazione" (Calendario) + messaggio WhatsApp precompilato
+- ✅ endpoint storico (`GET /api/communications`)
+- ⏳ da fare non appena disponibili client id/secret: test end-to-end del flusso OAuth reale
+- ⏳ TODO: pagina/UI dedicata allo storico comunicazioni (F10)
 
 ## Fase 6 — Estensioni future
 
-- messaggio WhatsApp precompilato
 - statistiche avanzate (formazioni, minutaggio, risultati)
 - archivio allenamenti (temi, esercizi)
 - gestione tornei e classifiche

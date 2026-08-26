@@ -6,7 +6,9 @@ import { config } from "./config";
 import { initDb } from "./db/schema";
 import attendanceRouter from "./routes/attendance";
 import callupsRouter from "./routes/callups";
+import communicationsRouter from "./routes/communications";
 import eventsRouter from "./routes/events";
+import googleRouter from "./routes/google";
 import playersRouter from "./routes/players";
 
 function resolveVersion(): string {
@@ -43,6 +45,8 @@ app.use("/api/players", playersRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/events/:id/callups", callupsRouter);
 app.use("/api/events/:id/attendance", attendanceRouter);
+app.use("/api/google", googleRouter);
+app.use("/api/communications", communicationsRouter);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({

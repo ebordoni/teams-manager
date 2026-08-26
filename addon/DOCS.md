@@ -21,16 +21,31 @@ Anagrafica della squadra: nome, ruolo, ruoli secondari e note.
 
 Per ogni evento, selezione rapida dei giocatori convocati.
 
-### Comunicazioni (in arrivo)
+### Comunicazioni
 
-Generazione automatica di un Google Document con gli appuntamenti della settimana, da condividere
-con i genitori tramite WhatsApp. Vedi [`SPECS.md`](../SPECS.md) per i dettagli della roadmap.
+Dalla pagina Calendario, seleziona uno o più eventi e premi "Genera comunicazione": l'app crea un
+Google Document con gli appuntamenti (nella cartella Drive "GIPS Calcio/Comunicazioni"), fornisce
+il link al documento e un messaggio WhatsApp pronto da incollare nel gruppo genitori.
 
 ## Configurazione
 
-| Opzione                | Descrizione                                        |
-| ---------------------- | -------------------------------------------------- |
-| `google_client_id`     | Client ID OAuth 2.0 Google (Fase 5, opzionale)     |
-| `google_client_secret` | Client Secret OAuth 2.0 Google (Fase 5, opzionale) |
+| Opzione                | Descrizione                                                          |
+| ---------------------- | --------------------------------------------------------------------- |
+| `google_client_id`     | Client ID OAuth 2.0 Google (necessario per le Comunicazioni)         |
+| `google_client_secret` | Client Secret OAuth 2.0 Google (necessario per le Comunicazioni)     |
+| `google_redirect_uri`  | Redirect URI OAuth (default: porta diretta `8101` dell'addon)        |
+
+### Collegare Google
+
+1. Su [Google Cloud Console](https://console.cloud.google.com/) crea un progetto, abilita **Google
+   Docs API** e **Google Drive API**, configura la schermata di consenso OAuth e crea una
+   credenziale **OAuth 2.0 Client ID** di tipo "Applicazione web".
+2. Aggiungi come **URI di reindirizzamento autorizzato**:
+   `http://<IP-HOME-ASSISTANT>:8101/api/google/oauth/callback`
+3. Inserisci Client ID e Client Secret nelle opzioni dell'addon.
+4. Apri la pagina **Impostazioni** dell'app e clicca **Collega Google**.
+
+> Il redirect deve passare dalla porta diretta `8101` (non dall'iframe Ingress), per questo
+> l'addon espone anche quella porta oltre all'integrazione in sidebar.
 
 I dati (SQLite) sono salvati in `/data` e inclusi nei backup di Home Assistant.

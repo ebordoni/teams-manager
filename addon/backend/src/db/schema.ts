@@ -59,6 +59,26 @@ const SCHEMA_V1 = `
   CREATE INDEX IF NOT EXISTS idx_attendance_event  ON attendance(event_id);
   CREATE INDEX IF NOT EXISTS idx_attendance_player ON attendance(player_id);
 
+  -- Riga singola (id = 1): token OAuth 2.0 dell'account Google collegato.
+  CREATE TABLE IF NOT EXISTS google_tokens (
+    id            INTEGER PRIMARY KEY CHECK (id = 1),
+    access_token  TEXT,
+    refresh_token TEXT,
+    scope         TEXT,
+    token_type    TEXT,
+    expiry_date   INTEGER,
+    updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS communications (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_ids      TEXT    NOT NULL, -- JSON array di event id inclusi
+    title          TEXT    NOT NULL,
+    google_doc_id  TEXT    NOT NULL,
+    google_doc_url TEXT    NOT NULL,
+    created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 `;
 

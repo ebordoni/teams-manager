@@ -4,6 +4,7 @@ import Calendar from "./pages/Calendar";
 import Dashboard from "./pages/Dashboard";
 import EventDetail from "./pages/EventDetail";
 import Players from "./pages/Players";
+import Settings from "./pages/Settings";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/players" element={<Players />} />
           <Route path="/events/:id" element={<EventDetail />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </HashRouter>

@@ -76,3 +76,31 @@ export interface Attendance {
   playerName: string;
   status: AttendanceStatus;
 }
+
+export interface GoogleTokensRow {
+  id: number;
+  access_token: string | null;
+  refresh_token: string | null;
+  scope: string | null;
+  token_type: string | null;
+  expiry_date: number | null;
+  updated_at: string;
+}
+
+export interface CommunicationRow {
+  id: number;
+  event_ids: string;
+  title: string;
+  google_doc_id: string;
+  google_doc_url: string;
+  created_at: string;
+}
+
+export interface Communication {
+  id: number;
+  eventIds: number[];
+  title: string;
+  googleDocId: string;
+  googleDocUrl: string;
+  createdAt: string;
+}

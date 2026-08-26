@@ -1,4 +1,11 @@
-import type { Event, EventRow, Player, PlayerRow } from "../types";
+import type {
+  Communication,
+  CommunicationRow,
+  Event,
+  EventRow,
+  Player,
+  PlayerRow,
+} from "../types";
 
 export function rowToPlayer(row: PlayerRow): Player {
   return {
@@ -24,6 +31,17 @@ export function rowToEvent(row: EventRow): Event {
     meetingTime: row.meeting_time,
     notes: row.notes,
     status: row.status,
+    createdAt: row.created_at,
+  };
+}
+
+export function rowToCommunication(row: CommunicationRow): Communication {
+  return {
+    id: row.id,
+    eventIds: JSON.parse(row.event_ids) as number[],
+    title: row.title,
+    googleDocId: row.google_doc_id,
+    googleDocUrl: row.google_doc_url,
     createdAt: row.created_at,
   };
 }

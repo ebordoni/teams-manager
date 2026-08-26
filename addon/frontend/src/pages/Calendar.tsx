@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import type { EventType, TeamEvent } from "../types";
+import type { EventType, GeneratedCommunication, TeamEvent } from "../types";
 
 const EVENT_TYPE_LABEL: Record<EventType, string> = {
   training: "Allenamento",
@@ -22,6 +22,12 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [generated, setGenerated] = useState<GeneratedCommunication | null>(
+    null,
+  );
 
   function loadEvents() {
     setLoading(true);
@@ -47,6 +53,37 @@ export default function Calendar() {
     setForm(EMPTY_FORM);
     setShowForm(false);
     loadEvents();
+  }
+
+  function toggleSelected(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleGenerateCommunication() {
+    setGenerateError(null);
+    setGenerating(true);
+    try {
+      const res = await api.generateCommunication(Array.from(selectedIds));
+      setGenerated(res.data);
+      setSelectedIds(new Set());
+    } catch (err) {
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error ?? "Errore durante la generazione della comunicazione";
+      setGenerateError(message);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleCopyWhatsapp() {
+    if (!generated) return;
+    await navigator.clipboard.writeText(generated.whatsappMessage);
   }
 
   return (
@@ -134,6 +171,41 @@ export default function Calendar() {
         </form>
       )}
 
+      {selectedIds.size > 0 && (
+        <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between gap-3">
+          <span className="text-sm">
+            {selectedIds.size} evento/i selezionato/i
+          </span>
+          <button
+            onClick={handleGenerateCommunication}
+            disabled={generating}
+            className="bg-gips-green text-white text-sm px-3 py-1.5 rounded disabled:opacity-50"
+          >
+            {generating ? "Generazione…" : "📄 Genera comunicazione"}
+          </button>
+        </div>
+      )}
+      {generateError && <p className="text-sm text-red-600">{generateError}</p>}
+      {generated && (
+        <div className="bg-white rounded-lg shadow p-4 space-y-2">
+          <p className="font-medium">✅ Comunicazione generata</p>
+          <a
+            href={generated.googleDocUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:underline block"
+          >
+            🔗 Apri documento
+          </a>
+          <button
+            onClick={handleCopyWhatsapp}
+            className="text-sm text-gips-green hover:underline"
+          >
+            📋 Copia messaggio WhatsApp
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-gray-500">Caricamento…</p>
       ) : events.length === 0 ? (
@@ -141,10 +213,16 @@ export default function Calendar() {
       ) : (
         <ul className="divide-y bg-white rounded-lg shadow">
           {events.map((event) => (
-            <li key={event.id} className="p-3">
+            <li key={event.id} className="p-3 flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={selectedIds.has(event.id)}
+                onChange={() => toggleSelected(event.id)}
+                className="w-5 h-5 shrink-0"
+              />
               <Link
                 to={`/events/${event.id}`}
-                className="flex justify-between items-center"
+                className="flex-1 flex justify-between items-center"
               >
                 <span>
                   <span className="font-medium">

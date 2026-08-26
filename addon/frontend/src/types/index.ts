@@ -31,6 +31,24 @@ export interface Callup {
   calledUp: boolean;
 }
 
+export interface GoogleStatus {
+  configured: boolean;
+  connected: boolean;
+}
+
+export interface Communication {
+  id: number;
+  eventIds: number[];
+  title: string;
+  googleDocId: string;
+  googleDocUrl: string;
+  createdAt: string;
+}
+
+export interface GeneratedCommunication extends Communication {
+  whatsappMessage: string;
+}
+
 export type AttendanceStatus = "present" | "absent" | "excused";
 
 export interface Attendance {

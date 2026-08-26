@@ -3,7 +3,10 @@ import type {
   Attendance,
   AttendanceStatus,
   Callup,
+  Communication,
   EventFilters,
+  GeneratedCommunication,
+  GoogleStatus,
   Player,
   TeamEvent,
 } from "../types";
@@ -61,4 +64,16 @@ export const api = {
       `/events/${eventId}/attendance`,
       { records },
     ),
+
+  // ── Google ─────────────────────────────────────────────────────────────
+  getGoogleStatus: () => apiClient.get<GoogleStatus>("/google/status"),
+  getGoogleAuthUrl: () => apiClient.get<{ url: string }>("/google/oauth/url"),
+  disconnectGoogle: () => apiClient.post("/google/disconnect"),
+
+  // ── Comunicazioni ──────────────────────────────────────────────────────
+  generateCommunication: (eventIds: number[]) =>
+    apiClient.post<GeneratedCommunication>("/communications", { eventIds }),
+  getCommunications: () =>
+    apiClient.get<Communication[]>("/communications"),
 };
+
