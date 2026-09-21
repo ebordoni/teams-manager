@@ -4,7 +4,7 @@
 
 **Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le convocazioni della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
 
-[![Version](https://img.shields.io/badge/version-0.2.2-blue)](addon/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.3-blue)](addon/CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Home%20Assistant-41BDF5)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20aarch64-lightgrey)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
@@ -13,7 +13,7 @@
 
 ---
 
-> ⚠️ **Stato: boilerplate iniziale.** L'infrastruttura dell'addon (backend, frontend, packaging Home Assistant) è impostata e funzionante come scheletro. Le funzionalità applicative verranno sviluppate progressivamente seguendo i requisiti descritti in [`SPECS.md`](SPECS.md).
+> ✅ **Stato: MVP operativo (v0.2.3).** Calendario, giocatori, convocazioni, presenze e comunicazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
 
 ## 🎯 Obiettivo
 
@@ -22,7 +22,7 @@ GIPS Calcio è il gestionale della squadra pensato per essere installato come ad
 - **Calendario** — allenamenti, partite, tornei, eventi speciali.
 - **Anagrafica giocatori** — ruoli, presenze, gol, note.
 - **Convocazioni** — selezione rapida dei convocati per ogni evento.
-- **Comunicazioni** — generazione automatica di un Google Document da condividere via WhatsApp con i genitori (Fase successiva, vedi [`SPECS.md`](SPECS.md)).
+- **Comunicazioni** — generazione di un Google Document condivisibile via WhatsApp con i genitori.
 
 Il database (SQLite) resta locale all'addon; Google Docs è solo il formato di pubblicazione della comunicazione.
 

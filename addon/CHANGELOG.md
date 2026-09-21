@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3] - 2026-09-21
+
+### Fixed
+
+- Tipi evento: non è più possibile rinominare la chiave di un tipo già usato, evitando eventi privi di tipo associato; gli ID delle operazioni di modifica ed eliminazione sono validati.
+- Google OAuth: il callback ora verifica un parametro `state` monouso con scadenza, proteggendo il collegamento dell'account da richieste forgiate.
+- Comunicazioni: lo storico locale viene eliminato solo dopo la rimozione riuscita del documento da Google Drive; un file già assente viene gestito come pulizia legittima, mentre gli altri errori consentono di riprovare.
+
+### Added
+
+- Base riutilizzabile per costruire documenti Google Docs con segmenti e stili tipografici, pronta per la successiva integrazione nel generatore di comunicazioni.
+
 ## [0.2.2] - 2026-08-26
 
 ### Added

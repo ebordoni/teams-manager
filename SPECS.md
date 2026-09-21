@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **boilerplate iniziale (v0.1.0)** — infrastruttura pronta, funzionalità da sviluppare.
+> Stato attuale: **MVP operativo (v0.2.3)** — le funzionalità core e l'integrazione Google sono completate; restano le estensioni di roadmap.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -281,7 +281,7 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 
 ## 7. Roadmap di sviluppo
 
-## Fase 1 — Boilerplate (corrente)
+## Fase 1 — Boilerplate (completata)
 
 - struttura addon Home Assistant (Docker, Ingress, config.yaml)
 - backend Express + SQLite, frontend React + Vite

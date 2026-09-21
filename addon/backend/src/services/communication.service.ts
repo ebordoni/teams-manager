@@ -166,6 +166,23 @@ export interface GeneratedCommunication {
   whatsappMessage: string;
 }
 
+/** Errore recuperabile: la comunicazione resta nello storico locale. */
+export class DriveDeletionError extends Error {
+  constructor() {
+    super("Impossibile eliminare il documento da Google Drive. Riprova più tardi.");
+    this.name = "DriveDeletionError";
+  }
+}
+
+function isGoogleNotFoundError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as {
+    code?: unknown;
+    response?: { status?: unknown };
+  };
+  return candidate.code === 404 || candidate.response?.status === 404;
+}
+
 /** Genera un Google Doc con gli appuntamenti selezionati e lo salva su Drive. */
 export async function generateCommunication(
   eventIds: number[],
@@ -244,8 +261,15 @@ export async function deleteCommunication(id: number): Promise<void> {
     await deleteFile(auth, row.google_doc_id);
   } catch (err) {
     // Il file potrebbe essere già stato rimosso manualmente da Drive: non
-    // bloccare la pulizia dello storico locale in quel caso.
-    console.warn("[communications] Impossibile eliminare il file Drive", err);
+    // bloccare la pulizia dello storico locale solo in questo caso.
+    if (!isGoogleNotFoundError(err)) {
+      console.error(
+        "[communications] Eliminazione Drive non riuscita; storico conservato",
+        err instanceof Error ? err.message : err,
+      );
+      throw new DriveDeletionError();
+    }
+    console.warn("[communications] File Drive già assente; pulisco lo storico locale");
   }
 
   db.prepare("DELETE FROM communications WHERE id = ?").run(id);
