@@ -78,6 +78,8 @@ export const api = {
     apiClient.get<Communication[]>("/communications"),
   deleteCommunication: (id: number) =>
     apiClient.delete(`/communications/${id}`),
+  exportToGoogleCalendar: (eventIds: number[]) =>
+    apiClient.post<{ exported: number }>("/google/calendar/export", { eventIds }),
 
   // ── Tipi evento ────────────────────────────────────────────────────────
   getEventTypes: () => apiClient.get<EventTypeDef[]>("/event-types"),
@@ -89,8 +91,7 @@ export const api = {
 
   // ── Impostazioni app ───────────────────────────────────────────────────
   getSettings: () =>
-    apiClient.get<{ googleTemplateDocId: string | null }>("/settings"),
-  updateSettings: (data: { googleTemplateDocId?: string | null }) =>
-    apiClient.put<{ googleTemplateDocId: string | null }>("/settings", data),
+    apiClient.get<{ googleTemplateDocId: string | null; googleCalendarId: string }>("/settings"),
+  updateSettings: (data: { googleTemplateDocId?: string | null; googleCalendarId?: string | null }) =>
+    apiClient.put<{ googleTemplateDocId: string | null; googleCalendarId: string }>("/settings", data),
 };
-

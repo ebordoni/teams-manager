@@ -11,7 +11,10 @@ import type { GoogleTokensRow } from "../../types";
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/documents",
   "https://www.googleapis.com/auth/drive.file",
+  "https://www.googleapis.com/auth/calendar.events",
 ];
+
+export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
@@ -69,6 +72,11 @@ export function isGoogleConnected(): boolean {
   return Boolean(tokens?.refresh_token);
 }
 
+export function hasGoogleCalendarAccess(): boolean {
+  const scope = loadStoredTokens()?.scope ?? "";
+  return scope.split(/\s+/).includes(GOOGLE_CALENDAR_SCOPE);
+}
+
 /** Crea e conserva un token monouso per associare consenso e callback OAuth. */
 export function createOAuthState(): string {
   const state = crypto.randomBytes(32).toString("base64url");
@@ -100,6 +108,7 @@ export function getAuthUrl(state: string): string {
     prompt: "consent", // forza il rilascio del refresh_token anche se già concesso in passato
     scope: GOOGLE_SCOPES,
     state,
+    include_granted_scopes: true,
   });
 }
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0] - 2026-09-21
+
+### Added
+
+- Modifica di nome, icona e flag "ha avversario" dei tipi evento dalle Impostazioni.
+- Calendario con anteprime degli eventi nella giornata, creazione rapida sui giorni vuoti e aggiunta dall'agenda del giorno selezionato.
+- Export unidirezionale degli eventi selezionati su Google Calendar, con aggiornamento idempotente delle esportazioni successive e calendario di destinazione configurabile.
+
 ## [0.3.0] - 2026-09-21
 
 ### Added

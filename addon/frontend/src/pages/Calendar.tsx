@@ -24,7 +24,7 @@ import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import type { EventTypeDef, GeneratedCommunication, TeamEvent } from "../types";
+import type { EventTypeDef, GeneratedCommunication, GoogleStatus, TeamEvent } from "../types";
 
 const STATUS_COLOR: Record<TeamEvent["status"], string> = {
   scheduled: "green",
@@ -79,6 +79,8 @@ export default function Calendar() {
   const [generated, setGenerated] = useState<GeneratedCommunication | null>(
     null,
   );
+  const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   function loadEvents(date = displayedDate) {
     setLoading(true);
@@ -89,10 +91,12 @@ export default function Calendar() {
         to: month.endOf("month").format("YYYY-MM-DD"),
       }),
       api.getEventTypes(),
+      api.getGoogleStatus(),
     ])
-      .then(([eventsRes, typesRes]) => {
+      .then(([eventsRes, typesRes, googleRes]) => {
         setEvents(eventsRes.data);
         setEventTypes(typesRes.data);
+        setGoogleStatus(googleRes.data);
         setForm((f) => ({ ...f, type: f.type || typesRes.data[0]?.key || "" }));
       })
       .finally(() => setLoading(false));
@@ -146,6 +150,21 @@ export default function Calendar() {
     }
   }
 
+  async function handleExportCalendar() {
+    setGenerateError(null);
+    setExporting(true);
+    try {
+      const res = await api.exportToGoogleCalendar(Array.from(selectedIds));
+      notifications.show({ message: `${res.data.exported} evento/i esportato/i su Google Calendar`, color: "green" });
+    } catch (err) {
+      setGenerateError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Errore durante l'esportazione su Google Calendar",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function handleCopyWhatsapp() {
     if (!generated) return;
     await navigator.clipboard.writeText(generated.whatsappMessage);
@@ -179,6 +198,14 @@ export default function Calendar() {
       date: current.date ?? (selectedDay ? dayjs(selectedDay).toDate() : null),
     }));
     openForm();
+  }
+
+  function handleDayClick(date: string, eventCount: number) {
+    setSelectedDay(date);
+    if (eventCount === 0) {
+      setForm((current) => ({ ...current, date: dayjs(date).toDate() }));
+      openForm();
+    }
   }
 
   const eventsByDate = useMemo(() => {
@@ -266,6 +293,14 @@ export default function Calendar() {
             <Button onClick={handleGenerateCommunication} loading={generating}>
               📄 Genera comunicazione
             </Button>
+            <Button
+              variant="light"
+              onClick={handleExportCalendar}
+              loading={exporting}
+              disabled={!googleStatus?.calendarConnected}
+            >
+              📅 Esporta in Google Calendar
+            </Button>
           </Group>
         </Card>
       )}
@@ -314,7 +349,7 @@ export default function Calendar() {
                 const dayEvents = eventsByDate.get(date) ?? [];
                 return {
                   selected: date === selectedDay,
-                  onClick: () => setSelectedDay(date),
+                  onClick: () => handleDayClick(date, dayEvents.length),
                   "aria-label": `${formatDayLabel(date)}: ${dayEvents.length} evento/i`,
                 };
               }}
@@ -323,25 +358,16 @@ export default function Calendar() {
                 return (
                   <Stack gap={2} align="center">
                     <Text inherit>{dayjs(date).date()}</Text>
-                    {dayEvents.length > 0 && (
-                      <Group gap={3} justify="center" wrap="nowrap">
-                        {dayEvents.slice(0, 3).map((event) => (
-                          <Box
-                            key={event.id}
-                            aria-hidden="true"
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: "50%",
-                              background: STATUS_DOT_COLOR[event.status],
-                            }}
-                          />
-                        ))}
-                        <Text size="xs" fw={700} aria-hidden="true">
-                          {dayEvents.length}
-                        </Text>
-                      </Group>
-                    )}
+                    {dayEvents.slice(0, 2).map((event) => {
+                      const type = typeOf(event.type);
+                      return (
+                        <Group key={event.id} gap={3} justify="center" wrap="nowrap">
+                          <Box aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_DOT_COLOR[event.status] }} />
+                          <Text size="xs" truncate="end">{event.startTime ? `${event.startTime} ` : ""}{type?.icon ?? "⚽"}</Text>
+                        </Group>
+                      );
+                    })}
+                    {dayEvents.length > 2 && <Text size="xs" fw={700}>+{dayEvents.length - 2}</Text>}
                   </Stack>
                 );
               }}
@@ -350,7 +376,10 @@ export default function Calendar() {
 
           {selectedDay ? (
             <Stack gap="xs">
-              <Title order={5}>{formatDayLabel(selectedDay)}</Title>
+              <Group justify="space-between">
+                <Title order={5}>{formatDayLabel(selectedDay)}</Title>
+                <Button size="xs" variant="light" onClick={handleOpenForm}>+ Aggiungi evento</Button>
+              </Group>
               {selectedDayEvents.length === 0 ? (
                 <Text c="dimmed">Nessun evento in questa giornata.</Text>
               ) : (

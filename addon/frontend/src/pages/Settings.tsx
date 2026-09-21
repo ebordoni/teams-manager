@@ -13,7 +13,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconTrash } from "@tabler/icons-react";
+import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { EventTypeDef, GoogleStatus } from "../types";
@@ -49,10 +49,13 @@ export default function Settings() {
     hasOpponent: false,
   });
   const [typeError, setTypeError] = useState<string | null>(null);
+  const [editingType, setEditingType] = useState<EventTypeDef | null>(null);
 
   const [templateDocId, setTemplateDocId] = useState("");
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateSaved, setTemplateSaved] = useState(false);
+  const [calendarId, setCalendarId] = useState("primary");
+  const [savingCalendar, setSavingCalendar] = useState(false);
 
   function loadAll() {
     setLoading(true);
@@ -61,6 +64,7 @@ export default function Settings() {
         setStatus(statusRes.data);
         setEventTypes(typesRes.data);
         setTemplateDocId(settingsRes.data.googleTemplateDocId ?? "");
+        setCalendarId(settingsRes.data.googleCalendarId);
       })
       .finally(() => setLoading(false));
   }
@@ -123,6 +127,23 @@ export default function Settings() {
     loadAll();
   }
 
+  async function handleSaveType(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingType) return;
+    setTypeError(null);
+    try {
+      await api.updateEventType(editingType.id, {
+        label: editingType.label.trim(),
+        icon: editingType.icon.trim() || "⚽",
+        hasOpponent: editingType.hasOpponent,
+      });
+      setEditingType(null);
+      loadAll();
+    } catch (err) {
+      setTypeError(apiErrorMessage(err, "Errore durante il salvataggio del tipo"));
+    }
+  }
+
   async function handleDeleteType(type: EventTypeDef) {
     setTypeError(null);
     try {
@@ -148,6 +169,16 @@ export default function Settings() {
     }
   }
 
+  async function handleSaveCalendar() {
+    setSavingCalendar(true);
+    try {
+      await api.updateSettings({ googleCalendarId: calendarId.trim() || "primary" });
+      setCalendarId(calendarId.trim() || "primary");
+    } finally {
+      setSavingCalendar(false);
+    }
+  }
+
   if (loading) return <Loader />;
 
   return (
@@ -156,7 +187,7 @@ export default function Settings() {
 
       <Card withBorder padding="md" radius="md">
         <Stack gap="sm">
-          <Title order={5}>Google (Docs + Drive)</Title>
+          <Title order={5}>Google (Docs, Drive e Calendar)</Title>
           <Text size="sm" c="dimmed">
             Collega il tuo account Google per generare automaticamente il
             documento delle comunicazioni ai genitori.
@@ -197,6 +228,30 @@ export default function Settings() {
               {error}
             </Alert>
           )}
+          {status?.connected && !status.calendarConnected && (
+            <Alert color="blue" title="Autorizzazione Calendar necessaria">
+              Ricollega Google per abilitare l'esportazione unidirezionale degli eventi su Google Calendar.
+            </Alert>
+          )}
+        </Stack>
+      </Card>
+
+      <Card withBorder padding="md" radius="md">
+        <Stack gap="sm">
+          <Title order={5}>Google Calendar</Title>
+          <Text size="sm" c="dimmed">
+            Gli eventi selezionati nel calendario vengono esportati e aggiornati nel calendario indicato. Non importiamo né eliminiamo eventi da Google Calendar.
+          </Text>
+          <Group align="flex-end">
+            <TextInput
+              label="ID calendario"
+              description={'Usa "primary" per il calendario principale, oppure l\'ID di un calendario condiviso.'}
+              value={calendarId}
+              onChange={(e) => setCalendarId(e.currentTarget.value)}
+              style={{ flex: 1 }}
+            />
+            <Button onClick={handleSaveCalendar} loading={savingCalendar}>Salva</Button>
+          </Group>
         </Stack>
       </Card>
 
@@ -263,6 +318,13 @@ export default function Settings() {
                     onChange={() => handleToggleOpponent(type)}
                   />
                   <ActionIcon
+                    variant="subtle"
+                    onClick={() => setEditingType({ ...type })}
+                    aria-label="Modifica tipo"
+                  >
+                    <IconPencil size={18} />
+                  </ActionIcon>
+                  <ActionIcon
                     color="red"
                     variant="subtle"
                     onClick={() => handleDeleteType(type)}
@@ -274,6 +336,39 @@ export default function Settings() {
               </Group>
             ))}
           </Stack>
+
+          {editingType && (
+            <form onSubmit={handleSaveType}>
+              <Card withBorder padding="sm" radius="sm">
+                <Stack gap="xs">
+                  <Text fw={600}>Modifica tipo: {editingType.key}</Text>
+                  <Group align="flex-end">
+                    <TextInput
+                      label="Nome"
+                      required
+                      value={editingType.label}
+                      onChange={(e) => setEditingType({ ...editingType, label: e.currentTarget.value })}
+                      style={{ flex: 1 }}
+                    />
+                    <TextInput
+                      label="Icona"
+                      value={editingType.icon}
+                      onChange={(e) => setEditingType({ ...editingType, icon: e.currentTarget.value })}
+                      style={{ width: 80 }}
+                    />
+                    <Checkbox
+                      label="Ha avversario"
+                      mb={8}
+                      checked={editingType.hasOpponent}
+                      onChange={(e) => setEditingType({ ...editingType, hasOpponent: e.currentTarget.checked })}
+                    />
+                    <Button type="submit">Salva</Button>
+                    <Button variant="subtle" onClick={() => setEditingType(null)}>Annulla</Button>
+                  </Group>
+                </Stack>
+              </Card>
+            </form>
+          )}
 
           <Divider label="Nuovo tipo" labelPosition="left" />
 
@@ -321,4 +416,3 @@ export default function Settings() {
     </Stack>
   );
 }
-

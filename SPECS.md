@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.3.0)** — le funzionalità core e l'integrazione Google sono completate; restano le estensioni di roadmap.
+> Stato attuale: **MVP operativo (v0.4.0)** — le funzionalità core e l'integrazione Google sono completate; restano le estensioni di roadmap.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---

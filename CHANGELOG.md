@@ -7,6 +7,13 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.4.0] — 2026-09-21
+
+### Aggiunto
+
+- Modifica dei tipi evento dalle Impostazioni e calendario interattivo con anteprime giornaliere e creazione rapida dal giorno selezionato.
+- Export unidirezionale e aggiornabile degli eventi selezionati verso Google Calendar.
+
 ## [0.3.0] — 2026-09-21
 
 ### Aggiunto

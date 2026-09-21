@@ -95,6 +95,13 @@ const SCHEMA_V1 = `
     value TEXT
   );
 
+  -- Mappa locale per aggiornare gli eventi già esportati su Google Calendar.
+  CREATE TABLE IF NOT EXISTS google_calendar_exports (
+    event_id        INTEGER PRIMARY KEY REFERENCES events(id) ON DELETE CASCADE,
+    google_event_id TEXT NOT NULL,
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 `;
 

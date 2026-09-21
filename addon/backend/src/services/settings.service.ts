@@ -19,6 +19,7 @@ export function setSetting(key: string, value: string | null): void {
 
 export const SETTINGS_KEYS = {
   googleTemplateDocId: "google_template_doc_id",
+  googleCalendarId: "google_calendar_id",
   // Valore temporaneo per proteggere il redirect OAuth da callback forgiati.
   // Non viene mai esposto dall'endpoint delle impostazioni.
   googleOAuthState: "google_oauth_state",

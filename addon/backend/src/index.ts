@@ -6,6 +6,7 @@ import { config } from "./config";
 import { initDb } from "./db/schema";
 import attendanceRouter from "./routes/attendance";
 import callupsRouter from "./routes/callups";
+import calendarExportRouter from "./routes/calendar-export";
 import communicationsRouter from "./routes/communications";
 import eventTypesRouter from "./routes/event-types";
 import eventsRouter from "./routes/events";
@@ -49,6 +50,7 @@ app.use("/api/events/:id/callups", callupsRouter);
 app.use("/api/events/:id/attendance", attendanceRouter);
 app.use("/api/event-types", eventTypesRouter);
 app.use("/api/google", googleRouter);
+app.use("/api/google/calendar", calendarExportRouter);
 app.use("/api/communications", communicationsRouter);
 app.use("/api/settings", settingsRouter);
 

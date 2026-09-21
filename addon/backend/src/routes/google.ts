@@ -5,6 +5,7 @@ import {
   getAuthUrl,
   isGoogleConfigured,
   isGoogleConnected,
+  hasGoogleCalendarAccess,
   exchangeCodeForTokens,
   consumeOAuthState,
   createOAuthState,
@@ -23,6 +24,7 @@ router.get("/status", (_req: Request, res: Response) => {
   res.json({
     configured: isGoogleConfigured(),
     connected: isGoogleConfigured() && isGoogleConnected(),
+    calendarConnected: isGoogleConfigured() && hasGoogleCalendarAccess(),
   });
 });
 

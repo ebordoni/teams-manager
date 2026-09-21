@@ -45,6 +45,7 @@ export interface Callup {
 export interface GoogleStatus {
   configured: boolean;
   connected: boolean;
+  calendarConnected: boolean;
 }
 
 export interface Communication {
