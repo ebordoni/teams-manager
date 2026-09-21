@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0] - 2026-09-21
+
+### Added
+
+- Calendario Mantine a tutta larghezza: navigazione mensile, indicatori di stato e agenda contestuale del giorno selezionato; gli eventi sono caricati per il solo mese visualizzato.
+- Generazione automatica di Google Doc formattati: titolo, sezioni per data, dettagli dell'evento e convocati usano gli stili tipografici del nuovo builder.
+
+### Changed
+
+- Processo di sviluppo e rilascio: versioni centralmente verificate, CI con build backend/frontend e build Docker dell'add-on.
+
 ## [0.2.3] - 2026-09-21
 
 ### Fixed

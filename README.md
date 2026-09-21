@@ -4,7 +4,7 @@
 
 **Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le convocazioni della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
 
-[![Version](https://img.shields.io/badge/version-0.2.3-blue)](addon/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue)](addon/CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Home%20Assistant-41BDF5)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20aarch64-lightgrey)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
@@ -13,7 +13,7 @@
 
 ---
 
-> ✅ **Stato: MVP operativo (v0.2.3).** Calendario, giocatori, convocazioni, presenze e comunicazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
+> ✅ **Stato: MVP operativo (v0.3.0).** Calendario, giocatori, convocazioni, presenze e comunicazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
 
 ## 🎯 Obiettivo
 
@@ -52,20 +52,20 @@ Avvia l'addon e aprilo dalla barra laterale di Home Assistant (Ingress).
 
 ### Requisiti
 
-- Node.js 20+ (il container di produzione usa Node 24)
+- Node.js 24+ (come il container di produzione e la CI)
 
 ### Avvio
 
 ```bash
+# Installa le dipendenze riproducibilmente
+npm ci --prefix addon/backend
+npm ci --prefix addon/frontend
+
 # Terminale 1 — Backend (porta 3002)
-cd addon/backend
-npm install
-npm run dev
+npm run dev --prefix addon/backend
 
 # Terminale 2 — Frontend (porta 5175)
-cd addon/frontend
-npm install
-npm run dev
+npm run dev --prefix addon/frontend
 ```
 
 Oppure con Docker Compose (dal root del repo):
@@ -75,6 +75,16 @@ docker compose up --build
 ```
 
 Il frontend in sviluppo proxya le richieste `/api` verso il backend (vedi `addon/frontend/vite.config.ts`).
+
+### Verifiche e rilascio
+
+```bash
+npm run check
+```
+
+Il comando controlla che le versioni siano coerenti e compila backend e frontend.
+La CI esegue lo stesso controllo e costruisce l'immagine Docker dell'add-on. Per
+le regole di versionamento, changelog e commit vedi [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ---
 
@@ -91,7 +101,7 @@ TEAMS_MANAGER/
 │   ├── backend/          # Node.js + TypeScript + Express + SQLite
 │   └── frontend/         # React + TypeScript + Vite + Mantine UI
 ├── docker-compose.yml    # ambiente di sviluppo
-├── repository.json       # descrittore per l'Add-on Store di HA
+├── repository.yaml       # descrittore per l'Add-on Store di HA
 └── SPECS.md              # specifiche funzionali (documento vivo)
 ```
 
