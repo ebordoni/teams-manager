@@ -1,7 +1,9 @@
 import type { OAuth2Client } from "google-auth-library";
+import crypto from "node:crypto";
 import { google } from "googleapis";
 import { config } from "../../config";
 import { getDb } from "../../db/schema";
+import { getSetting, setSetting, SETTINGS_KEYS } from "../settings.service";
 import type { GoogleTokensRow } from "../../types";
 
 // Scopes minimi necessari: creare/modificare documenti e gestire nel Drive
@@ -10,6 +12,8 @@ export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/documents",
   "https://www.googleapis.com/auth/drive.file",
 ];
+
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
 export function isGoogleConfigured(): boolean {
   return Boolean(config.googleClientId && config.googleClientSecret);
@@ -65,12 +69,37 @@ export function isGoogleConnected(): boolean {
   return Boolean(tokens?.refresh_token);
 }
 
-export function getAuthUrl(): string {
+/** Crea e conserva un token monouso per associare consenso e callback OAuth. */
+export function createOAuthState(): string {
+  const state = crypto.randomBytes(32).toString("base64url");
+  setSetting(SETTINGS_KEYS.googleOAuthState, state);
+  setSetting(SETTINGS_KEYS.googleOAuthStateCreatedAt, String(Date.now()));
+  return state;
+}
+
+/** Valida e consuma il token OAuth: non può essere riutilizzato. */
+export function consumeOAuthState(state: string): boolean {
+  const expected = getSetting(SETTINGS_KEYS.googleOAuthState);
+  const createdAt = Number(getSetting(SETTINGS_KEYS.googleOAuthStateCreatedAt));
+
+  // Consuma sempre lo stato, anche se non valido, per evitare callback replay.
+  setSetting(SETTINGS_KEYS.googleOAuthState, null);
+  setSetting(SETTINGS_KEYS.googleOAuthStateCreatedAt, null);
+
+  if (!expected || !Number.isFinite(createdAt)) return false;
+  if (Date.now() - createdAt > OAUTH_STATE_TTL_MS) return false;
+  if (state.length !== expected.length) return false;
+
+  return crypto.timingSafeEqual(Buffer.from(state), Buffer.from(expected));
+}
+
+export function getAuthUrl(state: string): string {
   const client = createOAuthClient();
   return client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent", // forza il rilascio del refresh_token anche se già concesso in passato
     scope: GOOGLE_SCOPES,
+    state,
   });
 }
 

@@ -1,13 +1,22 @@
 import { Request, Response, Router } from "express";
+import { z } from "zod";
 import {
   disconnectGoogle,
   getAuthUrl,
   isGoogleConfigured,
   isGoogleConnected,
   exchangeCodeForTokens,
+  consumeOAuthState,
+  createOAuthState,
 } from "../services/google/auth";
 
 const router = Router();
+
+const OAuthCallbackSchema = z.object({
+  code: z.string().min(1).optional(),
+  error: z.string().min(1).optional(),
+  state: z.string().min(1).optional(),
+});
 
 // GET /api/google/status
 router.get("/status", (_req: Request, res: Response) => {
@@ -26,14 +35,25 @@ router.get("/oauth/url", (_req: Request, res: Response) => {
     });
     return;
   }
-  res.json({ url: getAuthUrl() });
+  res.json({ url: getAuthUrl(createOAuthState()) });
 });
 
 // GET /api/google/oauth/callback — Google reindirizza qui dopo il consenso.
 // Deve essere raggiunto dal browser sulla porta diretta dell'addon (non Ingress).
 router.get("/oauth/callback", async (req: Request, res: Response) => {
-  const code = req.query.code as string | undefined;
-  const error = req.query.error as string | undefined;
+  const parse = OAuthCallbackSchema.safeParse(req.query);
+  if (!parse.success) {
+    res.status(400).send("Parametri OAuth non validi");
+    return;
+  }
+  const { code, error, state } = parse.data;
+
+  // Va verificato anche in caso di errore restituito da Google, così lo stato
+  // non resta valido dopo un tentativo di consenso annullato.
+  if (!state || !consumeOAuthState(state)) {
+    res.status(400).send("Richiesta OAuth non valida o scaduta: riprova il collegamento");
+    return;
+  }
 
   if (error) {
     res.status(400).send(`Autorizzazione Google rifiutata: ${error}`);
