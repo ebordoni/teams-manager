@@ -1,5 +1,7 @@
 import { getAuthorizedClient } from "./google/auth";
-import { createDocumentWithText, replacePlaceholders } from "./google/docs";
+import { createStyledDocument, replacePlaceholders } from "./google/docs";
+import { DocumentBuilder } from "./google/DocumentBuilder";
+import { documentStyles } from "./google/document-styles";
 import {
   copyFile,
   deleteFile,
@@ -108,21 +110,61 @@ function formatEvent(event: Event, eventTypes: Map<string, EventTypeDef>): strin
   return lines.join("\n");
 }
 
-function buildDocumentText(
+/** Costruisce il documento automatico con una gerarchia leggibile su mobile. */
+function buildStyledDocument(
   events: Event[],
   eventTypes: Map<string, EventTypeDef>,
-): { title: string; body: string } {
+): { title: string; builder: DocumentBuilder } {
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
   const title = `GIPS Salizzole – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
-  const body = [
-    "GIPS SALIZZOLE – APPUNTAMENTI",
-    "",
-    ...sorted.flatMap((event, i) => [
-      formatEvent(event, eventTypes),
-      ...(i < sorted.length - 1 ? ["", "---", ""] : []),
-    ]),
-  ].join("\n");
-  return { title, body };
+  const builder = new DocumentBuilder()
+    .addParagraph("GIPS SALIZZOLE", documentStyles.title)
+    .addParagraph(`Appuntamenti dal ${formatDateIt(sorted[0].date)}`, documentStyles.subtitle);
+
+  for (const event of sorted) {
+    const typeDef = eventTypes.get(event.type);
+    const eventLabel = (typeDef?.label ?? event.type).toUpperCase();
+
+    builder
+      .addParagraph(formatDateIt(event.date), documentStyles.date)
+      .addParagraph(`${typeDef?.icon ?? "⚽"} ${eventLabel}`, documentStyles.event);
+
+    if (event.status !== "scheduled") {
+      const status = event.status === "cancelled" ? "ANNULLATO" : "MODIFICATO";
+      builder.addParagraph(
+        `⚠️ ${status}${event.notes ? `: ${event.notes}` : ""}`,
+        documentStyles.note,
+      );
+    }
+
+    if (typeDef?.hasOpponent && event.opponent) {
+      builder.addParagraph(`GIPS Salizzole – ${event.opponent}`, documentStyles.match);
+    }
+    if (event.location) builder.addParagraph(`📍 ${event.location}`, documentStyles.normal);
+    if (event.meetingTime) builder.addParagraph(`⏰ Ritrovo: ${event.meetingTime}`, documentStyles.normal);
+    if (event.startTime) {
+      builder.addParagraph(
+        `⏰ Inizio: ${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}`,
+        documentStyles.normal,
+      );
+    }
+    if (event.notes && event.status === "scheduled") {
+      builder.addParagraph(event.notes, documentStyles.note);
+    }
+
+    if (typeDef?.hasOpponent) {
+      const callups = getCallupNames(event.id);
+      if (callups.length > 0) {
+        builder
+          .addParagraph("Convocati", documentStyles.match)
+          .addParagraph(callups.join(" · "), documentStyles.normal);
+      }
+    }
+
+    builder.addEmptyLine();
+  }
+
+  return { title, builder };
 }
 
 /** Costruisce i placeholder `{{CHIAVE}}` usati dal template Google Docs. */
@@ -214,9 +256,9 @@ export async function generateCommunication(
     documentId = await copyFile(auth, templateDocId, title);
     await replacePlaceholders(auth, documentId, built.replacements);
   } else {
-    const built = buildDocumentText(events, eventTypes);
+    const built = buildStyledDocument(events, eventTypes);
     title = built.title;
-    documentId = await createDocumentWithText(auth, title, built.body);
+    documentId = await createStyledDocument(auth, title, built.builder);
   }
 
   const folderId = await ensureCommunicationsFolder(auth);
