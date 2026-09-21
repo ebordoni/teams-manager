@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Badge,
+  Box,
   Button,
   Card,
   Checkbox,
@@ -15,11 +16,12 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { DateInput, TimeInput } from "@mantine/dates";
+import { Calendar as MantineCalendar, DateInput, TimeInput } from "@mantine/dates";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { IconTrash } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import type { EventTypeDef, GeneratedCommunication, TeamEvent } from "../types";
@@ -29,6 +31,20 @@ const STATUS_COLOR: Record<TeamEvent["status"], string> = {
   modified: "orange",
   cancelled: "red",
 };
+
+const STATUS_DOT_COLOR: Record<TeamEvent["status"], string> = {
+  scheduled: "var(--mantine-color-green-6)",
+  modified: "var(--mantine-color-orange-6)",
+  cancelled: "var(--mantine-color-red-6)",
+};
+
+function formatDayLabel(date: string): string {
+  return new Intl.DateTimeFormat("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date(`${date}T12:00:00`));
+}
 
 interface FormState {
   type: string;
@@ -51,8 +67,12 @@ export default function Calendar() {
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [showForm, { toggle: toggleForm, close: closeForm }] =
+  const [showForm, { open: openForm, close: closeForm }] =
     useDisclosure(false);
+  const [displayedDate, setDisplayedDate] = useState(() =>
+    dayjs().format("YYYY-MM-DD"),
+  );
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -60,9 +80,16 @@ export default function Calendar() {
     null,
   );
 
-  function loadEvents() {
+  function loadEvents(date = displayedDate) {
     setLoading(true);
-    Promise.all([api.getEvents(), api.getEventTypes()])
+    const month = dayjs(date);
+    Promise.all([
+      api.getEvents({
+        from: month.startOf("month").format("YYYY-MM-DD"),
+        to: month.endOf("month").format("YYYY-MM-DD"),
+      }),
+      api.getEventTypes(),
+    ])
       .then(([eventsRes, typesRes]) => {
         setEvents(eventsRes.data);
         setEventTypes(typesRes.data);
@@ -73,7 +100,7 @@ export default function Calendar() {
 
   useEffect(() => {
     loadEvents();
-  }, []);
+  }, [displayedDate]);
 
   const selectedType = eventTypes.find((t) => t.key === form.type);
   const typeOf = (key: string) => eventTypes.find((t) => t.key === key);
@@ -83,7 +110,7 @@ export default function Calendar() {
     if (!form.date) return;
     await api.createEvent({
       type: form.type,
-      date: form.date.toISOString().slice(0, 10),
+      date: dayjs(form.date).format("YYYY-MM-DD"),
       startTime: form.startTime || null,
       location: form.location || null,
       opponent: selectedType?.hasOpponent ? form.opponent || null : null,
@@ -146,11 +173,28 @@ export default function Calendar() {
     loadEvents();
   }
 
+  function handleOpenForm() {
+    setForm((current) => ({
+      ...current,
+      date: current.date ?? (selectedDay ? dayjs(selectedDay).toDate() : null),
+    }));
+    openForm();
+  }
+
+  const eventsByDate = useMemo(() => {
+    const grouped = new Map<string, TeamEvent[]>();
+    for (const event of events) {
+      grouped.set(event.date, [...(grouped.get(event.date) ?? []), event]);
+    }
+    return grouped;
+  }, [events]);
+  const selectedDayEvents = selectedDay ? eventsByDate.get(selectedDay) ?? [] : [];
+
   return (
     <Stack gap="md">
       <Group justify="space-between">
         <Title order={4}>Calendario</Title>
-        <Button onClick={toggleForm}>
+        <Button onClick={showForm ? closeForm : handleOpenForm}>
           {showForm ? "Annulla" : "+ Nuovo evento"}
         </Button>
       </Group>
@@ -256,62 +300,105 @@ export default function Calendar() {
 
       {loading ? (
         <Loader />
-      ) : events.length === 0 ? (
-        <Text c="dimmed">Nessun evento in calendario.</Text>
       ) : (
-        <Stack gap="xs">
-          {events.map((event) => {
-            const type = typeOf(event.type);
-            return (
-              <Card key={event.id} withBorder padding="sm" radius="md">
-                <Group wrap="nowrap" gap="sm">
-                  <Checkbox
-                    checked={selectedIds.has(event.id)}
-                    onChange={() => toggleSelected(event.id)}
-                  />
-                  <Link
-                    to={`/events/${event.id}`}
-                    style={{
-                      flex: 1,
-                      textDecoration: "none",
-                      color: "inherit",
-                    }}
-                  >
-                    <Group justify="space-between">
-                      <Text truncate>
-                        {type?.icon}{" "}
-                        <Text span fw={600}>
-                          {type?.label ?? event.type}
-                        </Text>{" "}
-                        {event.opponent ? `vs ${event.opponent}` : ""}
-                        {event.status !== "scheduled" && (
-                          <Badge
-                            ml="xs"
-                            size="sm"
-                            color={STATUS_COLOR[event.status]}
-                          >
-                            {event.status}
-                          </Badge>
-                        )}
-                      </Text>
-                      <Badge variant="light" color="gray">
-                        {event.date} {event.startTime ?? ""}
-                      </Badge>
-                    </Group>
-                  </Link>
-                  <ActionIcon
-                    color="red"
-                    variant="subtle"
-                    onClick={() => handleDelete(event)}
-                    aria-label="Elimina"
-                  >
-                    <IconTrash size={18} />
-                  </ActionIcon>
-                </Group>
-              </Card>
-            );
-          })}
-        </Stack>
+        <>
+          <Card withBorder padding="md" radius="md">
+            <MantineCalendar
+              fullWidth
+              date={displayedDate}
+              onDateChange={(date) => {
+                setDisplayedDate(date);
+                setSelectedDay(null);
+              }}
+              getDayProps={(date) => {
+                const dayEvents = eventsByDate.get(date) ?? [];
+                return {
+                  selected: date === selectedDay,
+                  onClick: () => setSelectedDay(date),
+                  "aria-label": `${formatDayLabel(date)}: ${dayEvents.length} evento/i`,
+                };
+              }}
+              renderDay={(date) => {
+                const dayEvents = eventsByDate.get(date) ?? [];
+                return (
+                  <Stack gap={2} align="center">
+                    <Text inherit>{dayjs(date).date()}</Text>
+                    {dayEvents.length > 0 && (
+                      <Group gap={3} justify="center" wrap="nowrap">
+                        {dayEvents.slice(0, 3).map((event) => (
+                          <Box
+                            key={event.id}
+                            aria-hidden="true"
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: "50%",
+                              background: STATUS_DOT_COLOR[event.status],
+                            }}
+                          />
+                        ))}
+                        <Text size="xs" fw={700} aria-hidden="true">
+                          {dayEvents.length}
+                        </Text>
+                      </Group>
+                    )}
+                  </Stack>
+                );
+              }}
+            />
+          </Card>
+
+          {selectedDay ? (
+            <Stack gap="xs">
+              <Title order={5}>{formatDayLabel(selectedDay)}</Title>
+              {selectedDayEvents.length === 0 ? (
+                <Text c="dimmed">Nessun evento in questa giornata.</Text>
+              ) : (
+                selectedDayEvents.map((event) => {
+                  const type = typeOf(event.type);
+                  return (
+                    <Card key={event.id} withBorder padding="sm" radius="md">
+                      <Group wrap="nowrap" gap="sm">
+                        <Checkbox
+                          checked={selectedIds.has(event.id)}
+                          onChange={() => toggleSelected(event.id)}
+                          aria-label={`Seleziona ${type?.label ?? event.type}`}
+                        />
+                        <Link
+                          to={`/events/${event.id}`}
+                          style={{ flex: 1, textDecoration: "none", color: "inherit" }}
+                        >
+                          <Group justify="space-between">
+                            <Text truncate>
+                              {type?.icon} <Text span fw={600}>{type?.label ?? event.type}</Text>{" "}
+                              {event.opponent ? `vs ${event.opponent}` : ""}
+                            </Text>
+                            <Group gap="xs" wrap="nowrap">
+                              {event.status !== "scheduled" && (
+                                <Badge size="sm" color={STATUS_COLOR[event.status]}>{event.status}</Badge>
+                              )}
+                              {event.startTime && <Badge variant="light" color="gray">{event.startTime}</Badge>}
+                            </Group>
+                          </Group>
+                        </Link>
+                        <ActionIcon
+                          color="red"
+                          variant="subtle"
+                          onClick={() => handleDelete(event)}
+                          aria-label="Elimina"
+                        >
+                          <IconTrash size={18} />
+                        </ActionIcon>
+                      </Group>
+                    </Card>
+                  );
+                })
+              )}
+            </Stack>
+          ) : (
+            <Text c="dimmed">Seleziona un giorno per vedere gli eventi.</Text>
+          )}
+        </>
       )}
     </Stack>
   );
