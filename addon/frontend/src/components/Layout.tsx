@@ -3,6 +3,7 @@ import { useDisclosure } from "@mantine/hooks";
 import {
   IconCalendarEvent,
   IconFileText,
+  IconLayoutList,
   IconLayoutDashboard,
   IconSettings,
   IconUsers,
@@ -13,6 +14,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: IconLayoutDashboard },
   { to: "/calendar", label: "Calendario", icon: IconCalendarEvent },
   { to: "/players", label: "Giocatori", icon: IconUsers },
+  { to: "/formations", label: "Formazioni", icon: IconLayoutList },
   { to: "/communications", label: "Comunicazioni", icon: IconFileText },
   { to: "/settings", label: "Impostazioni", icon: IconSettings },
 ];

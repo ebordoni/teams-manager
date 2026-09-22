@@ -129,3 +129,6 @@ export interface AppSettingRow {
   key: string;
   value: string | null;
 }
+
+export interface FormationRow { id: number; name: string; system: string; assignments: string; created_at: string; }
+export interface Formation { id: number; name: string; system: string; assignments: Record<string, number | null>; createdAt: string; }

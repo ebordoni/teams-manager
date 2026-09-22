@@ -88,6 +88,9 @@ export const api = {
   updateEventType: (id: number, data: Partial<EventTypeDef>) =>
     apiClient.put<EventTypeDef>(`/event-types/${id}`, data),
   deleteEventType: (id: number) => apiClient.delete(`/event-types/${id}`),
+  getFormations: () => apiClient.get<import("../types").Formation[]>("/formations"),
+  createFormation: (data: { name: string; assignments: Record<string, number | null> }) => apiClient.post<import("../types").Formation>("/formations", data),
+  deleteFormation: (id: number) => apiClient.delete(`/formations/${id}`),
 
   // ── Impostazioni app ───────────────────────────────────────────────────
   getSettings: () =>

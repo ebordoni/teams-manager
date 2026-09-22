@@ -8,6 +8,7 @@ import {
   Stack,
   Text,
   TextInput,
+  MultiSelect,
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -20,7 +21,7 @@ export default function Players() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
-  const [role, setRole] = useState("");
+  const [roles, setRoles] = useState<string[]>([]);
   const [showForm, { toggle: toggleForm, close: closeForm }] =
     useDisclosure(false);
 
@@ -39,9 +40,9 @@ export default function Players() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    await api.createPlayer({ name: name.trim(), role: role.trim() || null });
+    await api.createPlayer({ name: name.trim(), role: roles[0] ?? null, secondaryRoles: roles.slice(1) });
     setName("");
-    setRole("");
+    setRoles([]);
     closeForm();
     loadPlayers();
   }
@@ -71,10 +72,12 @@ export default function Players() {
                 onChange={(e) => setName(e.currentTarget.value)}
                 style={{ flex: 1 }}
               />
-              <TextInput
-                label="Ruolo"
-                value={role}
-                onChange={(e) => setRole(e.currentTarget.value)}
+              <MultiSelect
+                label="Ruoli"
+                data={["Portiere", "Difensore", "Centrocampista", "Esterno", "Attaccante"]}
+                value={roles}
+                onChange={setRoles}
+                searchable
                 style={{ flex: 1 }}
               />
               <Button type="submit">Salva</Button>
@@ -96,9 +99,9 @@ export default function Players() {
                   <Text span fw={600}>
                     {player.name}
                   </Text>
-                  {player.role && (
+                  {(player.role || player.secondaryRoles.length > 0) && (
                     <Text span c="dimmed" ml="xs">
-                      {player.role}
+                      {[player.role, ...player.secondaryRoles].filter(Boolean).join(", ")}
                     </Text>
                   )}
                 </Text>

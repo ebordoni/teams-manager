@@ -74,3 +74,4 @@ export interface EventFilters {
   to?: string;
   type?: EventType;
 }
+export interface Formation { id: number; name: string; system: string; assignments: Record<string, number | null>; createdAt: string; }

@@ -1,6 +1,6 @@
 {
       "name": "gips-calcio-backend",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "private": true,
       "scripts": {
             "dev": "tsx watch src/index.ts",
