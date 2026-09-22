@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.0] - 2026-09-22
+
+### Changed
+
+- Catalogo delle icone evento ampliato, ricercabile e con anteprima nel selettore e nel valore scelto.
+
 ## [0.9.0] - 2026-09-22
 
 ### Added

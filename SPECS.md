@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.9.0)** — le funzionalità core, le formazioni 7vs7, le comunicazioni contestuali e i controlli di qualità sono completati; restano le estensioni di roadmap.
+> Stato attuale: **MVP operativo (v0.10.0)** — le funzionalità core, le formazioni 7vs7, le comunicazioni contestuali, i controlli di qualità e il catalogo icone sono completati; restano le estensioni di roadmap.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---

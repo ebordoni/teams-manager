@@ -8,7 +8,6 @@ import {
   Divider,
   Group,
   Stack,
-  Select,
   Text,
   TextInput,
   Title,
@@ -16,7 +15,7 @@ import {
 import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { EventTypeIcon, eventTypeIconOptions } from "../components/EventTypeIcon";
+import { EventTypeIcon, EventTypeIconPicker } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
 import type { EventTypeDef, GoogleStatus } from "../types";
 
@@ -295,7 +294,8 @@ export default function Settings() {
           <Text size="sm" c="dimmed">
             Gestisci i tipi disponibili nel calendario (es. Allenamento,
             Partita, Torneo, Amichevole…). "Ha avversario" mostra il campo
-            avversario e le convocazioni per quel tipo.
+            avversario e le convocazioni per quel tipo. L’icona è ricercabile
+            e viene mostrata in anteprima prima del salvataggio.
           </Text>
 
           {typeError && (
@@ -352,9 +352,8 @@ export default function Settings() {
                       onChange={(e) => setEditingType({ ...editingType, label: e.currentTarget.value })}
                       style={{ flex: 1 }}
                     />
-                    <Select
+                    <EventTypeIconPicker
                       label="Icona"
-                      data={eventTypeIconOptions}
                       value={editingType.icon}
                       onChange={(icon) => setEditingType({ ...editingType, icon: icon ?? "IconBallFootball" })}
                       style={{ width: 180 }}
@@ -392,9 +391,8 @@ export default function Settings() {
                 }
                 style={{ flex: 1 }}
               />
-              <Select
+              <EventTypeIconPicker
                 label="Icona"
-                data={eventTypeIconOptions}
                 value={newType.icon}
                 onChange={(icon) => setNewType({ ...newType, icon: icon ?? "IconBallFootball" })}
                 style={{ width: 180 }}

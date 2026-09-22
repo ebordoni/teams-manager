@@ -7,6 +7,12 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.10.0] — 2026-09-22
+
+### Modificato
+
+- Selettore delle icone dei tipi evento ampliato a 33 icone Tabler, ricercabile in italiano e con anteprima immediata dell’icona selezionata e delle opzioni.
+
 ## [0.9.0] — 2026-09-22
 
 ### Aggiunto
