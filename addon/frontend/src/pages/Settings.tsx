@@ -9,6 +9,7 @@ import {
   Group,
   Loader,
   Stack,
+  Select,
   Text,
   TextInput,
   Title,
@@ -16,6 +17,7 @@ import {
 import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { EventTypeIcon, eventTypeIconOptions } from "../components/EventTypeIcon";
 import type { EventTypeDef, GoogleStatus } from "../types";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -45,7 +47,7 @@ export default function Settings() {
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [newType, setNewType] = useState({
     label: "",
-    icon: "⚽",
+    icon: "IconBallFootball",
     hasOpponent: false,
   });
   const [typeError, setTypeError] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export default function Settings() {
         hasOpponent: newType.hasOpponent,
         sortOrder: eventTypes.length,
       });
-      setNewType({ label: "", icon: "⚽", hasOpponent: false });
+      setNewType({ label: "", icon: "IconBallFootball", hasOpponent: false });
       loadAll();
     } catch (err) {
       setTypeError(apiErrorMessage(err, "Errore durante la creazione del tipo"));
@@ -306,7 +308,7 @@ export default function Settings() {
             {eventTypes.map((type) => (
               <Group key={type.id} justify="space-between" wrap="nowrap">
                 <Text>
-                  {type.icon} {type.label}{" "}
+                  <EventTypeIcon name={type.icon} /> {type.label}{" "}
                   <Text span c="dimmed" size="sm">
                     ({type.key})
                   </Text>
@@ -350,11 +352,12 @@ export default function Settings() {
                       onChange={(e) => setEditingType({ ...editingType, label: e.currentTarget.value })}
                       style={{ flex: 1 }}
                     />
-                    <TextInput
+                    <Select
                       label="Icona"
+                      data={eventTypeIconOptions}
                       value={editingType.icon}
-                      onChange={(e) => setEditingType({ ...editingType, icon: e.currentTarget.value })}
-                      style={{ width: 80 }}
+                      onChange={(icon) => setEditingType({ ...editingType, icon: icon ?? "IconBallFootball" })}
+                      style={{ width: 180 }}
                     />
                     <Checkbox
                       label="Ha avversario"
@@ -389,13 +392,12 @@ export default function Settings() {
                 }
                 style={{ flex: 1 }}
               />
-              <TextInput
+              <Select
                 label="Icona"
+                data={eventTypeIconOptions}
                 value={newType.icon}
-                onChange={(e) =>
-                  setNewType({ ...newType, icon: e.currentTarget.value })
-                }
-                style={{ width: 80 }}
+                onChange={(icon) => setNewType({ ...newType, icon: icon ?? "IconBallFootball" })}
+                style={{ width: 180 }}
               />
               <Checkbox
                 label="Ha avversario"

@@ -102,6 +102,14 @@ const SCHEMA_V1 = `
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS formations (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    system      TEXT NOT NULL DEFAULT '2-3-1',
+    assignments TEXT NOT NULL DEFAULT '{}',
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 `;
 
@@ -127,9 +135,9 @@ function seedDefaultEventTypes(): void {
     `INSERT INTO event_types (key, label, icon, has_opponent, sort_order)
      VALUES (?, ?, ?, ?, ?)`,
   );
-  insert.run("training", "Allenamento", "🏃", 0, 0);
-  insert.run("match", "Partita", "⚽", 1, 1);
-  insert.run("tournament", "Torneo", "🏆", 1, 2);
+  insert.run("training", "Allenamento", "IconRun", 0, 0);
+  insert.run("match", "Partita", "IconBallFootball", 1, 1);
+  insert.run("tournament", "Torneo", "IconTrophy", 1, 2);
 }
 
 export function getDb(): DatabaseSync {

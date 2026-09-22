@@ -24,6 +24,7 @@ import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { EventTypeIcon } from "../components/EventTypeIcon";
 import type { EventTypeDef, GeneratedCommunication, GoogleStatus, TeamEvent } from "../types";
 
 const STATUS_COLOR: Record<TeamEvent["status"], string> = {
@@ -235,7 +236,7 @@ export default function Calendar() {
                   label="Tipo"
                   data={eventTypes.map((t) => ({
                     value: t.key,
-                    label: `${t.icon} ${t.label}`,
+                    label: t.label,
                   }))}
                   value={form.type}
                   onChange={(value) => setForm({ ...form, type: value ?? "" })}
@@ -363,7 +364,7 @@ export default function Calendar() {
                       return (
                         <Group key={event.id} gap={3} justify="center" wrap="nowrap">
                           <Box aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_DOT_COLOR[event.status] }} />
-                          <Text size="xs" truncate="end">{event.startTime ? `${event.startTime} ` : ""}{type?.icon ?? "⚽"}</Text>
+                          <Text size="xs" truncate="end">{event.startTime ? `${event.startTime} ` : ""}<EventTypeIcon name={type?.icon ?? "IconBallFootball"} size={12} /></Text>
                         </Group>
                       );
                     })}
