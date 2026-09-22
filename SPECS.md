@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.12.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
+> Stato attuale: **MVP operativo (v0.13.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -53,13 +53,13 @@ condivisione** della comunicazione verso i genitori, non lo storage principale.
 
 ### 2.1 Stack tecnico
 
-| Layer    | Tecnologia                                                               |
-| -------- | ------------------------------------------------------------------------ |
+| Layer    | Tecnologia                                                                                                      |
+| -------- | --------------------------------------------------------------------------------------------------------------- |
 | Frontend | React 19, Vite 5, Mantine UI 9 (`@mantine/core`, `dates`, `notifications`, `form`), React Router 6 (HashRouter) |
-| Backend  | Node.js 24, TypeScript, Express                                          |
-| Storage  | SQLite (`node:sqlite`), file system persistente (`/data`)                |
-| Google   | Google Docs API + Google Drive API (OAuth 2.0)                           |
-| Hosting  | Home Assistant Addon (Docker), Ingress + porta diretta (redirect OAuth)  |
+| Backend  | Node.js 24, TypeScript, Express                                                                                 |
+| Storage  | SQLite (`node:sqlite`), file system persistente (`/data`)                                                       |
+| Google   | Google Docs API + Google Drive API (OAuth 2.0)                                                                  |
+| Hosting  | Home Assistant Addon (Docker), Ingress + porta diretta (redirect OAuth)                                         |
 
 ```
 addon/
@@ -94,33 +94,33 @@ addon/
 
 ### 3.1 Funzionalità Core (MVP)
 
-| ID  | Funzionalità             | Descrizione                                                                                              | Stato |
-| --- | ------------------------ | -------------------------------------------------------------------------------------------------------- | ----- |
-| F01 | **Anagrafica giocatori** | CRUD giocatori: nome, ruolo, ruoli secondari, note. Statistiche (presenze, gol) di base.                 | WIP   |
-| F02 | **Calendario eventi**    | CRUD eventi (allenamento/partita/torneo): data, ora, luogo, indirizzo, avversario, ritrovo, note, stato. | WIP   |
-| F03 | **Convocazioni**         | Per ogni evento, selezione dei giocatori convocati (checklist).                                          | WIP   |
-| F04 | **Presenze**             | Registrazione presenze effettive per allenamenti/partite (base per statistiche future).                  | DONE  |
-| F05 | **Dashboard**            | Prossimi eventi, numero giocatori, riepilogo rapido.                                                     | DONE  |
-| F06 | **App Home Assistant**   | Addon con Ingress, persistenza dati in `/data`, healthcheck.                                             | DONE  |
-| F13 | **Validazione stato evento** — note obbligatorie quando un evento è modificato/annullato; badge di stato in calendario e dettaglio. | DONE  |
-| F14 | **UI responsive (Mantine)** | Interfaccia basata su Mantine UI 9 (AppShell, form, tabelle), nav a hamburger su mobile. | DONE  |
-| F15 | **Tipi di evento configurabili** — gestione (crea/modifica/elimina) dei tipi evento (Allenamento, Partita, Torneo, …) dalle Impostazioni, con flag "ha avversario". | DONE  |
+| ID  | Funzionalità                                                                                                                                                        | Descrizione                                                                                              | Stato |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----- |
+| F01 | **Anagrafica giocatori**                                                                                                                                            | CRUD giocatori: nome, ruolo, ruoli secondari, note. Statistiche (presenze, gol) di base.                 | WIP   |
+| F02 | **Calendario eventi**                                                                                                                                               | CRUD eventi (allenamento/partita/torneo): data, ora, luogo, indirizzo, avversario, ritrovo, note, stato. | WIP   |
+| F03 | **Convocazioni**                                                                                                                                                    | Per ogni evento, selezione dei giocatori convocati (checklist).                                          | WIP   |
+| F04 | **Presenze**                                                                                                                                                        | Registrazione presenze effettive per allenamenti/partite (base per statistiche future).                  | DONE  |
+| F05 | **Dashboard**                                                                                                                                                       | Prossimi eventi, numero giocatori, riepilogo rapido.                                                     | DONE  |
+| F06 | **App Home Assistant**                                                                                                                                              | Addon con Ingress, persistenza dati in `/data`, healthcheck.                                             | DONE  |
+| F13 | **Validazione stato evento** — note obbligatorie quando un evento è modificato/annullato; badge di stato in calendario e dettaglio.                                 | DONE                                                                                                     |
+| F14 | **UI responsive (Mantine)**                                                                                                                                         | Interfaccia basata su Mantine UI 9 (AppShell, form, tabelle), nav a hamburger su mobile.                 | DONE  |
+| F15 | **Tipi di evento configurabili** — gestione (crea/modifica/elimina) dei tipi evento (Allenamento, Partita, Torneo, …) dalle Impostazioni, con flag "ha avversario". | DONE                                                                                                     |
 
 > Nota: le funzionalità marcate `WIP` hanno lo **scheletro** (API + UI di base) già presente nel
 > boilerplate ma vanno rifinite, validate e testate.
 
 ### 3.2 Funzionalità Post-MVP (da roadmap)
 
-| ID  | Funzionalità                                                                                                                                                                           | Stato |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| F07 | **Generazione comunicazione Google Docs** — pulsante "Genera comunicazione", creazione documento (da zero o da template con placeholder), salvataggio su Drive, link condivisibile. | DONE  |
-| F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                      | DONE  |
-| F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico).                                                               | DONE  |
-| F10 | **Storico comunicazioni** — pagina "Comunicazioni": elenco dei documenti generati, apertura e **eliminazione** (rimuove anche il file da Drive).                                       | DONE  |
+| ID  | Funzionalità                                                                                                                                                                                                                                                | Stato |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| F07 | **Generazione comunicazione Google Docs** — pulsante "Genera comunicazione", creazione documento (da zero o da template con placeholder), salvataggio su Drive, link condivisibile.                                                                         | DONE  |
+| F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                                                                                           | DONE  |
+| F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico).                                                                                                                                    | DONE  |
+| F10 | **Storico comunicazioni** — pagina "Comunicazioni": elenco dei documenti generati, apertura e **eliminazione** (rimuove anche il file da Drive).                                                                                                            | DONE  |
 | F16 | **Template Google Doc** — documento personalizzato con placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`, `{{FORMAZIONI}}`, `{{PRESENZE}}`, configurabile dalle Impostazioni. Se non impostato, si usa la generazione automatica. | DONE  |
-| F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                              | TODO  |
-| F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                | TODO  |
-| F17 | **Piani partita AI** — formazione per ciascun tempo, minimizzazione della differenza di minutaggio, rispetto dei ruoli, modifica manuale e conferma. | DONE |
+| F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                                                                                                   | TODO  |
+| F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                                                                                     | TODO  |
+| F17 | **Piani partita AI** — formazione per ciascun tempo, minimizzazione della differenza di minutaggio, rispetto dei ruoli, modifica manuale e conferma.                                                                                                        | DONE  |
 
 ---
 
