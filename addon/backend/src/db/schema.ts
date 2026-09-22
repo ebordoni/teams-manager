@@ -32,6 +32,7 @@ const SCHEMA_V1 = `
     meeting_time  TEXT,
     notes         TEXT,
     status        TEXT    NOT NULL DEFAULT 'scheduled', -- scheduled | modified | cancelled
+    formation_id  INTEGER REFERENCES formations(id) ON DELETE SET NULL,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -120,9 +121,15 @@ export function initDb(): void {
   db = new DatabaseSync(dbPath);
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA_V1);
+  ensureColumn("events", "formation_id", "INTEGER REFERENCES formations(id) ON DELETE SET NULL");
   seedDefaultEventTypes();
 
   console.log(`[db] SQLite ready at ${dbPath}`);
+}
+
+function ensureColumn(table: string, column: string, definition: string): void {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (!columns.some((item) => item.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
 function seedDefaultEventTypes(): void {

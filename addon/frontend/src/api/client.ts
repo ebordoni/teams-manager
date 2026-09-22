@@ -91,6 +91,7 @@ export const api = {
   getFormations: () => apiClient.get<import("../types").Formation[]>("/formations"),
   createFormation: (data: { name: string; assignments: Record<string, number | null> }) => apiClient.post<import("../types").Formation>("/formations", data),
   deleteFormation: (id: number) => apiClient.delete(`/formations/${id}`),
+  updateFormation: (id: number, data: { name: string; assignments: Record<string, number | null> }) => apiClient.put(`/formations/${id}`, data),
 
   // ── Impostazioni app ───────────────────────────────────────────────────
   getSettings: () =>

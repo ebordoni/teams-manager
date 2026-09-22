@@ -33,6 +33,7 @@ export interface TeamEvent {
   meetingTime: string | null;
   notes: string | null;
   status: EventStatus;
+  formationId: number | null;
   createdAt: string;
 }
 

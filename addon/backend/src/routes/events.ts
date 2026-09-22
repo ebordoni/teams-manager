@@ -17,6 +17,7 @@ const EventSchema = z.object({
   meetingTime: z.string().trim().optional().nullable(),
   notes: z.string().optional().nullable(),
   status: z.enum(["scheduled", "modified", "cancelled"]).optional(),
+  formationId: z.number().int().positive().optional().nullable(),
 });
 
 const FiltersSchema = z.object({
@@ -94,8 +95,8 @@ router.post("/", (req: Request, res: Response) => {
   const result = db
     .prepare(
       `INSERT INTO events
-        (type, date, start_time, end_time, location, address, opponent, meeting_time, notes, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (type, date, start_time, end_time, location, address, opponent, meeting_time, notes, status, formation_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       e.type,
@@ -108,6 +109,7 @@ router.post("/", (req: Request, res: Response) => {
       e.meetingTime ?? null,
       e.notes ?? null,
       e.status ?? "scheduled",
+      e.formationId ?? null,
     );
 
   const row = db
@@ -152,7 +154,7 @@ router.put("/:id", (req: Request, res: Response) => {
   db.prepare(
     `UPDATE events SET
       type = ?, date = ?, start_time = ?, end_time = ?, location = ?,
-      address = ?, opponent = ?, meeting_time = ?, notes = ?, status = ?
+      address = ?, opponent = ?, meeting_time = ?, notes = ?, status = ?, formation_id = ?
      WHERE id = ?`,
   ).run(
     e.type ?? existing.type,
@@ -165,6 +167,7 @@ router.put("/:id", (req: Request, res: Response) => {
     e.meetingTime !== undefined ? e.meetingTime : existing.meeting_time,
     e.notes !== undefined ? e.notes : existing.notes,
     e.status ?? existing.status,
+    e.formationId !== undefined ? e.formationId : existing.formation_id,
     req.params.id,
   );
 

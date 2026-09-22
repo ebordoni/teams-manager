@@ -12,7 +12,7 @@ import {
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconTrash } from "@tabler/icons-react";
+import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { Player } from "../types";
@@ -22,6 +22,7 @@ export default function Players() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
+  const [editing, setEditing] = useState<Player | null>(null);
   const [showForm, { toggle: toggleForm, close: closeForm }] =
     useDisclosure(false);
 
@@ -50,6 +51,14 @@ export default function Players() {
   async function handleDelete(id: number) {
     await api.deletePlayer(id);
     loadPlayers();
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) return;
+    const nextRoles = [editing.role, ...editing.secondaryRoles].filter(Boolean) as string[];
+    await api.updatePlayer(editing.id, { name: editing.name, role: nextRoles[0] ?? null, secondaryRoles: nextRoles.slice(1), notes: editing.notes });
+    setEditing(null); loadPlayers();
   }
 
   return (
@@ -106,6 +115,11 @@ export default function Players() {
                   )}
                 </Text>
                 <ActionIcon
+                  variant="subtle"
+                  onClick={() => setEditing({ ...player })}
+                  aria-label="Modifica"
+                ><IconPencil size={18} /></ActionIcon>
+                <ActionIcon
                   color="red"
                   variant="subtle"
                   onClick={() => handleDelete(player.id)}
@@ -118,6 +132,7 @@ export default function Players() {
           ))}
         </Stack>
       )}
+      {editing && <Card withBorder><form onSubmit={handleUpdate}><Stack><Title order={5}>Modifica giocatore</Title><TextInput label="Nome" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.currentTarget.value })} required /><MultiSelect label="Ruoli" data={["Portiere", "Difensore", "Centrocampista", "Esterno", "Attaccante"]} value={[editing.role, ...editing.secondaryRoles].filter(Boolean) as string[]} onChange={(values) => setEditing({ ...editing, role: values[0] ?? null, secondaryRoles: values.slice(1) })} /><TextInput label="Note" value={editing.notes ?? ""} onChange={(e) => setEditing({ ...editing, notes: e.currentTarget.value || null })} /><Group><Button type="submit">Salva</Button><Button variant="subtle" onClick={() => setEditing(null)}>Annulla</Button></Group></Stack></form></Card>}
     </Stack>
   );
 }

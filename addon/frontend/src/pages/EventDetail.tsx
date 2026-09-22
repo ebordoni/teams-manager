@@ -24,6 +24,7 @@ import type {
   Callup,
   EventStatus,
   EventTypeDef,
+  Formation,
   TeamEvent,
 } from "../types";
 
@@ -51,6 +52,7 @@ export default function EventDetail() {
   const eventId = Number(id);
   const [event, setEvent] = useState<TeamEvent | null>(null);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
+  const [formations, setFormations] = useState<Formation[]>([]);
   const [callups, setCallups] = useState<Callup[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +62,15 @@ export default function EventDetail() {
   const [notesDraft, setNotesDraft] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [typeDraft, setTypeDraft] = useState("");
+  const [dateDraft, setDateDraft] = useState("");
+  const [startTimeDraft, setStartTimeDraft] = useState("");
+  const [endTimeDraft, setEndTimeDraft] = useState("");
+  const [locationDraft, setLocationDraft] = useState("");
+  const [addressDraft, setAddressDraft] = useState("");
+  const [opponentDraft, setOpponentDraft] = useState("");
+  const [meetingTimeDraft, setMeetingTimeDraft] = useState("");
+  const [formationDraft, setFormationDraft] = useState<string | null>(null);
 
   useEffect(() => {
     if (!eventId) return;
@@ -68,14 +79,17 @@ export default function EventDetail() {
       api.getCallups(eventId),
       api.getAttendance(eventId),
       api.getEventTypes(),
+      api.getFormations(),
     ])
-      .then(([eventRes, callupsRes, attendanceRes, typesRes]) => {
+      .then(([eventRes, callupsRes, attendanceRes, typesRes, formationsRes]) => {
         setEvent(eventRes.data);
         setCallups(callupsRes.data);
         setAttendance(attendanceRes.data);
         setEventTypes(typesRes.data);
+        setFormations(formationsRes.data);
         setStatusDraft(eventRes.data.status);
         setNotesDraft(eventRes.data.notes ?? "");
+        setTypeDraft(eventRes.data.type); setDateDraft(eventRes.data.date); setStartTimeDraft(eventRes.data.startTime ?? ""); setEndTimeDraft(eventRes.data.endTime ?? ""); setLocationDraft(eventRes.data.location ?? ""); setAddressDraft(eventRes.data.address ?? ""); setOpponentDraft(eventRes.data.opponent ?? ""); setMeetingTimeDraft(eventRes.data.meetingTime ?? ""); setFormationDraft(eventRes.data.formationId ? String(eventRes.data.formationId) : null);
       })
       .finally(() => setLoading(false));
   }, [eventId]);
@@ -132,6 +146,9 @@ export default function EventDetail() {
     setSavingStatus(true);
     try {
       const res = await api.updateEvent(eventId, {
+        type: typeDraft, date: dateDraft, startTime: startTimeDraft || null, endTime: endTimeDraft || null,
+        location: locationDraft || null, address: addressDraft || null, opponent: opponentDraft || null,
+        meetingTime: meetingTimeDraft || null, formationId: formationDraft ? Number(formationDraft) : null,
         status: statusDraft,
         notes: notesDraft,
       });
@@ -193,10 +210,19 @@ export default function EventDetail() {
           </Text>
 
           <SimpleGrid
-            cols={{ base: 1, sm: 2 }}
+            cols={{ base: 1, sm: 2, lg: 3 }}
             pt="sm"
             style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}
           >
+            <Select label="Tipo" data={eventTypes.map((item) => ({ value: item.key, label: item.label }))} value={typeDraft} onChange={(value) => setTypeDraft(value ?? "")} allowDeselect={false} />
+            <TextInput label="Data" type="date" value={dateDraft} onChange={(e) => setDateDraft(e.currentTarget.value)} />
+            <TextInput label="Inizio" type="time" value={startTimeDraft} onChange={(e) => setStartTimeDraft(e.currentTarget.value)} />
+            <TextInput label="Fine" type="time" value={endTimeDraft} onChange={(e) => setEndTimeDraft(e.currentTarget.value)} />
+            <TextInput label="Ritrovo" type="time" value={meetingTimeDraft} onChange={(e) => setMeetingTimeDraft(e.currentTarget.value)} />
+            <TextInput label="Luogo" value={locationDraft} onChange={(e) => setLocationDraft(e.currentTarget.value)} />
+            <TextInput label="Indirizzo" value={addressDraft} onChange={(e) => setAddressDraft(e.currentTarget.value)} />
+            <TextInput label="Avversario" value={opponentDraft} onChange={(e) => setOpponentDraft(e.currentTarget.value)} />
+            <Select label="Formazione" placeholder="Nessuna" clearable data={formations.map((item) => ({ value: String(item.id), label: item.name }))} value={formationDraft} onChange={setFormationDraft} />
             <Select
               label="Stato evento"
               data={[

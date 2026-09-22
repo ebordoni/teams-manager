@@ -33,6 +33,7 @@ export interface Event {
   meetingTime: string | null;
   notes: string | null;
   status: EventStatus;
+  formationId: number | null;
   createdAt: string;
 }
 
@@ -48,6 +49,7 @@ export interface EventRow {
   meeting_time: string | null;
   notes: string | null;
   status: EventStatus;
+  formation_id: number | null;
   created_at: string;
 }
 

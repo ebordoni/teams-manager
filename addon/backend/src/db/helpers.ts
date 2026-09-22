@@ -33,6 +33,7 @@ export function rowToEvent(row: EventRow): Event {
     meetingTime: row.meeting_time,
     notes: row.notes,
     status: row.status,
+    formationId: row.formation_id,
     createdAt: row.created_at,
   };
 }

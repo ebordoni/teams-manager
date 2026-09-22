@@ -7,6 +7,12 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.6.0] — 2026-09-22
+
+### Modificato
+
+- CRUD professionale: giocatori, formazioni e appuntamenti sono ora modificabili; le formazioni possono essere associate a un evento.
+
 ## [0.4.0] — 2026-09-21
 
 ### Aggiunto

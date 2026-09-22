@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.0] - 2026-09-22
+
+### Changed
+
+- Il dettaglio evento consente di modificare tipo, data, orari, ritrovo, luogo, indirizzo, avversario, note, stato e formazione associata. Giocatori e formazioni hanno ora anche l'azione di modifica.
+
 ## [0.4.0] - 2026-09-21
 
 ### Added
