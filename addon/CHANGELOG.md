@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0] - 2026-09-22
+
+### Added
+
+- Formazioni 7vs7 con anteprima visuale del campo 2-3-1, duplicazione e validazione di sette giocatori univoci.
+- Dashboard operativa per il prossimo appuntamento, con indicatori di convocazioni, presenze, comunicazione e azioni rapide.
+
+### Changed
+
+- Le formazioni collegate agli eventi sono verificate lato API; la scheda evento evidenzia i titolari non convocati.
+
 ## [0.6.0] - 2026-09-22
 
 ### Changed

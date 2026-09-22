@@ -18,6 +18,7 @@ import { IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
+import { EventTypeIcon } from "../components/EventTypeIcon";
 import type {
   Attendance,
   AttendanceStatus,
@@ -180,16 +181,22 @@ export default function EventDetail() {
   if (!event) return <Text c="dimmed">Evento non trovato.</Text>;
 
   const type = eventTypes.find((t) => t.key === event.type);
+  const selectedFormation = formations.find((formation) => formation.id === event.formationId);
+  const formationPlayerIds = selectedFormation
+    ? Object.values(selectedFormation.assignments).filter((playerId): playerId is number => playerId !== null)
+    : [];
+  const calledUpIds = new Set(callups.filter((callup) => callup.calledUp).map((callup) => callup.playerId));
+  const missingCallups = callups.filter((callup) => formationPlayerIds.includes(callup.playerId) && !calledUpIds.has(callup.playerId));
 
   return (
     <Stack gap="lg">
       <Card withBorder padding="md" radius="md">
         <Stack gap="sm">
           <Group justify="space-between" wrap="nowrap">
-            <Title order={4}>
-              {type?.icon} {type?.label ?? event.type}
-              {event.opponent ? ` vs ${event.opponent}` : ""}
-            </Title>
+            <Group gap="xs" wrap="nowrap">
+              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} />
+              <Title order={4}>{type?.label ?? event.type}{event.opponent ? ` vs ${event.opponent}` : ""}</Title>
+            </Group>
             <Group gap="xs" wrap="nowrap">
               <Badge color={STATUS_COLOR[event.status]}>
                 {EVENT_STATUS_LABEL[event.status]}
@@ -258,6 +265,16 @@ export default function EventDetail() {
           </Button>
         </Stack>
       </Card>
+
+      {selectedFormation && (
+        <Card withBorder padding="md" radius="md">
+          <Group justify="space-between" mb="xs">
+            <div><Title order={5}>Formazione titolare</Title><Text size="sm" c="dimmed">{selectedFormation.name}</Text></div>
+            <Badge color={formationPlayerIds.length === 7 ? "green" : "yellow"}>{formationPlayerIds.length}/7 giocatori</Badge>
+          </Group>
+          {missingCallups.length > 0 ? <Alert color="yellow">Convoca anche: {missingCallups.map((callup) => callup.playerName).join(", ")}.</Alert> : <Text size="sm" c="dimmed">La formazione è coerente con le convocazioni attuali.</Text>}
+        </Card>
+      )}
 
       <div>
         <Group justify="space-between" mb="xs">

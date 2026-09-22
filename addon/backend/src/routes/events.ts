@@ -32,6 +32,11 @@ function isKnownEventType(type: string): boolean {
   return Boolean(row);
 }
 
+function isKnownFormation(formationId: number): boolean {
+  const row = getDb().prepare("SELECT 1 FROM formations WHERE id = ?").get(formationId);
+  return Boolean(row);
+}
+
 // GET /api/events?from=YYYY-MM-DD&to=YYYY-MM-DD&type=match
 router.get("/", (req: Request, res: Response) => {
   const parse = FiltersSchema.safeParse(req.query);
@@ -91,6 +96,10 @@ router.post("/", (req: Request, res: Response) => {
     res.status(400).json({ error: `Tipo evento sconosciuto: "${e.type}"` });
     return;
   }
+  if (e.formationId !== null && e.formationId !== undefined && !isKnownFormation(e.formationId)) {
+    res.status(400).json({ error: "Formazione non trovata" });
+    return;
+  }
   const db = getDb();
   const result = db
     .prepare(
@@ -137,6 +146,10 @@ router.put("/:id", (req: Request, res: Response) => {
   const e = parse.data;
   if (e.type !== undefined && !isKnownEventType(e.type)) {
     res.status(400).json({ error: `Tipo evento sconosciuto: "${e.type}"` });
+    return;
+  }
+  if (e.formationId !== null && e.formationId !== undefined && !isKnownFormation(e.formationId)) {
+    res.status(400).json({ error: "Formazione non trovata" });
     return;
   }
   const nextStatus = e.status ?? existing.status;

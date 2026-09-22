@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.7.0] — 2026-09-22
+
+### Aggiunto
+
+- Gestione professionale delle formazioni 7vs7: anteprima su campo 2-3-1, duplicazione e verifica di sette titolari distinti.
+- Dashboard operativa con prossimo appuntamento, stato convocazioni/presenze, comunicazioni e azioni rapide.
+
+### Modificato
+
+- Le formazioni associate a un evento sono validate e la scheda partita segnala i titolari non convocati.
+
 ## [0.6.0] — 2026-09-22
 
 ### Modificato

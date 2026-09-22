@@ -1,105 +1,78 @@
-import {
-  Badge,
-  Card,
-  Center,
-  Group,
-  Loader,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+import { Alert, Badge, Button, Card, Center, Group, Loader, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core";
+import { IconCalendarPlus, IconClipboardCheck, IconFileText, IconLayoutList, IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import type { EventTypeDef, Player, TeamEvent } from "../types";
+import { EventTypeIcon } from "../components/EventTypeIcon";
+import type { Attendance, Callup, Communication, EventTypeDef, Player, TeamEvent } from "../types";
+
+type EventChecklist = { callups: Callup[]; attendance: Attendance[] };
 
 export default function Dashboard() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<TeamEvent[]>([]);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
+  const [communications, setCommunications] = useState<Communication[]>([]);
+  const [checklist, setChecklist] = useState<EventChecklist | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    Promise.all([
-      api.getPlayers(),
-      api.getEvents({ from: today }),
-      api.getEventTypes(),
-    ])
-      .then(([playersRes, eventsRes, typesRes]) => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const [playersRes, eventsRes, typesRes, communicationsRes] = await Promise.all([
+          api.getPlayers(), api.getEvents({ from: today }), api.getEventTypes(), api.getCommunications(),
+        ]);
+        const events = eventsRes.data.slice(0, 5);
         setPlayers(playersRes.data);
-        setUpcomingEvents(eventsRes.data.slice(0, 5));
+        setUpcomingEvents(events);
         setEventTypes(typesRes.data);
-      })
-      .finally(() => setLoading(false));
+        setCommunications(communicationsRes.data);
+        if (events[0]) {
+          const [callupsRes, attendanceRes] = await Promise.all([api.getCallups(events[0].id), api.getAttendance(events[0].id)]);
+          setChecklist({ callups: callupsRes.data, attendance: attendanceRes.data });
+        } else setChecklist(null);
+      } finally { setLoading(false); }
+    };
+    void load();
   }, []);
 
-  if (loading) {
-    return (
-      <Center py="xl">
-        <Loader />
-      </Center>
-    );
-  }
+  if (loading) return <Center py="xl"><Loader /></Center>;
+  const nextEvent = upcomingEvents[0];
+  const typeOf = (key: string) => eventTypes.find((type) => type.key === key);
+  const calledUpCount = checklist?.callups.filter((callup) => callup.calledUp).length ?? 0;
+  const attendanceRecorded = checklist?.attendance.length ?? 0;
+  const hasCommunication = nextEvent ? communications.some((communication) => communication.eventIds.includes(nextEvent.id)) : false;
 
-  const typeOf = (key: string) => eventTypes.find((t) => t.key === key);
+  return <Stack gap="lg">
+    <div><Title order={3}>Gestione squadra</Title><Text c="dimmed">Una vista operativa per preparare il prossimo appuntamento.</Text></div>
+    <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
+      <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Giocatori</Text><Text size="xl" fw={700}>{players.length}</Text></div><ThemeIcon variant="light" color="blue" size="lg"><IconUsersGroup /></ThemeIcon></Group></Card>
+      <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Prossimo evento</Text><Text size="lg" fw={700}>{nextEvent ? nextEvent.date : "—"}</Text></div><ThemeIcon variant="light" color="green" size="lg"><IconClipboardCheck /></ThemeIcon></Group></Card>
+      <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Convocati</Text><Text size="xl" fw={700}>{nextEvent ? `${calledUpCount}/${players.length}` : "—"}</Text></div><ThemeIcon variant="light" color="orange" size="lg"><IconUsersGroup /></ThemeIcon></Group></Card>
+      <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Presenze registrate</Text><Text size="xl" fw={700}>{nextEvent ? `${attendanceRecorded}/${calledUpCount}` : "—"}</Text></div><ThemeIcon variant="light" color="violet" size="lg"><IconClipboardCheck /></ThemeIcon></Group></Card>
+    </SimpleGrid>
 
-  return (
-    <Stack gap="lg">
-      <SimpleGrid cols={{ base: 1, sm: 2 }}>
-        <Card withBorder radius="md" padding="lg">
-          <Text size="sm" c="dimmed">
-            Giocatori
-          </Text>
-          <Text size="xl" fw={700}>
-            {players.length}
-          </Text>
-        </Card>
-        <Card withBorder radius="md" padding="lg">
-          <Text size="sm" c="dimmed">
-            Prossimi eventi
-          </Text>
-          <Text size="xl" fw={700}>
-            {upcomingEvents.length}
-          </Text>
-        </Card>
-      </SimpleGrid>
+    <Card withBorder padding="lg">
+      <Group justify="space-between" mb="sm"><Title order={4}>Azioni rapide</Title></Group>
+      <Group>
+        <Button component={Link} to="/calendar" leftSection={<IconCalendarPlus size={18} />}>Nuovo appuntamento</Button>
+        <Button component={Link} to="/formations" variant="light" leftSection={<IconLayoutList size={18} />}>Prepara formazione</Button>
+        <Button component={Link} to="/communications" variant="light" leftSection={<IconFileText size={18} />}>Comunicazioni</Button>
+      </Group>
+    </Card>
 
-      <div>
-        <Title order={4} mb="sm">
-          Prossimi appuntamenti
-        </Title>
-        {upcomingEvents.length === 0 ? (
-          <Text c="dimmed">Nessun evento in programma.</Text>
-        ) : (
-          <Stack gap="xs">
-            {upcomingEvents.map((event) => {
-              const type = typeOf(event.type);
-              return (
-                <Card
-                  key={event.id}
-                  component={Link}
-                  to={`/events/${event.id}`}
-                  withBorder
-                  padding="sm"
-                  radius="md"
-                >
-                  <Group justify="space-between" wrap="nowrap">
-                    <Text truncate>
-                      {type?.icon} <Text span fw={600}>{type?.label ?? event.type}</Text>{" "}
-                      {event.opponent ? `vs ${event.opponent}` : ""}
-                    </Text>
-                    <Badge variant="light" color="gray">
-                      {event.date} {event.startTime ?? ""}
-                    </Badge>
-                  </Group>
-                </Card>
-              );
-            })}
-          </Stack>
-        )}
-      </div>
-    </Stack>
-  );
+    {nextEvent && <Alert color={calledUpCount === 0 ? "yellow" : hasCommunication ? "green" : "blue"} title="Preparazione prossimo appuntamento">
+      {calledUpCount === 0 ? "Manca la convocazione per il prossimo evento." : !hasCommunication ? "Convocazioni pronte: genera ora la comunicazione per i genitori dal calendario." : "La comunicazione per il prossimo evento è già stata generata."}
+      <Button component={Link} to={`/events/${nextEvent.id}`} size="compact-sm" variant="subtle" ml="xs">Apri evento</Button>
+    </Alert>}
+
+    <div><Group justify="space-between" mb="sm"><Title order={4}>Prossimi appuntamenti</Title><Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Apri calendario</Button></Group>
+      {upcomingEvents.length === 0 ? <Text c="dimmed">Nessun evento in programma. Crea il primo appuntamento della squadra.</Text> : <Stack gap="xs">{upcomingEvents.map((event) => {
+        const type = typeOf(event.type);
+        return <Card key={event.id} component={Link} to={`/events/${event.id}`} withBorder padding="sm" radius="md" style={{ textDecoration: "none", color: "inherit" }}><Group justify="space-between" wrap="nowrap"><Group wrap="nowrap"><ThemeIcon variant="light" color="blue" size="md"><EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={18} /></ThemeIcon><div><Text fw={600}>{type?.label ?? event.type}{event.opponent ? ` · vs ${event.opponent}` : ""}</Text><Text size="sm" c="dimmed">{event.location ?? "Luogo da definire"}</Text></div></Group><Badge variant="light" color={event.status === "cancelled" ? "red" : event.status === "modified" ? "orange" : "gray"}>{event.date} {event.startTime ?? ""}</Badge></Group></Card>;
+      })}</Stack>}
+    </div>
+  </Stack>;
 }

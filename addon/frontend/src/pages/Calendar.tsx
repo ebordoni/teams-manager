@@ -400,7 +400,7 @@ export default function Calendar() {
                         >
                           <Group justify="space-between">
                             <Text truncate>
-                              {type?.icon} <Text span fw={600}>{type?.label ?? event.type}</Text>{" "}
+                              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={16} /> <Text span fw={600}>{type?.label ?? event.type}</Text>{" "}
                               {event.opponent ? `vs ${event.opponent}` : ""}
                             </Text>
                             <Group gap="xs" wrap="nowrap">
