@@ -82,16 +82,30 @@ export default function EventDetail() {
       api.getEventTypes(),
       api.getFormations(),
     ])
-      .then(([eventRes, callupsRes, attendanceRes, typesRes, formationsRes]) => {
-        setEvent(eventRes.data);
-        setCallups(callupsRes.data);
-        setAttendance(attendanceRes.data);
-        setEventTypes(typesRes.data);
-        setFormations(formationsRes.data);
-        setStatusDraft(eventRes.data.status);
-        setNotesDraft(eventRes.data.notes ?? "");
-        setTypeDraft(eventRes.data.type); setDateDraft(eventRes.data.date); setStartTimeDraft(eventRes.data.startTime ?? ""); setEndTimeDraft(eventRes.data.endTime ?? ""); setLocationDraft(eventRes.data.location ?? ""); setAddressDraft(eventRes.data.address ?? ""); setOpponentDraft(eventRes.data.opponent ?? ""); setMeetingTimeDraft(eventRes.data.meetingTime ?? ""); setFormationDraft(eventRes.data.formationId ? String(eventRes.data.formationId) : null);
-      })
+      .then(
+        ([eventRes, callupsRes, attendanceRes, typesRes, formationsRes]) => {
+          setEvent(eventRes.data);
+          setCallups(callupsRes.data);
+          setAttendance(attendanceRes.data);
+          setEventTypes(typesRes.data);
+          setFormations(formationsRes.data);
+          setStatusDraft(eventRes.data.status);
+          setNotesDraft(eventRes.data.notes ?? "");
+          setTypeDraft(eventRes.data.type);
+          setDateDraft(eventRes.data.date);
+          setStartTimeDraft(eventRes.data.startTime ?? "");
+          setEndTimeDraft(eventRes.data.endTime ?? "");
+          setLocationDraft(eventRes.data.location ?? "");
+          setAddressDraft(eventRes.data.address ?? "");
+          setOpponentDraft(eventRes.data.opponent ?? "");
+          setMeetingTimeDraft(eventRes.data.meetingTime ?? "");
+          setFormationDraft(
+            eventRes.data.formationId
+              ? String(eventRes.data.formationId)
+              : null,
+          );
+        },
+      )
       .finally(() => setLoading(false));
   }, [eventId]);
 
@@ -131,6 +145,7 @@ export default function EventDetail() {
         eventId,
         attendance.map((a) => ({ playerId: a.playerId, status: a.status })),
       );
+      setAttendance((prev) => prev.map((a) => ({ ...a, recorded: true })));
     } finally {
       setSavingAttendance(false);
     }
@@ -147,9 +162,15 @@ export default function EventDetail() {
     setSavingStatus(true);
     try {
       const res = await api.updateEvent(eventId, {
-        type: typeDraft, date: dateDraft, startTime: startTimeDraft || null, endTime: endTimeDraft || null,
-        location: locationDraft || null, address: addressDraft || null, opponent: opponentDraft || null,
-        meetingTime: meetingTimeDraft || null, formationId: formationDraft ? Number(formationDraft) : null,
+        type: typeDraft,
+        date: dateDraft,
+        startTime: startTimeDraft || null,
+        endTime: endTimeDraft || null,
+        location: locationDraft || null,
+        address: addressDraft || null,
+        opponent: opponentDraft || null,
+        meetingTime: meetingTimeDraft || null,
+        formationId: formationDraft ? Number(formationDraft) : null,
         status: statusDraft,
         notes: notesDraft,
       });
@@ -181,12 +202,27 @@ export default function EventDetail() {
   if (!event) return <Text c="dimmed">Evento non trovato.</Text>;
 
   const type = eventTypes.find((t) => t.key === event.type);
-  const selectedFormation = formations.find((formation) => formation.id === event.formationId);
+  const selectedFormation = formations.find(
+    (formation) => formation.id === event.formationId,
+  );
   const formationPlayerIds = selectedFormation
-    ? Object.values(selectedFormation.assignments).filter((playerId): playerId is number => playerId !== null)
+    ? Object.values(selectedFormation.assignments).filter(
+        (playerId): playerId is number => playerId !== null,
+      )
     : [];
-  const calledUpIds = new Set(callups.filter((callup) => callup.calledUp).map((callup) => callup.playerId));
-  const missingCallups = callups.filter((callup) => formationPlayerIds.includes(callup.playerId) && !calledUpIds.has(callup.playerId));
+  const calledUpIds = new Set(
+    callups
+      .filter((callup) => callup.calledUp)
+      .map((callup) => callup.playerId),
+  );
+  const missingCallups = callups.filter(
+    (callup) =>
+      formationPlayerIds.includes(callup.playerId) &&
+      !calledUpIds.has(callup.playerId),
+  );
+  const recordedAttendance = attendance.filter(
+    (record) => record.recorded,
+  ).length;
 
   return (
     <Stack gap="lg">
@@ -195,7 +231,10 @@ export default function EventDetail() {
           <Group justify="space-between" wrap="nowrap">
             <Group gap="xs" wrap="nowrap">
               <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} />
-              <Title order={4}>{type?.label ?? event.type}{event.opponent ? ` vs ${event.opponent}` : ""}</Title>
+              <Title order={4}>
+                {type?.label ?? event.type}
+                {event.opponent ? ` vs ${event.opponent}` : ""}
+              </Title>
             </Group>
             <Group gap="xs" wrap="nowrap">
               <Badge color={STATUS_COLOR[event.status]}>
@@ -221,15 +260,66 @@ export default function EventDetail() {
             pt="sm"
             style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}
           >
-            <Select label="Tipo" data={eventTypes.map((item) => ({ value: item.key, label: item.label }))} value={typeDraft} onChange={(value) => setTypeDraft(value ?? "")} allowDeselect={false} />
-            <TextInput label="Data" type="date" value={dateDraft} onChange={(e) => setDateDraft(e.currentTarget.value)} />
-            <TextInput label="Inizio" type="time" value={startTimeDraft} onChange={(e) => setStartTimeDraft(e.currentTarget.value)} />
-            <TextInput label="Fine" type="time" value={endTimeDraft} onChange={(e) => setEndTimeDraft(e.currentTarget.value)} />
-            <TextInput label="Ritrovo" type="time" value={meetingTimeDraft} onChange={(e) => setMeetingTimeDraft(e.currentTarget.value)} />
-            <TextInput label="Luogo" value={locationDraft} onChange={(e) => setLocationDraft(e.currentTarget.value)} />
-            <TextInput label="Indirizzo" value={addressDraft} onChange={(e) => setAddressDraft(e.currentTarget.value)} />
-            <TextInput label="Avversario" value={opponentDraft} onChange={(e) => setOpponentDraft(e.currentTarget.value)} />
-            <Select label="Formazione" placeholder="Nessuna" clearable data={formations.map((item) => ({ value: String(item.id), label: item.name }))} value={formationDraft} onChange={setFormationDraft} />
+            <Select
+              label="Tipo"
+              data={eventTypes.map((item) => ({
+                value: item.key,
+                label: item.label,
+              }))}
+              value={typeDraft}
+              onChange={(value) => setTypeDraft(value ?? "")}
+              allowDeselect={false}
+            />
+            <TextInput
+              label="Data"
+              type="date"
+              value={dateDraft}
+              onChange={(e) => setDateDraft(e.currentTarget.value)}
+            />
+            <TextInput
+              label="Inizio"
+              type="time"
+              value={startTimeDraft}
+              onChange={(e) => setStartTimeDraft(e.currentTarget.value)}
+            />
+            <TextInput
+              label="Fine"
+              type="time"
+              value={endTimeDraft}
+              onChange={(e) => setEndTimeDraft(e.currentTarget.value)}
+            />
+            <TextInput
+              label="Ritrovo"
+              type="time"
+              value={meetingTimeDraft}
+              onChange={(e) => setMeetingTimeDraft(e.currentTarget.value)}
+            />
+            <TextInput
+              label="Luogo"
+              value={locationDraft}
+              onChange={(e) => setLocationDraft(e.currentTarget.value)}
+            />
+            <TextInput
+              label="Indirizzo"
+              value={addressDraft}
+              onChange={(e) => setAddressDraft(e.currentTarget.value)}
+            />
+            <TextInput
+              label="Avversario"
+              value={opponentDraft}
+              onChange={(e) => setOpponentDraft(e.currentTarget.value)}
+            />
+            <Select
+              label="Formazione"
+              placeholder="Nessuna"
+              clearable
+              data={formations.map((item) => ({
+                value: String(item.id),
+                label: item.name,
+              }))}
+              value={formationDraft}
+              onChange={setFormationDraft}
+            />
             <Select
               label="Stato evento"
               data={[
@@ -261,7 +351,7 @@ export default function EventDetail() {
             loading={savingStatus}
             style={{ alignSelf: "flex-start" }}
           >
-            Aggiorna stato evento
+            Salva modifiche
           </Button>
         </Stack>
       </Card>
@@ -276,10 +366,26 @@ export default function EventDetail() {
       {selectedFormation && (
         <Card withBorder padding="md" radius="md">
           <Group justify="space-between" mb="xs">
-            <div><Title order={5}>Formazione titolare</Title><Text size="sm" c="dimmed">{selectedFormation.name}</Text></div>
-            <Badge color={formationPlayerIds.length === 7 ? "green" : "yellow"}>{formationPlayerIds.length}/7 giocatori</Badge>
+            <div>
+              <Title order={5}>Formazione titolare</Title>
+              <Text size="sm" c="dimmed">
+                {selectedFormation.name}
+              </Text>
+            </div>
+            <Badge color={formationPlayerIds.length === 7 ? "green" : "yellow"}>
+              {formationPlayerIds.length}/7 giocatori
+            </Badge>
           </Group>
-          {missingCallups.length > 0 ? <Alert color="yellow">Convoca anche: {missingCallups.map((callup) => callup.playerName).join(", ")}.</Alert> : <Text size="sm" c="dimmed">La formazione è coerente con le convocazioni attuali.</Text>}
+          {missingCallups.length > 0 ? (
+            <Alert color="yellow">
+              Convoca anche:{" "}
+              {missingCallups.map((callup) => callup.playerName).join(", ")}.
+            </Alert>
+          ) : (
+            <Text size="sm" c="dimmed">
+              La formazione è coerente con le convocazioni attuali.
+            </Text>
+          )}
         </Card>
       )}
 
@@ -313,7 +419,19 @@ export default function EventDetail() {
 
       <div>
         <Group justify="space-between" mb="xs">
-          <Title order={5}>Presenze</Title>
+          <Group gap="xs">
+            <Title order={5}>Presenze</Title>
+            {attendance.length > 0 && (
+              <Badge
+                variant="light"
+                color={
+                  recordedAttendance === attendance.length ? "green" : "gray"
+                }
+              >
+                {recordedAttendance}/{attendance.length} registrate
+              </Badge>
+            )}
+          </Group>
           <Button
             onClick={handleSaveAttendance}
             loading={savingAttendance}

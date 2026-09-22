@@ -13,7 +13,7 @@
 
 ---
 
-> ✅ **Stato: MVP operativo (v0.12.0).** Calendario, giocatori, convocazioni, presenze, formazioni, piani partita AI e comunicazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
+> ✅ **Stato: MVP operativo (v0.13.0).** Calendario, giocatori, convocazioni, presenze, formazioni, piani partita AI e comunicazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
 
 ## 🎯 Obiettivo
 

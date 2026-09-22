@@ -1,10 +1,10 @@
 import type { OAuth2Client } from "google-auth-library";
-import crypto from "node:crypto";
 import { google } from "googleapis";
+import crypto from "node:crypto";
 import { config } from "../../config";
 import { getDb } from "../../db/schema";
-import { getSetting, setSetting, SETTINGS_KEYS } from "../settings.service";
 import type { GoogleTokensRow } from "../../types";
+import { getSetting, setSetting, SETTINGS_KEYS } from "../settings.service";
 
 // Scopes minimi necessari: creare/modificare documenti e gestire nel Drive
 // solo i file creati da questa app (non l'intero Drive dell'utente).
@@ -14,12 +14,39 @@ export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
 ];
 
-export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
+export const GOOGLE_CALENDAR_SCOPE =
+  "https://www.googleapis.com/auth/calendar.events";
 
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
 export function isGoogleConfigured(): boolean {
   return Boolean(config.googleClientId && config.googleClientSecret);
+}
+
+/** L'account Google non è collegato (o il collegamento non è più valido). */
+export class GoogleAuthRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GoogleAuthRequiredError";
+  }
+}
+
+/**
+ * Google risponde `invalid_grant` quando il refresh token non è più spendibile:
+ * consenso revocato, credenziali OAuth cambiate, oppure app ancora in modalità
+ * "Testing" (i refresh token scadono dopo 7 giorni).
+ */
+function isInvalidGrantError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as {
+    message?: unknown;
+    response?: { data?: { error?: unknown } };
+  };
+  return (
+    candidate.response?.data?.error === "invalid_grant" ||
+    (typeof candidate.message === "string" &&
+      candidate.message.includes("invalid_grant"))
+  );
 }
 
 function createOAuthClient(): OAuth2Client {
@@ -122,7 +149,9 @@ export async function exchangeCodeForTokens(code: string): Promise<void> {
 export function getAuthorizedClient(): OAuth2Client {
   const tokens = loadStoredTokens();
   if (!tokens?.refresh_token) {
-    throw new Error("Google non collegato: effettua prima l'autorizzazione");
+    throw new GoogleAuthRequiredError(
+      "Google non è collegato: apri le Impostazioni e collega l'account",
+    );
   }
 
   const client = createOAuthClient();
@@ -144,4 +173,27 @@ export function getAuthorizedClient(): OAuth2Client {
 export function disconnectGoogle(): void {
   const db = getDb();
   db.prepare("DELETE FROM google_tokens WHERE id = 1").run();
+}
+
+/**
+ * Esegue un'operazione sulle API Google con il client autorizzato. Se il
+ * collegamento non è più valido rimuove i token salvati — così le Impostazioni
+ * tornano a mostrare "Non collegato" — e rilancia un errore comprensibile.
+ */
+export async function withGoogleAuth<T>(
+  operation: (auth: OAuth2Client) => Promise<T>,
+): Promise<T> {
+  const client = getAuthorizedClient();
+  try {
+    return await operation(client);
+  } catch (error) {
+    if (!isInvalidGrantError(error)) throw error;
+    console.warn(
+      "[google] invalid_grant: collegamento rimosso, serve riautorizzare",
+    );
+    disconnectGoogle();
+    throw new GoogleAuthRequiredError(
+      "Il collegamento Google non è più valido (consenso revocato o scaduto): ricollega l'account dalle Impostazioni",
+    );
+  }
 }

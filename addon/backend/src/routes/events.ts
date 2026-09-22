@@ -33,8 +33,29 @@ function isKnownEventType(type: string): boolean {
 }
 
 function isKnownFormation(formationId: number): boolean {
-  const row = getDb().prepare("SELECT 1 FROM formations WHERE id = ?").get(formationId);
+  const row = getDb()
+    .prepare("SELECT 1 FROM formations WHERE id = ?")
+    .get(formationId);
   return Boolean(row);
+}
+
+/**
+ * Un evento modificato/annullato deve riportare in "notes" il motivo, così i
+ * genitori vedono sempre perché l'appuntamento è cambiato.
+ */
+const STATUS_NOTES_ERROR =
+  "Le note sono obbligatorie quando l'evento è modificato o annullato";
+
+function statusNotesMissing(
+  status: string | null | undefined,
+  notes: string | null | undefined,
+): boolean {
+  return (
+    status !== undefined &&
+    status !== null &&
+    status !== "scheduled" &&
+    !notes?.trim()
+  );
 }
 
 // GET /api/events?from=YYYY-MM-DD&to=YYYY-MM-DD&type=match
@@ -96,8 +117,16 @@ router.post("/", (req: Request, res: Response) => {
     res.status(400).json({ error: `Tipo evento sconosciuto: "${e.type}"` });
     return;
   }
-  if (e.formationId !== null && e.formationId !== undefined && !isKnownFormation(e.formationId)) {
+  if (
+    e.formationId !== null &&
+    e.formationId !== undefined &&
+    !isKnownFormation(e.formationId)
+  ) {
     res.status(400).json({ error: "Formazione non trovata" });
+    return;
+  }
+  if (statusNotesMissing(e.status, e.notes)) {
+    res.status(400).json({ error: STATUS_NOTES_ERROR });
     return;
   }
   const db = getDb();
@@ -148,19 +177,18 @@ router.put("/:id", (req: Request, res: Response) => {
     res.status(400).json({ error: `Tipo evento sconosciuto: "${e.type}"` });
     return;
   }
-  if (e.formationId !== null && e.formationId !== undefined && !isKnownFormation(e.formationId)) {
+  if (
+    e.formationId !== null &&
+    e.formationId !== undefined &&
+    !isKnownFormation(e.formationId)
+  ) {
     res.status(400).json({ error: "Formazione non trovata" });
     return;
   }
   const nextStatus = e.status ?? existing.status;
   const nextNotes = e.notes !== undefined ? e.notes : existing.notes;
-  // Un evento modificato/annullato deve riportare in "notes" il motivo, così
-  // i genitori vedono sempre perché l'appuntamento è cambiato.
-  if (nextStatus !== "scheduled" && !nextNotes?.trim()) {
-    res.status(400).json({
-      error:
-        "Le note sono obbligatorie quando l'evento è modificato o annullato",
-    });
+  if (statusNotesMissing(nextStatus, nextNotes)) {
+    res.status(400).json({ error: STATUS_NOTES_ERROR });
     return;
   }
 

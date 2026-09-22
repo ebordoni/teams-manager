@@ -2,13 +2,36 @@ import { Request, Response, Router } from "express";
 import { z } from "zod";
 import { rowToCommunication } from "../db/helpers";
 import {
+  CommunicationRequestError,
   deleteCommunication,
   DriveDeletionError,
   generateCommunication,
   listCommunications,
 } from "../services/communication.service";
+import { GoogleAuthRequiredError } from "../services/google/auth";
 
 const router = Router();
+
+/**
+ * Traduce gli errori del servizio: 403 se serve (ri)collegare Google, 400 se la
+ * richiesta non è valida, 502 se Google ha risposto male.
+ */
+function sendServiceError(res: Response, err: unknown, fallback: string): void {
+  if (err instanceof GoogleAuthRequiredError) {
+    res.status(403).json({ error: err.message });
+    return;
+  }
+  if (err instanceof CommunicationRequestError) {
+    res.status(400).json({ error: err.message });
+    return;
+  }
+  if (err instanceof DriveDeletionError) {
+    res.status(502).json({ error: err.message });
+    return;
+  }
+  console.error("[communications]", err instanceof Error ? err.message : err);
+  res.status(502).json({ error: fallback });
+}
 
 const GenerateSchema = z.object({
   eventIds: z.array(z.number().int().positive()).min(1),
@@ -32,8 +55,11 @@ router.post("/", async (req: Request, res: Response) => {
     const result = await generateCommunication(parse.data.eventIds);
     res.status(201).json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto";
-    res.status(400).json({ error: message });
+    sendServiceError(
+      res,
+      err,
+      "Impossibile generare la comunicazione su Google Docs. Riprova più tardi.",
+    );
   }
 });
 
@@ -49,8 +75,11 @@ router.delete("/:id", async (req: Request, res: Response) => {
     await deleteCommunication(idParse.data);
     res.status(204).send();
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto";
-    res.status(err instanceof DriveDeletionError ? 502 : 400).json({ error: message });
+    sendServiceError(
+      res,
+      err,
+      "Impossibile eliminare la comunicazione. Riprova più tardi.",
+    );
   }
 });
 

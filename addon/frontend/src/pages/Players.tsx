@@ -5,10 +5,10 @@ import {
   Collapse,
   Group,
   Loader,
+  MultiSelect,
   Stack,
   Text,
   TextInput,
-  MultiSelect,
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -41,7 +41,11 @@ export default function Players() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    await api.createPlayer({ name: name.trim(), role: roles[0] ?? null, secondaryRoles: roles.slice(1) });
+    await api.createPlayer({
+      name: name.trim(),
+      role: roles[0] ?? null,
+      secondaryRoles: roles.slice(1),
+    });
     setName("");
     setRoles([]);
     closeForm();
@@ -56,9 +60,17 @@ export default function Players() {
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) return;
-    const nextRoles = [editing.role, ...editing.secondaryRoles].filter(Boolean) as string[];
-    await api.updatePlayer(editing.id, { name: editing.name, role: nextRoles[0] ?? null, secondaryRoles: nextRoles.slice(1), notes: editing.notes });
-    setEditing(null); loadPlayers();
+    const nextRoles = [editing.role, ...editing.secondaryRoles].filter(
+      Boolean,
+    ) as string[];
+    await api.updatePlayer(editing.id, {
+      name: editing.name,
+      role: nextRoles[0] ?? null,
+      secondaryRoles: nextRoles.slice(1),
+      notes: editing.notes,
+    });
+    setEditing(null);
+    loadPlayers();
   }
 
   return (
@@ -83,7 +95,13 @@ export default function Players() {
               />
               <MultiSelect
                 label="Ruoli"
-                data={["Portiere", "Difensore", "Centrocampista", "Esterno", "Attaccante"]}
+                data={[
+                  "Portiere",
+                  "Difensore",
+                  "Centrocampista",
+                  "Esterno",
+                  "Attaccante",
+                ]}
                 value={roles}
                 onChange={setRoles}
                 searchable
@@ -103,36 +121,96 @@ export default function Players() {
         <Stack gap="xs">
           {players.map((player) => (
             <Card key={player.id} withBorder padding="sm" radius="md">
-              <Group justify="space-between">
+              <Group justify="space-between" wrap="nowrap">
                 <Text>
                   <Text span fw={600}>
                     {player.name}
                   </Text>
                   {(player.role || player.secondaryRoles.length > 0) && (
                     <Text span c="dimmed" ml="xs">
-                      {[player.role, ...player.secondaryRoles].filter(Boolean).join(", ")}
+                      {[player.role, ...player.secondaryRoles]
+                        .filter(Boolean)
+                        .join(", ")}
                     </Text>
                   )}
                 </Text>
-                <ActionIcon
-                  variant="subtle"
-                  onClick={() => setEditing({ ...player })}
-                  aria-label="Modifica"
-                ><IconPencil size={18} /></ActionIcon>
-                <ActionIcon
-                  color="red"
-                  variant="subtle"
-                  onClick={() => handleDelete(player.id)}
-                  aria-label="Elimina"
-                >
-                  <IconTrash size={18} />
-                </ActionIcon>
+                <Group gap="xs" wrap="nowrap">
+                  <ActionIcon
+                    variant="subtle"
+                    onClick={() => setEditing({ ...player })}
+                    aria-label="Modifica"
+                  >
+                    <IconPencil size={18} />
+                  </ActionIcon>
+                  <ActionIcon
+                    color="red"
+                    variant="subtle"
+                    onClick={() => handleDelete(player.id)}
+                    aria-label="Elimina"
+                  >
+                    <IconTrash size={18} />
+                  </ActionIcon>
+                </Group>
               </Group>
             </Card>
           ))}
         </Stack>
       )}
-      {editing && <Card withBorder><form onSubmit={handleUpdate}><Stack><Title order={5}>Modifica giocatore</Title><TextInput label="Nome" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.currentTarget.value })} required /><MultiSelect label="Ruoli" data={["Portiere", "Difensore", "Centrocampista", "Esterno", "Attaccante"]} value={[editing.role, ...editing.secondaryRoles].filter(Boolean) as string[]} onChange={(values) => setEditing({ ...editing, role: values[0] ?? null, secondaryRoles: values.slice(1) })} /><TextInput label="Note" value={editing.notes ?? ""} onChange={(e) => setEditing({ ...editing, notes: e.currentTarget.value || null })} /><Group><Button type="submit">Salva</Button><Button variant="subtle" onClick={() => setEditing(null)}>Annulla</Button></Group></Stack></form></Card>}
+      {editing && (
+        <Card withBorder>
+          <form onSubmit={handleUpdate}>
+            <Stack>
+              <Title order={5}>Modifica giocatore</Title>
+              <TextInput
+                label="Nome"
+                value={editing.name}
+                onChange={(e) =>
+                  setEditing({ ...editing, name: e.currentTarget.value })
+                }
+                required
+              />
+              <MultiSelect
+                label="Ruoli"
+                data={[
+                  "Portiere",
+                  "Difensore",
+                  "Centrocampista",
+                  "Esterno",
+                  "Attaccante",
+                ]}
+                value={
+                  [editing.role, ...editing.secondaryRoles].filter(
+                    Boolean,
+                  ) as string[]
+                }
+                onChange={(values) =>
+                  setEditing({
+                    ...editing,
+                    role: values[0] ?? null,
+                    secondaryRoles: values.slice(1),
+                  })
+                }
+              />
+              <TextInput
+                label="Note"
+                value={editing.notes ?? ""}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    notes: e.currentTarget.value || null,
+                  })
+                }
+              />
+              <Group>
+                <Button type="submit">Salva</Button>
+                <Button variant="subtle" onClick={() => setEditing(null)}>
+                  Annulla
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        </Card>
+      )}
     </Stack>
   );
 }

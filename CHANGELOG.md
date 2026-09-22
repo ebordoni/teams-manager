@@ -7,6 +7,12 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.13.0] — 2026-09-22
+
+### Modificato
+
+- Eliminati file duplicati
+
 ## [0.12.0] — 2026-09-22
 
 ### Aggiunto
