@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.10.0)** — le funzionalità core, le formazioni 7vs7, le comunicazioni contestuali, i controlli di qualità e il catalogo icone sono completati; restano le estensioni di roadmap.
+> Stato attuale: **MVP operativo (v0.12.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -120,6 +120,7 @@ addon/
 | F16 | **Template Google Doc** — documento personalizzato con placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`, `{{FORMAZIONI}}`, `{{PRESENZE}}`, configurabile dalle Impostazioni. Se non impostato, si usa la generazione automatica. | DONE  |
 | F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                              | TODO  |
 | F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                | TODO  |
+| F17 | **Piani partita AI** — formazione per ciascun tempo, minimizzazione della differenza di minutaggio, rispetto dei ruoli, modifica manuale e conferma. | DONE |
 
 ---
 
@@ -198,6 +199,15 @@ app_settings          -- coppie chiave/valore (es. google_template_doc_id)
 ------------
 key
 value
+
+match_plans           -- configurazione e stato del piano partita AI
+-----------
+id, event_id, name, period_count, minutes_per_period, players_on_field
+system, role_policy, source, provider, model, status, warnings
+
+match_periods         -- formazione e panchina per ciascun tempo
+-------------
+id, match_plan_id, period_number, assignments, bench_player_ids
 ```
 
 ---
@@ -224,6 +234,17 @@ PUT    /api/events/:id/callups     -- body: { playerIds: number[] }
 
 GET    /api/events/:id/attendance
 PUT    /api/events/:id/attendance  -- body: { records: { playerId, status }[] }
+
+GET    /api/ai/config
+PUT    /api/ai/config
+POST   /api/ai/test
+
+GET    /api/events/:id/match-plans
+POST   /api/events/:id/match-plans/generate
+GET    /api/events/:id/match-plans/:planId
+PUT    /api/events/:id/match-plans/:planId
+POST   /api/events/:id/match-plans/:planId/confirm
+DELETE /api/events/:id/match-plans/:planId
 
 GET    /api/event-types
 POST   /api/event-types             -- body: { key, label, icon, hasOpponent, sortOrder }

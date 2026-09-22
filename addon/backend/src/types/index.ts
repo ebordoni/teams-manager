@@ -134,3 +134,74 @@ export interface AppSettingRow {
 
 export interface FormationRow { id: number; name: string; system: string; assignments: string; created_at: string; }
 export interface Formation { id: number; name: string; system: string; assignments: Record<string, number | null>; createdAt: string; }
+
+export type AIProvider = "openai" | "google" | "anthropic" | "groq" | "xai";
+export type RolePolicy = "strict" | "preferred" | "free";
+
+export interface AIConfig {
+  provider: AIProvider;
+  model: string;
+  fallbackProviders: AIProvider[];
+  configuredProviders: AIProvider[];
+  defaultPeriodCount: number;
+  defaultMinutesPerPeriod: number;
+  defaultPlayersOnField: number;
+  defaultRolePolicy: RolePolicy;
+}
+
+export interface MatchPeriodAssignment {
+  slot: string;
+  playerId: number;
+  role: string;
+}
+
+export interface MatchPeriod {
+  periodNumber: number;
+  assignments: MatchPeriodAssignment[];
+  benchPlayerIds: number[];
+}
+
+export interface MatchPlanRow {
+  id: number;
+  event_id: number;
+  name: string;
+  period_count: number;
+  minutes_per_period: number;
+  players_on_field: number;
+  system: string;
+  role_policy: RolePolicy;
+  source: "ai" | "fallback" | "manual";
+  provider: string | null;
+  model: string | null;
+  status: "draft" | "confirmed";
+  warnings: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MatchPeriodRow {
+  id: number;
+  match_plan_id: number;
+  period_number: number;
+  assignments: string;
+  bench_player_ids: string;
+}
+
+export interface MatchPlan {
+  id: number;
+  eventId: number;
+  name: string;
+  periodCount: number;
+  minutesPerPeriod: number;
+  playersOnField: number;
+  system: string;
+  rolePolicy: RolePolicy;
+  source: "ai" | "fallback" | "manual";
+  provider: string | null;
+  model: string | null;
+  status: "draft" | "confirmed";
+  warnings: string[];
+  periods: MatchPeriod[];
+  createdAt: string;
+  updatedAt: string;
+}

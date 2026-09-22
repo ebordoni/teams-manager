@@ -10,6 +10,10 @@ import type {
   GoogleStatus,
   Player,
   TeamEvent,
+  AIConfig,
+  MatchPeriod,
+  MatchPlan,
+  RolePolicy,
 } from "../types";
 
 // Use a relative base URL (no leading slash) so the browser resolves it
@@ -98,4 +102,18 @@ export const api = {
     apiClient.get<{ googleTemplateDocId: string | null; googleCalendarId: string }>("/settings"),
   updateSettings: (data: { googleTemplateDocId?: string | null; googleCalendarId?: string | null }) =>
     apiClient.put<{ googleTemplateDocId: string | null; googleCalendarId: string }>("/settings", data),
+
+  // ── Intelligenza artificiale e piani partita ───────────────────────────
+  getAIConfig: () => apiClient.get<AIConfig>("/ai/config"),
+  updateAIConfig: (data: Partial<AIConfig>) => apiClient.put<AIConfig>("/ai/config", data),
+  testAI: () => apiClient.post<{ provider: string; model: string; message: string }>("/ai/test"),
+  getMatchPlans: (eventId: number) => apiClient.get<MatchPlan[]>(`/events/${eventId}/match-plans`),
+  generateMatchPlan: (eventId: number, data: { name?: string; periodCount: number; minutesPerPeriod: number; playersOnField: number; system?: string; rolePolicy: RolePolicy }) =>
+    apiClient.post<MatchPlan>(`/events/${eventId}/match-plans/generate`, data),
+  updateMatchPlan: (eventId: number, planId: number, data: { name?: string; periods?: MatchPeriod[] }) =>
+    apiClient.put<MatchPlan>(`/events/${eventId}/match-plans/${planId}`, data),
+  confirmMatchPlan: (eventId: number, planId: number) =>
+    apiClient.post<MatchPlan>(`/events/${eventId}/match-plans/${planId}/confirm`),
+  deleteMatchPlan: (eventId: number, planId: number) =>
+    apiClient.delete(`/events/${eventId}/match-plans/${planId}`),
 };

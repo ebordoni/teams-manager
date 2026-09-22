@@ -7,6 +7,11 @@ import path from "node:path";
 const dataDir = await mkdtemp(path.join(os.tmpdir(), "gips-calcio-test-"));
 process.env.DATA_DIR = dataDir;
 process.env.NODE_ENV = "test";
+process.env.OPENAI_API_KEY = "";
+process.env.GOOGLE_GENERATIVE_AI_API_KEY = "";
+process.env.ANTHROPIC_API_KEY = "";
+process.env.GROQ_API_KEY = "";
+process.env.XAI_API_KEY = "";
 
 const { closeDb, initDb } = await import("../dist/db/schema.js");
 const { app } = await import("../dist/index.js");
@@ -76,4 +81,51 @@ test("unknown event types are rejected", async () => {
   });
   assert.equal(response.status, 400);
   assert.match(body.error, /Tipo evento sconosciuto/);
+});
+
+test("AI configuration never exposes API keys", async () => {
+  const updated = await request("/api/ai/config", {
+    method: "PUT",
+    body: JSON.stringify({ provider: "openai", model: "gpt-4o-mini", defaultPeriodCount: 4, defaultMinutesPerPeriod: 15, defaultPlayersOnField: 7, defaultRolePolicy: "preferred" }),
+  });
+  assert.equal(updated.response.status, 200);
+  assert.equal(updated.body.defaultPeriodCount, 4);
+  assert.equal("apiKey" in updated.body, false);
+  assert.equal("aiApiKeys" in updated.body, false);
+});
+
+test("match plans use the validated local fallback when AI is not configured", async () => {
+  const roles = ["Portiere", "Difensore", "Difensore", "Centrocampista", "Esterno", "Esterno", "Attaccante"];
+  const playerIds = [];
+  for (let index = 0; index < roles.length; index += 1) {
+    const player = await request("/api/players", {
+      method: "POST",
+      body: JSON.stringify({ name: `Rotazione ${index + 1}`, role: roles[index] }),
+    });
+    assert.equal(player.response.status, 201);
+    playerIds.push(player.body.id);
+  }
+  const event = await request("/api/events", {
+    method: "POST",
+    body: JSON.stringify({ type: "match", date: "2026-10-03", opponent: "Avversario rotazioni" }),
+  });
+  await request(`/api/events/${event.body.id}/callups`, {
+    method: "PUT",
+    body: JSON.stringify({ playerIds }),
+  });
+  const generated = await request(`/api/events/${event.body.id}/match-plans/generate`, {
+    method: "POST",
+    body: JSON.stringify({ periodCount: 3, minutesPerPeriod: 20, playersOnField: 7, rolePolicy: "preferred" }),
+  });
+  assert.equal(generated.response.status, 201);
+  assert.equal(generated.body.source, "fallback");
+  assert.equal(generated.body.periods.length, 3);
+  assert.ok(generated.body.periods.every((period) => period.assignments.length === 7));
+
+  const confirmed = await request(`/api/events/${event.body.id}/match-plans/${generated.body.id}/confirm`, { method: "POST" });
+  assert.equal(confirmed.response.status, 200);
+  assert.equal(confirmed.body.status, "confirmed");
+
+  const removed = await request(`/api/events/${event.body.id}/match-plans/${generated.body.id}`, { method: "DELETE" });
+  assert.equal(removed.response.status, 204);
 });

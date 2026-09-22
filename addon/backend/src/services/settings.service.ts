@@ -24,4 +24,11 @@ export const SETTINGS_KEYS = {
   // Non viene mai esposto dall'endpoint delle impostazioni.
   googleOAuthState: "google_oauth_state",
   googleOAuthStateCreatedAt: "google_oauth_state_created_at",
+  aiProvider: "ai_provider",
+  aiModel: "ai_model",
+  aiFallbackProviders: "ai_fallback_providers",
+  aiDefaultPeriodCount: "ai_default_period_count",
+  aiDefaultMinutesPerPeriod: "ai_default_minutes_per_period",
+  aiDefaultPlayersOnField: "ai_default_players_on_field",
+  aiDefaultRolePolicy: "ai_default_role_policy",
 } as const;

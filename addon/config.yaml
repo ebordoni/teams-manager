@@ -1,6 +1,6 @@
 name: "GIPS Calcio"
 description: "Gestionale squadra calcio: calendario, giocatori, convocazioni e comunicazioni per i genitori"
-version: "0.10.0"
+version: "0.12.0"
 slug: "gips_calcio"
 init: false
 arch:
@@ -21,9 +21,27 @@ options:
   google_client_id: ""
   google_client_secret: ""
   google_redirect_uri: ""
+  ai_provider: "openai"
+  ai_model: ""
+  ai_api_key: ""
+  ai_fallback_providers: ""
+  openai_api_key: ""
+  google_ai_api_key: ""
+  anthropic_api_key: ""
+  groq_api_key: ""
+  xai_api_key: ""
 schema:
   google_client_id: "str?"
   google_client_secret: "password?"
   google_redirect_uri: "str?"
+  ai_provider: "str?"
+  ai_model: "str?"
+  ai_api_key: "password?"
+  ai_fallback_providers: "str?"
+  openai_api_key: "password?"
+  google_ai_api_key: "password?"
+  anthropic_api_key: "password?"
+  groq_api_key: "password?"
+  xai_api_key: "password?"
 map:
   - data:rw

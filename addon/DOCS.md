@@ -27,6 +27,16 @@ Anagrafica della squadra: nome, ruolo, ruoli secondari e note.
 
 Per ogni evento, selezione rapida dei giocatori convocati.
 
+### Piani partita AI
+
+Dopo avere salvato le convocazioni, apri la scheda della partita e seleziona **Piano partita AI**.
+Indica numero e durata dei tempi, giocatori in campo e rigidità dei ruoli. L'app prepara una
+formazione per ciascun tempo cercando la distribuzione di minuti più uniforme possibile senza
+cambi durante il tempo. La proposta può essere modificata, confermata o eliminata.
+
+I nomi non vengono inviati al provider: l'AI riceve pseudonimi e ruoli. Se il provider non è
+configurato o non risponde, viene usato automaticamente il motore locale.
+
 ### Comunicazioni
 
 Dalla pagina Calendario, seleziona uno o più eventi e premi "Genera comunicazione": l'app crea un
@@ -52,6 +62,15 @@ Se il campo è vuoto, il documento viene generato automaticamente senza template
 | `google_client_id`     | Client ID OAuth 2.0 Google (necessario per le Comunicazioni)         |
 | `google_client_secret` | Client Secret OAuth 2.0 Google (necessario per le Comunicazioni)     |
 | `google_redirect_uri`  | Redirect URI OAuth (default: porta diretta `8101` dell'addon)        |
+| `ai_provider`          | Provider principale: `openai`, `google`, `anthropic`, `groq`, `xai` |
+| `ai_model`             | Modello opzionale; vuoto usa il predefinito del provider             |
+| `ai_api_key`           | Chiave del provider principale (campo protetto)                       |
+| `ai_fallback_providers`| Provider di riserva separati da virgola                               |
+
+Per usare provider diversi come fallback configura anche le rispettive opzioni protette:
+`openai_api_key`, `google_ai_api_key`, `anthropic_api_key`, `groq_api_key`, `xai_api_key`.
+La pagina **Intelligenza artificiale** permette di selezionare provider e modello, impostare i
+valori predefiniti e verificare la connessione.
 
 ### Collegare Google
 

@@ -1,6 +1,6 @@
 {
   "name": "gips-calcio",
-  "version": "0.10.0",
+  "version": "0.12.0",
   "private": true,
   "scripts": {
     "check": "npm run verify:version && npm test --prefix addon/backend && npm run build --prefix addon/frontend",

@@ -5,6 +5,7 @@ import path from "path";
 import { config } from "./config";
 import { initDb } from "./db/schema";
 import attendanceRouter from "./routes/attendance";
+import aiRouter from "./routes/ai";
 import callupsRouter from "./routes/callups";
 import calendarExportRouter from "./routes/calendar-export";
 import communicationsRouter from "./routes/communications";
@@ -14,6 +15,7 @@ import eventsRouter from "./routes/events";
 import googleRouter from "./routes/google";
 import playersRouter from "./routes/players";
 import settingsRouter from "./routes/settings";
+import matchPlansRouter from "./routes/match-plans";
 
 function resolveVersion(): string {
   try {
@@ -50,12 +52,14 @@ app.use("/api/players", playersRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/events/:id/callups", callupsRouter);
 app.use("/api/events/:id/attendance", attendanceRouter);
+app.use("/api/events/:id/match-plans", matchPlansRouter);
 app.use("/api/event-types", eventTypesRouter);
 app.use("/api/formations", formationsRouter);
 app.use("/api/google", googleRouter);
 app.use("/api/google/calendar", calendarExportRouter);
 app.use("/api/communications", communicationsRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/ai", aiRouter);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({

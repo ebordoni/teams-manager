@@ -111,6 +111,35 @@ const SCHEMA_V1 = `
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS match_plans (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id           INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    name               TEXT NOT NULL,
+    period_count       INTEGER NOT NULL,
+    minutes_per_period INTEGER NOT NULL,
+    players_on_field   INTEGER NOT NULL,
+    system             TEXT NOT NULL DEFAULT '2-3-1',
+    role_policy        TEXT NOT NULL DEFAULT 'preferred',
+    source             TEXT NOT NULL DEFAULT 'ai',
+    provider           TEXT,
+    model              TEXT,
+    status             TEXT NOT NULL DEFAULT 'draft',
+    warnings           TEXT NOT NULL DEFAULT '[]',
+    created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_match_plans_event ON match_plans(event_id);
+
+  CREATE TABLE IF NOT EXISTS match_periods (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    match_plan_id    INTEGER NOT NULL REFERENCES match_plans(id) ON DELETE CASCADE,
+    period_number    INTEGER NOT NULL,
+    assignments      TEXT NOT NULL DEFAULT '[]',
+    bench_player_ids TEXT NOT NULL DEFAULT '[]',
+    UNIQUE(match_plan_id, period_number)
+  );
+
   INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 `;
 

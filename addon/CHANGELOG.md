@@ -7,6 +7,18 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.12.0] — 2026-09-22
+
+### Aggiunto
+
+- Piani partita AI per più tempi con provider OpenAI, Google, Anthropic, Groq e xAI.
+- Distribuzione bilanciata dei minuti, vincoli sui ruoli, fallback locale validato e tutela dei nomi tramite pseudonimi.
+- Configurazione AI dedicata e gestione completa dei piani dalla scheda evento.
+
+### Sviluppo
+
+- Tabelle `match_plans`/`match_periods`, API CRUD e smoke test del flusso senza dipendenze esterne.
+
 ## [0.11.0] — 2026-09-22
 
 ### Modificato

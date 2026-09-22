@@ -6,6 +6,7 @@ import {
   IconLayoutList,
   IconLayoutDashboard,
   IconSettings,
+  IconRobot,
   IconUsers,
 } from "@tabler/icons-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
@@ -16,6 +17,7 @@ const navItems = [
   { to: "/players", label: "Giocatori", icon: IconUsers },
   { to: "/formations", label: "Formazioni", icon: IconLayoutList },
   { to: "/communications", label: "Comunicazioni", icon: IconFileText },
+  { to: "/ai-settings", label: "Intelligenza artificiale", icon: IconRobot },
   { to: "/settings", label: "Impostazioni", icon: IconSettings },
 ];
 

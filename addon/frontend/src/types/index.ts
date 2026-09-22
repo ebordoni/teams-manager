@@ -76,3 +76,25 @@ export interface EventFilters {
   type?: EventType;
 }
 export interface Formation { id: number; name: string; system: string; assignments: Record<string, number | null>; createdAt: string; }
+
+export type AIProvider = "openai" | "google" | "anthropic" | "groq" | "xai";
+export type RolePolicy = "strict" | "preferred" | "free";
+export interface AIConfig {
+  provider: AIProvider;
+  model: string;
+  fallbackProviders: AIProvider[];
+  configuredProviders: AIProvider[];
+  defaultModels: Record<AIProvider, string>;
+  defaultPeriodCount: number;
+  defaultMinutesPerPeriod: number;
+  defaultPlayersOnField: number;
+  defaultRolePolicy: RolePolicy;
+}
+export interface MatchPeriodAssignment { slot: string; playerId: number; role: string; }
+export interface MatchPeriod { periodNumber: number; assignments: MatchPeriodAssignment[]; benchPlayerIds: number[]; }
+export interface MatchPlan {
+  id: number; eventId: number; name: string; periodCount: number; minutesPerPeriod: number;
+  playersOnField: number; system: string; rolePolicy: RolePolicy; source: "ai" | "fallback" | "manual";
+  provider: string | null; model: string | null; status: "draft" | "confirmed";
+  warnings: string[]; periods: MatchPeriod[]; createdAt: string; updatedAt: string;
+}

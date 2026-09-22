@@ -7,6 +7,26 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.12.0] — 2026-09-22
+
+### Aggiunto
+
+- Generazione AI multi-provider dei piani partita, con una formazione per ogni tempo e minimizzazione deterministica delle differenze di minutaggio.
+- Pagina di configurazione AI con provider, modello, fallback, test connessione e valori predefiniti della partita.
+- Pagina piano partita con storico, modifica manuale, panchina, riepilogo minuti, conferma e cancellazione.
+- Motore locale di fallback, validazione di giocatori, ruoli e portiere, persistenza dei piani e test API dedicati.
+
+### Sicurezza
+
+- I provider AI ricevono soltanto pseudonimi e ruoli; nomi e chiavi API non vengono inviati al browser.
+
+## [0.11.0] — 2026-09-22
+
+### Modificato
+
+- Calendario più leggibile su desktop e mobile, correzioni a tipi evento, presenze, Google Calendar e gestione degli errori OAuth.
+- Nuovi smoke test per presenze, stati evento e ricollegamento Google.
+
 ## [0.10.0] — 2026-09-22
 
 ### Modificato

@@ -1,6 +1,6 @@
 {
       "name": "gips-calcio-backend",
-      "version": "0.10.0",
+      "version": "0.12.0",
       "private": true,
       "scripts": {
             "dev": "tsx watch src/index.ts",
@@ -9,11 +9,17 @@
             "start": "node dist/index.js"
       },
       "dependencies": {
+            "@ai-sdk/anthropic": "^3.0.58",
+            "@ai-sdk/google": "^3.0.43",
+            "@ai-sdk/groq": "^3.0.29",
+            "@ai-sdk/openai": "^3.0.41",
+            "@ai-sdk/xai": "^3.0.83",
+            "ai": "^6.0.116",
             "cors": "^2.8.5",
             "dotenv": "^17.4.2",
             "express": "^4.19.2",
             "googleapis": "^144.0.0",
-            "zod": "^3.23.8"
+            "zod": "^4.3.6"
       },
       "devDependencies": {
             "@types/cors": "^2.8.17",

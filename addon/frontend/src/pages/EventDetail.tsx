@@ -13,9 +13,9 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconTrash } from "@tabler/icons-react";
+import { IconRobot, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
@@ -264,6 +264,13 @@ export default function EventDetail() {
             Aggiorna stato evento
           </Button>
         </Stack>
+      </Card>
+
+      <Card withBorder padding="md" radius="md">
+        <Group justify="space-between">
+          <div><Title order={5}>Rotazioni della partita</Title><Text size="sm" c="dimmed">Genera una formazione per ogni tempo bilanciando automaticamente il minutaggio.</Text></div>
+          <Button component={Link} to={`/events/${eventId}/match-plan`} leftSection={<IconRobot size={18} />}>Apri piano partita AI</Button>
+        </Group>
       </Card>
 
       {selectedFormation && (
