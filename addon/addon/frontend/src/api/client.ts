@@ -1,0 +1,101 @@
+import axios from "axios";
+import type {
+  Attendance,
+  AttendanceStatus,
+  Callup,
+  Communication,
+  EventFilters,
+  EventTypeDef,
+  GeneratedCommunication,
+  GoogleStatus,
+  Player,
+  TeamEvent,
+} from "../types";
+
+// Use a relative base URL (no leading slash) so the browser resolves it
+// relative to the document URL — works both in local dev and under any
+// HA Ingress path without any path-guessing.
+const apiClient = axios.create({
+  baseURL: "api",
+  timeout: 30_000,
+});
+
+export const api = {
+  health: () =>
+    apiClient.get<{ status: string; version: string; timestamp: string }>(
+      "/health",
+    ),
+
+  // ── Players ────────────────────────────────────────────────────────────
+  getPlayers: () => apiClient.get<Player[]>("/players"),
+  getPlayer: (id: number) => apiClient.get<Player>(`/players/${id}`),
+  createPlayer: (data: Partial<Player>) =>
+    apiClient.post<Player>("/players", data),
+  updatePlayer: (id: number, data: Partial<Player>) =>
+    apiClient.put<Player>(`/players/${id}`, data),
+  deletePlayer: (id: number) => apiClient.delete(`/players/${id}`),
+
+  // ── Events ─────────────────────────────────────────────────────────────
+  getEvents: (filters?: EventFilters) =>
+    apiClient.get<TeamEvent[]>("/events", { params: filters }),
+  getEvent: (id: number) => apiClient.get<TeamEvent>(`/events/${id}`),
+  createEvent: (data: Partial<TeamEvent>) =>
+    apiClient.post<TeamEvent>("/events", data),
+  updateEvent: (id: number, data: Partial<TeamEvent>) =>
+    apiClient.put<TeamEvent>(`/events/${id}`, data),
+  deleteEvent: (id: number) => apiClient.delete(`/events/${id}`),
+
+  // ── Callups ────────────────────────────────────────────────────────────
+  getCallups: (eventId: number) =>
+    apiClient.get<Callup[]>(`/events/${eventId}/callups`),
+  setCallups: (eventId: number, playerIds: number[]) =>
+    apiClient.put<{ eventId: number; callupCount: number }>(
+      `/events/${eventId}/callups`,
+      { playerIds },
+    ),
+
+  // ── Attendance ─────────────────────────────────────────────────────────
+  getAttendance: (eventId: number) =>
+    apiClient.get<Attendance[]>(`/events/${eventId}/attendance`),
+  setAttendance: (
+    eventId: number,
+    records: { playerId: number; status: AttendanceStatus }[],
+  ) =>
+    apiClient.put<{ eventId: number; recordCount: number }>(
+      `/events/${eventId}/attendance`,
+      { records },
+    ),
+
+  // ── Google ─────────────────────────────────────────────────────────────
+  getGoogleStatus: () => apiClient.get<GoogleStatus>("/google/status"),
+  getGoogleAuthUrl: () => apiClient.get<{ url: string }>("/google/oauth/url"),
+  disconnectGoogle: () => apiClient.post("/google/disconnect"),
+
+  // ── Comunicazioni ──────────────────────────────────────────────────────
+  generateCommunication: (eventIds: number[]) =>
+    apiClient.post<GeneratedCommunication>("/communications", { eventIds }),
+  getCommunications: () =>
+    apiClient.get<Communication[]>("/communications"),
+  deleteCommunication: (id: number) =>
+    apiClient.delete(`/communications/${id}`),
+  exportToGoogleCalendar: (eventIds: number[]) =>
+    apiClient.post<{ exported: number }>("/google/calendar/export", { eventIds }),
+
+  // ── Tipi evento ────────────────────────────────────────────────────────
+  getEventTypes: () => apiClient.get<EventTypeDef[]>("/event-types"),
+  createEventType: (data: Partial<EventTypeDef>) =>
+    apiClient.post<EventTypeDef>("/event-types", data),
+  updateEventType: (id: number, data: Partial<EventTypeDef>) =>
+    apiClient.put<EventTypeDef>(`/event-types/${id}`, data),
+  deleteEventType: (id: number) => apiClient.delete(`/event-types/${id}`),
+  getFormations: () => apiClient.get<import("../types").Formation[]>("/formations"),
+  createFormation: (data: { name: string; assignments: Record<string, number | null> }) => apiClient.post<import("../types").Formation>("/formations", data),
+  deleteFormation: (id: number) => apiClient.delete(`/formations/${id}`),
+  updateFormation: (id: number, data: { name: string; assignments: Record<string, number | null> }) => apiClient.put(`/formations/${id}`, data),
+
+  // ── Impostazioni app ───────────────────────────────────────────────────
+  getSettings: () =>
+    apiClient.get<{ googleTemplateDocId: string | null; googleCalendarId: string }>("/settings"),
+  updateSettings: (data: { googleTemplateDocId?: string | null; googleCalendarId?: string | null }) =>
+    apiClient.put<{ googleTemplateDocId: string | null; googleCalendarId: string }>("/settings", data),
+};

@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: ./addon/backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./addon/backend/src:/app/src:ro
+      - ./data:/data
+    environment:
+      NODE_ENV: development
+      PORT: "3002"
+      DATA_DIR: /data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./addon/frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5175:5175"
+    volumes:
+      - ./addon/frontend/src:/app/src:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
