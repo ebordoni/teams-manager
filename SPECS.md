@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.7.0)** — le funzionalità core, le formazioni 7vs7 e l'integrazione Google sono completate; restano le estensioni di roadmap.
+> Stato attuale: **MVP operativo (v0.8.0)** — le funzionalità core, le formazioni 7vs7 e le comunicazioni contestuali sono completate; restano le estensioni di roadmap.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -117,7 +117,7 @@ addon/
 | F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                      | DONE  |
 | F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico).                                                               | DONE  |
 | F10 | **Storico comunicazioni** — pagina "Comunicazioni": elenco dei documenti generati, apertura e **eliminazione** (rimuove anche il file da Drive).                                       | DONE  |
-| F16 | **Template Google Doc** — documento personalizzato con placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`, configurabile dalle Impostazioni. Se non impostato, si usa la generazione automatica. | DONE  |
+| F16 | **Template Google Doc** — documento personalizzato con placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`, `{{FORMAZIONI}}`, `{{PRESENZE}}`, configurabile dalle Impostazioni. Se non impostato, si usa la generazione automatica. | DONE  |
 | F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                              | TODO  |
 | F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                | TODO  |
 

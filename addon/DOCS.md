@@ -40,7 +40,8 @@ eliminarli (l'eliminazione rimuove anche il file da Google Drive).
 ### Template Google Doc (opzionale)
 
 Nelle Impostazioni puoi collegare un Google Doc personale da usare come template: crealo su Google
-Docs con i placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}` e `{{ALLENAMENTI}}` dove
+Docs con i placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`,
+`{{FORMAZIONI}}` e `{{PRESENZE}}` dove
 vuoi che compaiano i rispettivi contenuti, poi incolla il link del documento nel campo dedicato.
 Se il campo è vuoto, il documento viene generato automaticamente senza template.
 

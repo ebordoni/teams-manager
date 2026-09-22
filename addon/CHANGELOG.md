@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0] - 2026-09-22
+
+### Added
+
+- Comunicazioni arricchite con formazione, convocati e presenze effettivamente registrate.
+- Placeholder template Google Docs `{{FORMAZIONI}}` e `{{PRESENZE}}`.
+
 ## [0.7.0] - 2026-09-22
 
 ### Added

@@ -18,7 +18,18 @@ import type {
   EventRow,
   EventTypeDef,
   EventTypeDefRow,
+  FormationRow,
 } from "../types";
+
+const FORMATION_SLOTS: Array<[string, string]> = [
+  ["portiere", "Portiere"],
+  ["difensoreSinistro", "Difensore sinistro"],
+  ["difensoreDestro", "Difensore destro"],
+  ["centrale", "Centrocampista"],
+  ["fasciaSinistra", "Fascia sinistra"],
+  ["fasciaDestra", "Fascia destra"],
+  ["attaccante", "Attaccante"],
+];
 
 function loadEventTypes(): Map<string, EventTypeDef> {
   const db = getDb();
@@ -72,6 +83,41 @@ function getCallupNames(eventId: number): string[] {
   return rows.map((r) => r.name);
 }
 
+function getFormationLines(event: Event): string[] {
+  if (!event.formationId) return [];
+  const db = getDb();
+  const formation = db.prepare("SELECT * FROM formations WHERE id = ?").get(event.formationId) as FormationRow | undefined;
+  if (!formation) return [];
+  const assignments = JSON.parse(formation.assignments) as Record<string, number | null>;
+  const playerIds = Object.values(assignments).filter((id): id is number => id !== null);
+  if (playerIds.length === 0) return [];
+  const players = db.prepare(`SELECT id, name FROM players WHERE id IN (${playerIds.map(() => "?").join(", ")})`).all(...playerIds) as Array<{ id: number; name: string }>;
+  const playerNames = new Map(players.map((player) => [player.id, player.name]));
+  const lineup = FORMATION_SLOTS.flatMap(([slot, label]) => {
+    const name = assignments[slot] ? playerNames.get(assignments[slot]!) : undefined;
+    return name ? [`${label}: ${name}`] : [];
+  });
+  return lineup.length ? [`FORMAZIONE · ${formation.name}`, ...lineup.map((item) => `- ${item}`)] : [];
+}
+
+function getAttendanceLines(eventId: number): string[] {
+  const rows = getDb().prepare(
+    `SELECT p.name AS name, a.status AS status
+     FROM attendance a JOIN players p ON p.id = a.player_id
+     WHERE a.event_id = ? ORDER BY p.name ASC`,
+  ).all(eventId) as Array<{ name: string; status: "present" | "absent" | "excused" }>;
+  if (rows.length === 0) return [];
+  const labels = { present: "Presenti", absent: "Assenti", excused: "Giustificati" };
+  return (["present", "absent", "excused"] as const).flatMap((status) => {
+    const names = rows.filter((row) => row.status === status).map((row) => row.name);
+    return names.length ? [`${labels[status]}: ${names.join(", ")}`] : [];
+  });
+}
+
+function eventIcon(icon?: string): string {
+  return icon?.startsWith("Icon") ? "⚽" : icon ?? "⚽";
+}
+
 function formatEvent(event: Event, eventTypes: Map<string, EventTypeDef>): string {
   const typeDef = eventTypes.get(event.type);
   const lines: string[] = [];
@@ -107,6 +153,11 @@ function formatEvent(event: Event, eventTypes: Map<string, EventTypeDef>): strin
     }
   }
 
+  const formation = getFormationLines(event);
+  if (formation.length > 0) lines.push("", ...formation);
+  const attendance = getAttendanceLines(event.id);
+  if (attendance.length > 0) lines.push("", "PRESENZE REGISTRATE", ...attendance);
+
   return lines.join("\n");
 }
 
@@ -127,7 +178,7 @@ function buildStyledDocument(
 
     builder
       .addParagraph(formatDateIt(event.date), documentStyles.date)
-      .addParagraph(`${typeDef?.icon ?? "⚽"} ${eventLabel}`, documentStyles.event);
+      .addParagraph(`${eventIcon(typeDef?.icon)} ${eventLabel}`, documentStyles.event);
 
     if (event.status !== "scheduled") {
       const status = event.status === "cancelled" ? "ANNULLATO" : "MODIFICATO";
@@ -161,6 +212,18 @@ function buildStyledDocument(
       }
     }
 
+    const formation = getFormationLines(event);
+    if (formation.length > 0) {
+      builder.addParagraph(formation[0], documentStyles.match);
+      builder.addParagraph(formation.slice(1).join(" · "), documentStyles.normal);
+    }
+    const attendance = getAttendanceLines(event.id);
+    if (attendance.length > 0) {
+      builder
+        .addParagraph("Presenze registrate", documentStyles.match)
+        .addParagraph(attendance.join(" · "), documentStyles.normal);
+    }
+
     builder.addEmptyLine();
   }
 
@@ -184,6 +247,14 @@ function buildTemplatePlaceholders(
   const allenamenti = trainings.length
     ? trainings.map((e) => formatEvent(e, eventTypes)).join("\n\n---\n\n")
     : "Nessun allenamento in programma.";
+  const formazione = matches
+    .map((event) => getFormationLines(event).join("\n"))
+    .filter(Boolean)
+    .join("\n\n") || "Nessuna formazione associata.";
+  const presenze = sorted
+    .map((event) => getAttendanceLines(event.id).join("\n"))
+    .filter(Boolean)
+    .join("\n\n") || "Nessuna presenza registrata.";
 
   return {
     title,
@@ -192,6 +263,8 @@ function buildTemplatePlaceholders(
       SETTIMANA: formatDateIt(sorted[0].date),
       PARTITE: partite,
       ALLENAMENTI: allenamenti,
+      FORMAZIONI: formazione,
+      PRESENZE: presenze,
     },
   };
 }

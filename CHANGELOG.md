@@ -7,6 +7,13 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.0] — 2026-09-22
+
+### Aggiunto
+
+- Comunicazioni per genitori più complete: documento automatico con formazione associata e presenze registrate.
+- Nuovi placeholder Google Docs opzionali: `{{FORMAZIONI}}` e `{{PRESENZE}}`.
+
 ## [0.7.0] — 2026-09-22
 
 ### Aggiunto

@@ -263,9 +263,9 @@ export default function Settings() {
           <Text size="sm" c="dimmed">
             Incolla il link (o l'id) di un Google Doc con i placeholder{" "}
             <code>{"{{TITOLO}}"}</code>, <code>{"{{SETTIMANA}}"}</code>,{" "}
-            <code>{"{{PARTITE}}"}</code> e <code>{"{{ALLENAMENTI}}"}</code>. Se
-            lasciato vuoto, il documento viene generato automaticamente senza
-            template.
+            <code>{"{{PARTITE}}"}</code>, <code>{"{{ALLENAMENTI}}"}</code>,{" "}
+            <code>{"{{FORMAZIONI}}"}</code> e <code>{"{{PRESENZE}}"}</code>.
+            Se lasciato vuoto, il documento viene generato automaticamente senza template.
           </Text>
           <Group align="flex-end">
             <TextInput
