@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Badge,
-  Box,
   Button,
   Card,
   Checkbox,
@@ -16,8 +15,12 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { Calendar as MantineCalendar, DateInput, TimeInput } from "@mantine/dates";
-import { useDisclosure } from "@mantine/hooks";
+import {
+  DateInput,
+  Calendar as MantineCalendar,
+  TimeInput,
+} from "@mantine/dates";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { IconTrash } from "@tabler/icons-react";
 import dayjs from "dayjs";
@@ -25,7 +28,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
-import type { EventTypeDef, GeneratedCommunication, GoogleStatus, TeamEvent } from "../types";
+import type {
+  EventTypeDef,
+  GeneratedCommunication,
+  GoogleStatus,
+  TeamEvent,
+} from "../types";
 
 const STATUS_COLOR: Record<TeamEvent["status"], string> = {
   scheduled: "green",
@@ -33,11 +41,16 @@ const STATUS_COLOR: Record<TeamEvent["status"], string> = {
   cancelled: "red",
 };
 
-const STATUS_DOT_COLOR: Record<TeamEvent["status"], string> = {
-  scheduled: "var(--mantine-color-green-6)",
-  modified: "var(--mantine-color-orange-6)",
-  cancelled: "var(--mantine-color-red-6)",
+// Nella cella del calendario gli eventi regolari usano il colore del testo:
+// il colore resta un segnale per le sole eccezioni (modificato/annullato).
+const STATUS_ACCENT: Record<TeamEvent["status"], string | undefined> = {
+  scheduled: undefined,
+  modified: "orange.6",
+  cancelled: "red.6",
 };
+
+/** Eventi mostrati nella cella del giorno prima del contatore "+N". */
+const MAX_DAY_PREVIEW = 2;
 
 function formatDayLabel(date: string): string {
   return new Intl.DateTimeFormat("it-IT", {
@@ -68,8 +81,7 @@ export default function Calendar() {
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [showForm, { open: openForm, close: closeForm }] =
-    useDisclosure(false);
+  const [showForm, { open: openForm, close: closeForm }] = useDisclosure(false);
   const [displayedDate, setDisplayedDate] = useState(() =>
     dayjs().format("YYYY-MM-DD"),
   );
@@ -82,6 +94,10 @@ export default function Calendar() {
   );
   const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [needsGoogleAuth, setNeedsGoogleAuth] = useState(false);
+  // Su schermi stretti nella cella resta la sola icona: gli orari si leggono
+  // nell'agenda del giorno selezionato.
+  const compactDays = useMediaQuery("(max-width: 48em)") ?? false;
 
   function loadEvents(date = displayedDate) {
     setLoading(true);
@@ -134,18 +150,30 @@ export default function Calendar() {
     });
   }
 
+  /** Mostra l'errore dell'API; con 403 serve (ri)collegare l'account Google. */
+  function reportApiError(err: unknown, fallback: string) {
+    const response = (
+      err as {
+        response?: { status?: number; data?: { error?: string } };
+      }
+    )?.response;
+    setGenerateError(response?.data?.error ?? fallback);
+    if (response?.status === 403) {
+      setNeedsGoogleAuth(true);
+      api.getGoogleStatus().then((res) => setGoogleStatus(res.data));
+    }
+  }
+
   async function handleGenerateCommunication() {
     setGenerateError(null);
+    setNeedsGoogleAuth(false);
     setGenerating(true);
     try {
       const res = await api.generateCommunication(Array.from(selectedIds));
       setGenerated(res.data);
       setSelectedIds(new Set());
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error ?? "Errore durante la generazione della comunicazione";
-      setGenerateError(message);
+      reportApiError(err, "Errore durante la generazione della comunicazione");
     } finally {
       setGenerating(false);
     }
@@ -153,14 +181,16 @@ export default function Calendar() {
 
   async function handleExportCalendar() {
     setGenerateError(null);
+    setNeedsGoogleAuth(false);
     setExporting(true);
     try {
       const res = await api.exportToGoogleCalendar(Array.from(selectedIds));
-      notifications.show({ message: `${res.data.exported} evento/i esportato/i su Google Calendar`, color: "green" });
+      notifications.show({
+        message: `${res.data.exported} evento/i esportato/i su Google Calendar`,
+        color: "green",
+      });
     } catch (err) {
-      setGenerateError(
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Errore durante l'esportazione su Google Calendar",
-      );
+      reportApiError(err, "Errore durante l'esportazione su Google Calendar");
     } finally {
       setExporting(false);
     }
@@ -216,7 +246,9 @@ export default function Calendar() {
     }
     return grouped;
   }, [events]);
-  const selectedDayEvents = selectedDay ? eventsByDate.get(selectedDay) ?? [] : [];
+  const selectedDayEvents = selectedDay
+    ? (eventsByDate.get(selectedDay) ?? [])
+    : [];
 
   return (
     <Stack gap="md">
@@ -289,25 +321,41 @@ export default function Calendar() {
 
       {selectedIds.size > 0 && (
         <Card withBorder padding="md" radius="md">
-          <Group justify="space-between">
+          <Group justify="space-between" wrap="wrap">
             <Text size="sm">{selectedIds.size} evento/i selezionato/i</Text>
-            <Button onClick={handleGenerateCommunication} loading={generating}>
-              📄 Genera comunicazione
-            </Button>
-            <Button
-              variant="light"
-              onClick={handleExportCalendar}
-              loading={exporting}
-              disabled={!googleStatus?.calendarConnected}
-            >
-              📅 Esporta in Google Calendar
-            </Button>
+            <Group gap="xs" wrap="wrap">
+              <Button
+                onClick={handleGenerateCommunication}
+                loading={generating}
+              >
+                📄 Genera comunicazione
+              </Button>
+              <Button
+                variant="light"
+                onClick={handleExportCalendar}
+                loading={exporting}
+                disabled={!googleStatus?.calendarConnected}
+              >
+                📅 Esporta in Google Calendar
+              </Button>
+            </Group>
           </Group>
         </Card>
       )}
       {generateError && (
         <Alert color="red" title="Errore">
           {generateError}
+          {needsGoogleAuth && (
+            <Button
+              component={Link}
+              to="/settings"
+              size="compact-sm"
+              variant="subtle"
+              ml="xs"
+            >
+              Apri Impostazioni
+            </Button>
+          )}
         </Alert>
       )}
       {generated && (
@@ -341,10 +389,19 @@ export default function Calendar() {
           <Card withBorder padding="md" radius="md">
             <MantineCalendar
               fullWidth
+              highlightToday
               date={displayedDate}
               onDateChange={(date) => {
                 setDisplayedDate(date);
                 setSelectedDay(null);
+              }}
+              styles={{
+                day: {
+                  height: compactDays ? 58 : 70,
+                  alignItems: "flex-start",
+                  padding: "5px 2px 3px",
+                  borderRadius: "var(--mantine-radius-md)",
+                },
               }}
               getDayProps={(date) => {
                 const dayEvents = eventsByDate.get(date) ?? [];
@@ -352,23 +409,60 @@ export default function Calendar() {
                   selected: date === selectedDay,
                   onClick: () => handleDayClick(date, dayEvents.length),
                   "aria-label": `${formatDayLabel(date)}: ${dayEvents.length} evento/i`,
+                  // I giorni impegnati si riconoscono a colpo d'occhio anche
+                  // quando non sono selezionati.
+                  style:
+                    dayEvents.length > 0 && date !== selectedDay
+                      ? {
+                          border:
+                            "1px solid var(--mantine-color-default-border)",
+                        }
+                      : undefined,
                 };
               }}
               renderDay={(date) => {
                 const dayEvents = eventsByDate.get(date) ?? [];
+                const visible = dayEvents.slice(0, MAX_DAY_PREVIEW);
                 return (
-                  <Stack gap={2} align="center">
-                    <Text inherit>{dayjs(date).date()}</Text>
-                    {dayEvents.slice(0, 2).map((event) => {
-                      const type = typeOf(event.type);
-                      return (
-                        <Group key={event.id} gap={3} justify="center" wrap="nowrap">
-                          <Box aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_DOT_COLOR[event.status] }} />
-                          <Text size="xs" truncate="end">{event.startTime ? `${event.startTime} ` : ""}<EventTypeIcon name={type?.icon ?? "IconBallFootball"} size={12} /></Text>
-                        </Group>
-                      );
-                    })}
-                    {dayEvents.length > 2 && <Text size="xs" fw={700}>+{dayEvents.length - 2}</Text>}
+                  <Stack gap={3} align="center" w="100%">
+                    <Text fz={15} fw={600} lh={1}>
+                      {dayjs(date).date()}
+                    </Text>
+                    {visible.map((event) => (
+                      <Group
+                        key={event.id}
+                        gap={4}
+                        justify="center"
+                        wrap="nowrap"
+                        maw="100%"
+                        fz={13}
+                        c={STATUS_ACCENT[event.status]}
+                      >
+                        <EventTypeIcon
+                          name={typeOf(event.type)?.icon ?? "IconBallFootball"}
+                          size={compactDays ? 18 : 16}
+                        />
+                        {!compactDays && event.startTime && (
+                          <Text
+                            fz={10}
+                            fw={500}
+                            lh={1}
+                            td={
+                              event.status === "cancelled"
+                                ? "line-through"
+                                : undefined
+                            }
+                          >
+                            {event.startTime}
+                          </Text>
+                        )}
+                      </Group>
+                    ))}
+                    {dayEvents.length > visible.length && (
+                      <Text fz={10} fw={700} lh={1} opacity={0.7}>
+                        +{dayEvents.length - visible.length}
+                      </Text>
+                    )}
                   </Stack>
                 );
               }}
@@ -379,7 +473,9 @@ export default function Calendar() {
             <Stack gap="xs">
               <Group justify="space-between">
                 <Title order={5}>{formatDayLabel(selectedDay)}</Title>
-                <Button size="xs" variant="light" onClick={handleOpenForm}>+ Aggiungi evento</Button>
+                <Button size="xs" variant="light" onClick={handleOpenForm}>
+                  + Aggiungi evento
+                </Button>
               </Group>
               {selectedDayEvents.length === 0 ? (
                 <Text c="dimmed">Nessun evento in questa giornata.</Text>
@@ -396,18 +492,37 @@ export default function Calendar() {
                         />
                         <Link
                           to={`/events/${event.id}`}
-                          style={{ flex: 1, textDecoration: "none", color: "inherit" }}
+                          style={{
+                            flex: 1,
+                            textDecoration: "none",
+                            color: "inherit",
+                          }}
                         >
                           <Group justify="space-between">
                             <Text truncate>
-                              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={16} /> <Text span fw={600}>{type?.label ?? event.type}</Text>{" "}
+                              <EventTypeIcon
+                                name={type?.icon ?? "IconCalendarEvent"}
+                                size={16}
+                              />{" "}
+                              <Text span fw={600}>
+                                {type?.label ?? event.type}
+                              </Text>{" "}
                               {event.opponent ? `vs ${event.opponent}` : ""}
                             </Text>
                             <Group gap="xs" wrap="nowrap">
                               {event.status !== "scheduled" && (
-                                <Badge size="sm" color={STATUS_COLOR[event.status]}>{event.status}</Badge>
+                                <Badge
+                                  size="sm"
+                                  color={STATUS_COLOR[event.status]}
+                                >
+                                  {event.status}
+                                </Badge>
                               )}
-                              {event.startTime && <Badge variant="light" color="gray">{event.startTime}</Badge>}
+                              {event.startTime && (
+                                <Badge variant="light" color="gray">
+                                  {event.startTime}
+                                </Badge>
+                              )}
                             </Group>
                           </Group>
                         </Link>

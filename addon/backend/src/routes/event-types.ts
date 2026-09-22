@@ -25,7 +25,8 @@ const EventTypeSchema = z.object({
     .transform(slugify)
     .refine((v) => v.length > 0, "Inserisci un nome valido per la chiave"),
   label: z.string().trim().min(1),
-  icon: z.string().trim().min(1).default("⚽"),
+  // Nome di un'icona Tabler (vedi frontend/src/components/EventTypeIcon.tsx).
+  icon: z.string().trim().min(1).default("IconBallFootball"),
   hasOpponent: z.boolean().default(false),
   sortOrder: z.number().int().default(0),
 });
@@ -99,7 +100,9 @@ router.put("/:id", (req: Request, res: Response) => {
       .prepare("SELECT 1 FROM event_types WHERE key = ? AND id <> ?")
       .get(e.key, idParse.data);
     if (duplicate) {
-      res.status(409).json({ error: `Esiste già un tipo con chiave "${e.key}"` });
+      res
+        .status(409)
+        .json({ error: `Esiste già un tipo con chiave "${e.key}"` });
       return;
     }
 
@@ -108,7 +111,8 @@ router.put("/:id", (req: Request, res: Response) => {
       .get(existing.key) as { n: number };
     if (inUse.n > 0) {
       res.status(409).json({
-        error: "Non puoi modificare la chiave di un tipo evento già usato da eventi esistenti",
+        error:
+          "Non puoi modificare la chiave di un tipo evento già usato da eventi esistenti",
       });
       return;
     }
@@ -121,7 +125,11 @@ router.put("/:id", (req: Request, res: Response) => {
     e.key ?? existing.key,
     e.label ?? existing.label,
     e.icon ?? existing.icon,
-    e.hasOpponent !== undefined ? (e.hasOpponent ? 1 : 0) : existing.has_opponent,
+    e.hasOpponent !== undefined
+      ? e.hasOpponent
+        ? 1
+        : 0
+      : existing.has_opponent,
     e.sortOrder ?? existing.sort_order,
     idParse.data,
   );

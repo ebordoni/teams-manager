@@ -4,12 +4,17 @@ import type { Event, EventTypeDef } from "../../types";
 
 function isNotFoundError(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
-  const candidate = error as { code?: unknown; response?: { status?: unknown } };
+  const candidate = error as {
+    code?: unknown;
+    response?: { status?: unknown };
+  };
   return candidate.code === 404 || candidate.response?.status === 404;
 }
 
 function eventResource(event: Event, type: EventTypeDef | undefined) {
-  const summary = `${type?.icon ?? "⚽"} ${type?.label ?? event.type}${
+  // Il campo `icon` contiene il nome di un'icona Tabler (es. "IconRun"): non è
+  // rappresentabile su Google Calendar, quindi il titolo usa solo l'etichetta.
+  const summary = `${type?.label ?? event.type}${
     event.opponent ? ` – ${event.opponent}` : ""
   }`;
   const details = [
@@ -19,8 +24,11 @@ function eventResource(event: Event, type: EventTypeDef | undefined) {
     event.meetingTime ? `Ritrovo: ${event.meetingTime}` : null,
     event.notes,
     "Gestito da GIPS Calcio",
-  ].filter(Boolean).join("\n");
-  const location = [event.location, event.address].filter(Boolean).join(" – ") || undefined;
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const location =
+    [event.location, event.address].filter(Boolean).join(" – ") || undefined;
 
   if (!event.startTime) {
     const nextDay = new Date(`${event.date}T12:00:00`);
@@ -38,7 +46,10 @@ function eventResource(event: Event, type: EventTypeDef | undefined) {
     summary,
     description: details,
     location,
-    start: { dateTime: `${event.date}T${event.startTime}:00`, timeZone: "Europe/Rome" },
+    start: {
+      dateTime: `${event.date}T${event.startTime}:00`,
+      timeZone: "Europe/Rome",
+    },
     end: {
       dateTime: `${event.date}T${event.endTime ?? event.startTime}:00`,
       timeZone: "Europe/Rome",
@@ -58,7 +69,11 @@ export async function upsertCalendarEvent(
 
   if (googleEventId) {
     try {
-      const updated = await calendar.events.update({ calendarId, eventId: googleEventId, requestBody });
+      const updated = await calendar.events.update({
+        calendarId,
+        eventId: googleEventId,
+        requestBody,
+      });
       if (updated.data.id) return updated.data.id;
     } catch (error) {
       if (!isNotFoundError(error)) throw error;
@@ -66,6 +81,7 @@ export async function upsertCalendarEvent(
   }
 
   const created = await calendar.events.insert({ calendarId, requestBody });
-  if (!created.data.id) throw new Error("Google Calendar non ha restituito l'id dell'evento");
+  if (!created.data.id)
+    throw new Error("Google Calendar non ha restituito l'id dell'evento");
   return created.data.id;
 }

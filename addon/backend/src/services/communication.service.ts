@@ -1,17 +1,5 @@
-import { getAuthorizedClient } from "./google/auth";
-import { createStyledDocument, replacePlaceholders } from "./google/docs";
-import { DocumentBuilder } from "./google/DocumentBuilder";
-import { documentStyles } from "./google/document-styles";
-import {
-  copyFile,
-  deleteFile,
-  ensureCommunicationsFolder,
-  makeShareableAndGetLink,
-  moveFileToFolder,
-} from "./google/drive";
-import { getSetting, SETTINGS_KEYS } from "./settings.service";
-import { getDb } from "../db/schema";
 import { rowToEvent, rowToEventTypeDef } from "../db/helpers";
+import { getDb } from "../db/schema";
 import type {
   CommunicationRow,
   Event,
@@ -20,6 +8,18 @@ import type {
   EventTypeDefRow,
   FormationRow,
 } from "../types";
+import { GoogleAuthRequiredError, withGoogleAuth } from "./google/auth";
+import { createStyledDocument, replacePlaceholders } from "./google/docs";
+import { documentStyles } from "./google/document-styles";
+import { DocumentBuilder } from "./google/DocumentBuilder";
+import {
+  copyFile,
+  deleteFile,
+  ensureCommunicationsFolder,
+  makeShareableAndGetLink,
+  moveFileToFolder,
+} from "./google/drive";
+import { getSetting, SETTINGS_KEYS } from "./settings.service";
 
 const FORMATION_SLOTS: Array<[string, string]> = [
   ["portiere", "Portiere"],
@@ -86,39 +86,70 @@ function getCallupNames(eventId: number): string[] {
 function getFormationLines(event: Event): string[] {
   if (!event.formationId) return [];
   const db = getDb();
-  const formation = db.prepare("SELECT * FROM formations WHERE id = ?").get(event.formationId) as FormationRow | undefined;
+  const formation = db
+    .prepare("SELECT * FROM formations WHERE id = ?")
+    .get(event.formationId) as FormationRow | undefined;
   if (!formation) return [];
-  const assignments = JSON.parse(formation.assignments) as Record<string, number | null>;
-  const playerIds = Object.values(assignments).filter((id): id is number => id !== null);
+  const assignments = JSON.parse(formation.assignments) as Record<
+    string,
+    number | null
+  >;
+  const playerIds = Object.values(assignments).filter(
+    (id): id is number => id !== null,
+  );
   if (playerIds.length === 0) return [];
-  const players = db.prepare(`SELECT id, name FROM players WHERE id IN (${playerIds.map(() => "?").join(", ")})`).all(...playerIds) as Array<{ id: number; name: string }>;
-  const playerNames = new Map(players.map((player) => [player.id, player.name]));
+  const players = db
+    .prepare(
+      `SELECT id, name FROM players WHERE id IN (${playerIds.map(() => "?").join(", ")})`,
+    )
+    .all(...playerIds) as Array<{ id: number; name: string }>;
+  const playerNames = new Map(
+    players.map((player) => [player.id, player.name]),
+  );
   const lineup = FORMATION_SLOTS.flatMap(([slot, label]) => {
-    const name = assignments[slot] ? playerNames.get(assignments[slot]!) : undefined;
+    const name = assignments[slot]
+      ? playerNames.get(assignments[slot]!)
+      : undefined;
     return name ? [`${label}: ${name}`] : [];
   });
-  return lineup.length ? [`FORMAZIONE · ${formation.name}`, ...lineup.map((item) => `- ${item}`)] : [];
+  return lineup.length
+    ? [`FORMAZIONE · ${formation.name}`, ...lineup.map((item) => `- ${item}`)]
+    : [];
 }
 
 function getAttendanceLines(eventId: number): string[] {
-  const rows = getDb().prepare(
-    `SELECT p.name AS name, a.status AS status
+  const rows = getDb()
+    .prepare(
+      `SELECT p.name AS name, a.status AS status
      FROM attendance a JOIN players p ON p.id = a.player_id
      WHERE a.event_id = ? ORDER BY p.name ASC`,
-  ).all(eventId) as Array<{ name: string; status: "present" | "absent" | "excused" }>;
+    )
+    .all(eventId) as Array<{
+    name: string;
+    status: "present" | "absent" | "excused";
+  }>;
   if (rows.length === 0) return [];
-  const labels = { present: "Presenti", absent: "Assenti", excused: "Giustificati" };
+  const labels = {
+    present: "Presenti",
+    absent: "Assenti",
+    excused: "Giustificati",
+  };
   return (["present", "absent", "excused"] as const).flatMap((status) => {
-    const names = rows.filter((row) => row.status === status).map((row) => row.name);
+    const names = rows
+      .filter((row) => row.status === status)
+      .map((row) => row.name);
     return names.length ? [`${labels[status]}: ${names.join(", ")}`] : [];
   });
 }
 
 function eventIcon(icon?: string): string {
-  return icon?.startsWith("Icon") ? "⚽" : icon ?? "⚽";
+  return icon?.startsWith("Icon") ? "⚽" : (icon ?? "⚽");
 }
 
-function formatEvent(event: Event, eventTypes: Map<string, EventTypeDef>): string {
+function formatEvent(
+  event: Event,
+  eventTypes: Map<string, EventTypeDef>,
+): string {
   const typeDef = eventTypes.get(event.type);
   const lines: string[] = [];
   const header = `${formatDateIt(event.date)} — ${(typeDef?.label ?? event.type).toUpperCase()}`;
@@ -156,7 +187,8 @@ function formatEvent(event: Event, eventTypes: Map<string, EventTypeDef>): strin
   const formation = getFormationLines(event);
   if (formation.length > 0) lines.push("", ...formation);
   const attendance = getAttendanceLines(event.id);
-  if (attendance.length > 0) lines.push("", "PRESENZE REGISTRATE", ...attendance);
+  if (attendance.length > 0)
+    lines.push("", "PRESENZE REGISTRATE", ...attendance);
 
   return lines.join("\n");
 }
@@ -170,7 +202,10 @@ function buildStyledDocument(
   const title = `GIPS Salizzole – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
   const builder = new DocumentBuilder()
     .addParagraph("GIPS SALIZZOLE", documentStyles.title)
-    .addParagraph(`Appuntamenti dal ${formatDateIt(sorted[0].date)}`, documentStyles.subtitle);
+    .addParagraph(
+      `Appuntamenti dal ${formatDateIt(sorted[0].date)}`,
+      documentStyles.subtitle,
+    );
 
   for (const event of sorted) {
     const typeDef = eventTypes.get(event.type);
@@ -178,7 +213,10 @@ function buildStyledDocument(
 
     builder
       .addParagraph(formatDateIt(event.date), documentStyles.date)
-      .addParagraph(`${eventIcon(typeDef?.icon)} ${eventLabel}`, documentStyles.event);
+      .addParagraph(
+        `${eventIcon(typeDef?.icon)} ${eventLabel}`,
+        documentStyles.event,
+      );
 
     if (event.status !== "scheduled") {
       const status = event.status === "cancelled" ? "ANNULLATO" : "MODIFICATO";
@@ -189,10 +227,18 @@ function buildStyledDocument(
     }
 
     if (typeDef?.hasOpponent && event.opponent) {
-      builder.addParagraph(`GIPS Salizzole – ${event.opponent}`, documentStyles.match);
+      builder.addParagraph(
+        `GIPS Salizzole – ${event.opponent}`,
+        documentStyles.match,
+      );
     }
-    if (event.location) builder.addParagraph(`📍 ${event.location}`, documentStyles.normal);
-    if (event.meetingTime) builder.addParagraph(`⏰ Ritrovo: ${event.meetingTime}`, documentStyles.normal);
+    if (event.location)
+      builder.addParagraph(`📍 ${event.location}`, documentStyles.normal);
+    if (event.meetingTime)
+      builder.addParagraph(
+        `⏰ Ritrovo: ${event.meetingTime}`,
+        documentStyles.normal,
+      );
     if (event.startTime) {
       builder.addParagraph(
         `⏰ Inizio: ${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}`,
@@ -215,7 +261,10 @@ function buildStyledDocument(
     const formation = getFormationLines(event);
     if (formation.length > 0) {
       builder.addParagraph(formation[0], documentStyles.match);
-      builder.addParagraph(formation.slice(1).join(" · "), documentStyles.normal);
+      builder.addParagraph(
+        formation.slice(1).join(" · "),
+        documentStyles.normal,
+      );
     }
     const attendance = getAttendanceLines(event.id);
     if (attendance.length > 0) {
@@ -247,14 +296,16 @@ function buildTemplatePlaceholders(
   const allenamenti = trainings.length
     ? trainings.map((e) => formatEvent(e, eventTypes)).join("\n\n---\n\n")
     : "Nessun allenamento in programma.";
-  const formazione = matches
-    .map((event) => getFormationLines(event).join("\n"))
-    .filter(Boolean)
-    .join("\n\n") || "Nessuna formazione associata.";
-  const presenze = sorted
-    .map((event) => getAttendanceLines(event.id).join("\n"))
-    .filter(Boolean)
-    .join("\n\n") || "Nessuna presenza registrata.";
+  const formazione =
+    matches
+      .map((event) => getFormationLines(event).join("\n"))
+      .filter(Boolean)
+      .join("\n\n") || "Nessuna formazione associata.";
+  const presenze =
+    sorted
+      .map((event) => getAttendanceLines(event.id).join("\n"))
+      .filter(Boolean)
+      .join("\n\n") || "Nessuna presenza registrata.";
 
   return {
     title,
@@ -281,10 +332,20 @@ export interface GeneratedCommunication {
   whatsappMessage: string;
 }
 
+/** La richiesta non è valida: nessun evento selezionato o id inesistenti. */
+export class CommunicationRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CommunicationRequestError";
+  }
+}
+
 /** Errore recuperabile: la comunicazione resta nello storico locale. */
 export class DriveDeletionError extends Error {
   constructor() {
-    super("Impossibile eliminare il documento da Google Drive. Riprova più tardi.");
+    super(
+      "Impossibile eliminare il documento da Google Drive. Riprova più tardi.",
+    );
     this.name = "DriveDeletionError";
   }
 }
@@ -303,7 +364,7 @@ export async function generateCommunication(
   eventIds: number[],
 ): Promise<GeneratedCommunication> {
   if (eventIds.length === 0) {
-    throw new Error("Seleziona almeno un evento");
+    throw new CommunicationRequestError("Seleziona almeno un evento");
   }
 
   const db = getDb();
@@ -312,31 +373,37 @@ export async function generateCommunication(
     .prepare(`SELECT * FROM events WHERE id IN (${placeholders})`)
     .all(...eventIds) as unknown as EventRow[];
   if (rows.length === 0) {
-    throw new Error("Nessun evento trovato per gli id forniti");
+    throw new CommunicationRequestError(
+      "Nessun evento trovato per gli id forniti",
+    );
   }
   const events = rows.map(rowToEvent);
   const eventTypes = loadEventTypes();
-
-  const auth = getAuthorizedClient();
   const templateDocId = getSetting(SETTINGS_KEYS.googleTemplateDocId);
 
-  let documentId: string;
-  let title: string;
+  const { documentId, title, url } = await withGoogleAuth(async (auth) => {
+    let documentId: string;
+    let title: string;
 
-  if (templateDocId) {
-    const built = buildTemplatePlaceholders(events, eventTypes);
-    title = built.title;
-    documentId = await copyFile(auth, templateDocId, title);
-    await replacePlaceholders(auth, documentId, built.replacements);
-  } else {
-    const built = buildStyledDocument(events, eventTypes);
-    title = built.title;
-    documentId = await createStyledDocument(auth, title, built.builder);
-  }
+    if (templateDocId) {
+      const built = buildTemplatePlaceholders(events, eventTypes);
+      title = built.title;
+      documentId = await copyFile(auth, templateDocId, title);
+      await replacePlaceholders(auth, documentId, built.replacements);
+    } else {
+      const built = buildStyledDocument(events, eventTypes);
+      title = built.title;
+      documentId = await createStyledDocument(auth, title, built.builder);
+    }
 
-  const folderId = await ensureCommunicationsFolder(auth);
-  await moveFileToFolder(auth, documentId, folderId);
-  const url = await makeShareableAndGetLink(auth, documentId);
+    const folderId = await ensureCommunicationsFolder(auth);
+    await moveFileToFolder(auth, documentId, folderId);
+    return {
+      documentId,
+      title,
+      url: await makeShareableAndGetLink(auth, documentId),
+    };
+  });
 
   const result = db
     .prepare(
@@ -368,13 +435,13 @@ export async function deleteCommunication(id: number): Promise<void> {
     .prepare("SELECT * FROM communications WHERE id = ?")
     .get(id) as CommunicationRow | undefined;
   if (!row) {
-    throw new Error("Comunicazione non trovata");
+    throw new CommunicationRequestError("Comunicazione non trovata");
   }
 
-  const auth = getAuthorizedClient();
   try {
-    await deleteFile(auth, row.google_doc_id);
+    await withGoogleAuth((auth) => deleteFile(auth, row.google_doc_id));
   } catch (err) {
+    if (err instanceof GoogleAuthRequiredError) throw err;
     // Il file potrebbe essere già stato rimosso manualmente da Drive: non
     // bloccare la pulizia dello storico locale solo in questo caso.
     if (!isGoogleNotFoundError(err)) {
@@ -384,7 +451,9 @@ export async function deleteCommunication(id: number): Promise<void> {
       );
       throw new DriveDeletionError();
     }
-    console.warn("[communications] File Drive già assente; pulisco lo storico locale");
+    console.warn(
+      "[communications] File Drive già assente; pulisco lo storico locale",
+    );
   }
 
   db.prepare("DELETE FROM communications WHERE id = ?").run(id);

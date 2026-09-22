@@ -57,15 +57,15 @@ Se il campo è vuoto, il documento viene generato automaticamente senza template
 
 ## Configurazione
 
-| Opzione                | Descrizione                                                          |
-| ---------------------- | --------------------------------------------------------------------- |
-| `google_client_id`     | Client ID OAuth 2.0 Google (necessario per le Comunicazioni)         |
-| `google_client_secret` | Client Secret OAuth 2.0 Google (necessario per le Comunicazioni)     |
-| `google_redirect_uri`  | Redirect URI OAuth (default: porta diretta `8101` dell'addon)        |
-| `ai_provider`          | Provider principale: `openai`, `google`, `anthropic`, `groq`, `xai` |
-| `ai_model`             | Modello opzionale; vuoto usa il predefinito del provider             |
-| `ai_api_key`           | Chiave del provider principale (campo protetto)                       |
-| `ai_fallback_providers`| Provider di riserva separati da virgola                               |
+| Opzione                 | Descrizione                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| `google_client_id`      | Client ID OAuth 2.0 Google (necessario per le Comunicazioni)        |
+| `google_client_secret`  | Client Secret OAuth 2.0 Google (necessario per le Comunicazioni)    |
+| `google_redirect_uri`   | Redirect URI OAuth (default: porta diretta `8101` dell'addon)       |
+| `ai_provider`           | Provider principale: `openai`, `google`, `anthropic`, `groq`, `xai` |
+| `ai_model`              | Modello opzionale; vuoto usa il predefinito del provider            |
+| `ai_api_key`            | Chiave del provider principale (campo protetto)                     |
+| `ai_fallback_providers` | Provider di riserva separati da virgola                             |
 
 Per usare provider diversi come fallback configura anche le rispettive opzioni protette:
 `openai_api_key`, `google_ai_api_key`, `anthropic_api_key`, `groq_api_key`, `xai_api_key`.
@@ -84,5 +84,19 @@ valori predefiniti e verificare la connessione.
 
 > Il redirect deve passare dalla porta diretta `8101` (non dall'iframe Ingress), per questo
 > l'addon espone anche quella porta oltre all'integrazione in sidebar.
+
+### "Il collegamento Google non è più valido" (errore `invalid_grant`)
+
+Google invalida il consenso salvato — e l'app chiede di ricollegare l'account — nei casi seguenti:
+
+- l'app OAuth è rimasta in stato **Testing** sulla schermata di consenso: in questa modalità i
+  refresh token **scadono dopo 7 giorni**. Pubblica l'app ("In produzione") per un uso continuativo;
+- il Client ID/Secret nelle opzioni dell'addon è stato cambiato dopo il collegamento;
+- l'accesso è stato revocato dal tuo account Google (myaccount.google.com → Sicurezza → App con
+  accesso al tuo account);
+- l'orologio del sistema Home Assistant è molto sfasato.
+
+In tutti questi casi basta aprire **Impostazioni → Collega Google** e completare di nuovo il
+consenso: il vecchio token viene rimosso automaticamente.
 
 I dati (SQLite) sono salvati in `/data` e inclusi nei backup di Home Assistant.

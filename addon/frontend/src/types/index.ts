@@ -58,7 +58,12 @@ export interface Communication {
   createdAt: string;
 }
 
-export interface GeneratedCommunication extends Communication {
+/** Risposta di POST /api/communications: non include eventIds/createdAt. */
+export interface GeneratedCommunication {
+  id: number;
+  title: string;
+  googleDocId: string;
+  googleDocUrl: string;
   whatsappMessage: string;
 }
 
@@ -68,6 +73,8 @@ export interface Attendance {
   playerId: number;
   playerName: string;
   status: AttendanceStatus;
+  /** false quando lo stato è solo il default proposto e non è mai stato salvato */
+  recorded: boolean;
 }
 
 export interface EventFilters {
@@ -75,7 +82,13 @@ export interface EventFilters {
   to?: string;
   type?: EventType;
 }
-export interface Formation { id: number; name: string; system: string; assignments: Record<string, number | null>; createdAt: string; }
+export interface Formation {
+  id: number;
+  name: string;
+  system: string;
+  assignments: Record<string, number | null>;
+  createdAt: string;
+}
 
 export type AIProvider = "openai" | "google" | "anthropic" | "groq" | "xai";
 export type RolePolicy = "strict" | "preferred" | "free";
@@ -90,11 +103,31 @@ export interface AIConfig {
   defaultPlayersOnField: number;
   defaultRolePolicy: RolePolicy;
 }
-export interface MatchPeriodAssignment { slot: string; playerId: number; role: string; }
-export interface MatchPeriod { periodNumber: number; assignments: MatchPeriodAssignment[]; benchPlayerIds: number[]; }
+export interface MatchPeriodAssignment {
+  slot: string;
+  playerId: number;
+  role: string;
+}
+export interface MatchPeriod {
+  periodNumber: number;
+  assignments: MatchPeriodAssignment[];
+  benchPlayerIds: number[];
+}
 export interface MatchPlan {
-  id: number; eventId: number; name: string; periodCount: number; minutesPerPeriod: number;
-  playersOnField: number; system: string; rolePolicy: RolePolicy; source: "ai" | "fallback" | "manual";
-  provider: string | null; model: string | null; status: "draft" | "confirmed";
-  warnings: string[]; periods: MatchPeriod[]; createdAt: string; updatedAt: string;
+  id: number;
+  eventId: number;
+  name: string;
+  periodCount: number;
+  minutesPerPeriod: number;
+  playersOnField: number;
+  system: string;
+  rolePolicy: RolePolicy;
+  source: "ai" | "fallback" | "manual";
+  provider: string | null;
+  model: string | null;
+  status: "draft" | "confirmed";
+  warnings: string[];
+  periods: MatchPeriod[];
+  createdAt: string;
+  updatedAt: string;
 }

@@ -15,7 +15,10 @@ import {
 import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { EventTypeIcon, EventTypeIconPicker } from "../components/EventTypeIcon";
+import {
+  EventTypeIcon,
+  EventTypeIconPicker,
+} from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
 import type { EventTypeDef, GoogleStatus } from "../types";
 
@@ -112,14 +115,16 @@ export default function Settings() {
       await api.createEventType({
         key,
         label,
-        icon: newType.icon.trim() || "⚽",
+        icon: newType.icon.trim() || "IconBallFootball",
         hasOpponent: newType.hasOpponent,
         sortOrder: eventTypes.length,
       });
       setNewType({ label: "", icon: "IconBallFootball", hasOpponent: false });
       loadAll();
     } catch (err) {
-      setTypeError(apiErrorMessage(err, "Errore durante la creazione del tipo"));
+      setTypeError(
+        apiErrorMessage(err, "Errore durante la creazione del tipo"),
+      );
     }
   }
 
@@ -135,13 +140,15 @@ export default function Settings() {
     try {
       await api.updateEventType(editingType.id, {
         label: editingType.label.trim(),
-        icon: editingType.icon.trim() || "⚽",
+        icon: editingType.icon.trim() || "IconBallFootball",
         hasOpponent: editingType.hasOpponent,
       });
       setEditingType(null);
       loadAll();
     } catch (err) {
-      setTypeError(apiErrorMessage(err, "Errore durante il salvataggio del tipo"));
+      setTypeError(
+        apiErrorMessage(err, "Errore durante il salvataggio del tipo"),
+      );
     }
   }
 
@@ -173,7 +180,9 @@ export default function Settings() {
   async function handleSaveCalendar() {
     setSavingCalendar(true);
     try {
-      await api.updateSettings({ googleCalendarId: calendarId.trim() || "primary" });
+      await api.updateSettings({
+        googleCalendarId: calendarId.trim() || "primary",
+      });
       setCalendarId(calendarId.trim() || "primary");
     } finally {
       setSavingCalendar(false);
@@ -197,8 +206,7 @@ export default function Settings() {
           {!status?.configured && (
             <Alert color="orange" title="Configurazione mancante">
               Client ID/Secret Google non configurati: impostali nelle opzioni
-              dell'addon (Impostazioni → Add-on → GIPS Calcio →
-              Configurazione).
+              dell'addon (Impostazioni → Add-on → GIPS Calcio → Configurazione).
             </Alert>
           )}
 
@@ -231,7 +239,8 @@ export default function Settings() {
           )}
           {status?.connected && !status.calendarConnected && (
             <Alert color="blue" title="Autorizzazione Calendar necessaria">
-              Ricollega Google per abilitare l'esportazione unidirezionale degli eventi su Google Calendar.
+              Ricollega Google per abilitare l'esportazione unidirezionale degli
+              eventi su Google Calendar.
             </Alert>
           )}
         </Stack>
@@ -241,17 +250,23 @@ export default function Settings() {
         <Stack gap="sm">
           <Title order={5}>Google Calendar</Title>
           <Text size="sm" c="dimmed">
-            Gli eventi selezionati nel calendario vengono esportati e aggiornati nel calendario indicato. Non importiamo né eliminiamo eventi da Google Calendar.
+            Gli eventi selezionati nel calendario vengono esportati e aggiornati
+            nel calendario indicato. Non importiamo né eliminiamo eventi da
+            Google Calendar.
           </Text>
           <Group align="flex-end">
             <TextInput
               label="ID calendario"
-              description={'Usa "primary" per il calendario principale, oppure l\'ID di un calendario condiviso.'}
+              description={
+                'Usa "primary" per il calendario principale, oppure l\'ID di un calendario condiviso.'
+              }
               value={calendarId}
               onChange={(e) => setCalendarId(e.currentTarget.value)}
               style={{ flex: 1 }}
             />
-            <Button onClick={handleSaveCalendar} loading={savingCalendar}>Salva</Button>
+            <Button onClick={handleSaveCalendar} loading={savingCalendar}>
+              Salva
+            </Button>
           </Group>
         </Stack>
       </Card>
@@ -263,8 +278,9 @@ export default function Settings() {
             Incolla il link (o l'id) di un Google Doc con i placeholder{" "}
             <code>{"{{TITOLO}}"}</code>, <code>{"{{SETTIMANA}}"}</code>,{" "}
             <code>{"{{PARTITE}}"}</code>, <code>{"{{ALLENAMENTI}}"}</code>,{" "}
-            <code>{"{{FORMAZIONI}}"}</code> e <code>{"{{PRESENZE}}"}</code>.
-            Se lasciato vuoto, il documento viene generato automaticamente senza template.
+            <code>{"{{FORMAZIONI}}"}</code> e <code>{"{{PRESENZE}}"}</code>. Se
+            lasciato vuoto, il documento viene generato automaticamente senza
+            template.
           </Text>
           <Group align="flex-end">
             <TextInput
@@ -294,8 +310,8 @@ export default function Settings() {
           <Text size="sm" c="dimmed">
             Gestisci i tipi disponibili nel calendario (es. Allenamento,
             Partita, Torneo, Amichevole…). "Ha avversario" mostra il campo
-            avversario e le convocazioni per quel tipo. L’icona è ricercabile
-            e viene mostrata in anteprima prima del salvataggio.
+            avversario e le convocazioni per quel tipo. L’icona è ricercabile e
+            viene mostrata in anteprima prima del salvataggio.
           </Text>
 
           {typeError && (
@@ -349,23 +365,43 @@ export default function Settings() {
                       label="Nome"
                       required
                       value={editingType.label}
-                      onChange={(e) => setEditingType({ ...editingType, label: e.currentTarget.value })}
+                      onChange={(e) =>
+                        setEditingType({
+                          ...editingType,
+                          label: e.currentTarget.value,
+                        })
+                      }
                       style={{ flex: 1 }}
                     />
                     <EventTypeIconPicker
                       label="Icona"
                       value={editingType.icon}
-                      onChange={(icon) => setEditingType({ ...editingType, icon: icon ?? "IconBallFootball" })}
+                      onChange={(icon) =>
+                        setEditingType({
+                          ...editingType,
+                          icon: icon ?? "IconBallFootball",
+                        })
+                      }
                       style={{ width: 180 }}
                     />
                     <Checkbox
                       label="Ha avversario"
                       mb={8}
                       checked={editingType.hasOpponent}
-                      onChange={(e) => setEditingType({ ...editingType, hasOpponent: e.currentTarget.checked })}
+                      onChange={(e) =>
+                        setEditingType({
+                          ...editingType,
+                          hasOpponent: e.currentTarget.checked,
+                        })
+                      }
                     />
                     <Button type="submit">Salva</Button>
-                    <Button variant="subtle" onClick={() => setEditingType(null)}>Annulla</Button>
+                    <Button
+                      variant="subtle"
+                      onClick={() => setEditingType(null)}
+                    >
+                      Annulla
+                    </Button>
                   </Group>
                 </Stack>
               </Card>
@@ -394,7 +430,9 @@ export default function Settings() {
               <EventTypeIconPicker
                 label="Icona"
                 value={newType.icon}
-                onChange={(icon) => setNewType({ ...newType, icon: icon ?? "IconBallFootball" })}
+                onChange={(icon) =>
+                  setNewType({ ...newType, icon: icon ?? "IconBallFootball" })
+                }
                 style={{ width: 180 }}
               />
               <Checkbox

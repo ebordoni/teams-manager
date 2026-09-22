@@ -79,6 +79,8 @@ export interface Attendance {
   playerId: number;
   playerName: string;
   status: AttendanceStatus;
+  /** false quando lo stato è solo il default proposto e non è mai stato salvato */
+  recorded: boolean;
 }
 
 export interface GoogleTokensRow {
@@ -132,8 +134,20 @@ export interface AppSettingRow {
   value: string | null;
 }
 
-export interface FormationRow { id: number; name: string; system: string; assignments: string; created_at: string; }
-export interface Formation { id: number; name: string; system: string; assignments: Record<string, number | null>; createdAt: string; }
+export interface FormationRow {
+  id: number;
+  name: string;
+  system: string;
+  assignments: string;
+  created_at: string;
+}
+export interface Formation {
+  id: number;
+  name: string;
+  system: string;
+  assignments: Record<string, number | null>;
+  createdAt: string;
+}
 
 export type AIProvider = "openai" | "google" | "anthropic" | "groq" | "xai";
 export type RolePolicy = "strict" | "preferred" | "free";

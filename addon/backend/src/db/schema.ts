@@ -85,7 +85,7 @@ const SCHEMA_V1 = `
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     key          TEXT    NOT NULL UNIQUE,
     label        TEXT    NOT NULL,
-    icon         TEXT    NOT NULL DEFAULT '\u26bd',
+    icon         TEXT    NOT NULL DEFAULT 'IconBallFootball',
     has_opponent INTEGER NOT NULL DEFAULT 0,
     sort_order   INTEGER NOT NULL DEFAULT 0
   );
@@ -150,7 +150,11 @@ export function initDb(): void {
   db = new DatabaseSync(dbPath);
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA_V1);
-  ensureColumn("events", "formation_id", "INTEGER REFERENCES formations(id) ON DELETE SET NULL");
+  ensureColumn(
+    "events",
+    "formation_id",
+    "INTEGER REFERENCES formations(id) ON DELETE SET NULL",
+  );
   seedDefaultEventTypes();
 
   console.log(`[db] SQLite ready at ${dbPath}`);
@@ -158,13 +162,18 @@ export function initDb(): void {
 
 function ensureColumn(table: string, column: string, definition: string): void {
   const database = getDb();
-  const columns = database.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
-  if (!columns.some((item) => item.name === column)) database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  const columns = database
+    .prepare(`PRAGMA table_info(${table})`)
+    .all() as Array<{ name: string }>;
+  if (!columns.some((item) => item.name === column))
+    database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
 function seedDefaultEventTypes(): void {
   const database = getDb();
-  const count = database.prepare("SELECT COUNT(*) AS n FROM event_types").get() as {
+  const count = database
+    .prepare("SELECT COUNT(*) AS n FROM event_types")
+    .get() as {
     n: number;
   };
   if (count.n > 0) return;
