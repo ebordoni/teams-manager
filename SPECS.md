@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.8.0)** — le funzionalità core, le formazioni 7vs7 e le comunicazioni contestuali sono completate; restano le estensioni di roadmap.
+> Stato attuale: **MVP operativo (v0.9.0)** — le funzionalità core, le formazioni 7vs7, le comunicazioni contestuali e i controlli di qualità sono completati; restano le estensioni di roadmap.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -326,4 +326,4 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 - statistiche avanzate (formazioni, minutaggio, risultati)
 - archivio allenamenti (temi, esercizi)
 - gestione tornei e classifiche
-- code-splitting del bundle frontend (bundle attuale >500kB, vedi warning build Vite)
+- ulteriori test di integrazione per i flussi Google (richiedono credenziali esterne)

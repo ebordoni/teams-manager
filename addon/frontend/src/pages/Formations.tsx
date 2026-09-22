@@ -1,7 +1,8 @@
-import { ActionIcon, Alert, Badge, Box, Button, Card, Group, Loader, Select, SimpleGrid, Stack, Text, TextInput, Title } from "@mantine/core";
+import { ActionIcon, Alert, Badge, Box, Button, Card, Group, Select, SimpleGrid, Stack, Text, TextInput, Title } from "@mantine/core";
 import { IconCopy, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import PageLoader from "../components/PageLoader";
 import type { Formation, Player } from "../types";
 
 const slots = [
@@ -52,7 +53,7 @@ export default function Formations() {
   const edit = (formation: Formation) => { setEditingId(formation.id); setName(formation.name); setAssignments(formationAssignments(formation.assignments)); setError(null); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const duplicate = async (formation: Formation) => { setError(null); try { await api.createFormation({ name: `Copia di ${formation.name}`, assignments: formationAssignments(formation.assignments) }); await load(); } catch (err) { setError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Impossibile duplicare la formazione"); } };
   const remove = async (formation: Formation) => { if (!window.confirm(`Eliminare la formazione “${formation.name}”? Gli eventi collegati resteranno disponibili senza formazione.`)) return; await api.deleteFormation(formation.id); if (editingId === formation.id) reset(); await load(); };
-  if (loading) return <Loader />;
+  if (loading) return <PageLoader />;
   return <Stack gap="lg">
     <div><Title order={3}>Formazioni</Title><Text c="dimmed" size="sm">Prepara gli schieramenti 7vs7 nello schema 2-3-1 e riutilizzali nella partita.</Text></div>
     <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">

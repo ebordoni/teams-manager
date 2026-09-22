@@ -28,12 +28,13 @@ export default function Layout() {
       header={{ height: 56 }}
       navbar={{ width: 230, breakpoint: "sm", collapsed: { mobile: !opened } }}
       padding="md"
+      styles={{ main: { minWidth: 0 } }}
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group gap="xs">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Title order={3}>⚽ GIPS Calcio</Title>
+            <Title order={3} fz={{ base: "h4", sm: "h3" }}>⚽ GIPS Calcio</Title>
           </Group>
         </Group>
       </AppShell.Header>

@@ -27,7 +27,8 @@ function resolveVersion(): string {
 }
 const APP_VERSION = resolveVersion();
 
-const app = express();
+export function createApp() {
+  const app = express();
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "5mb" }));
@@ -99,13 +100,20 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: "Internal server error" });
 });
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────
-initDb();
+  return app;
+}
 
-app.listen(config.port, () => {
-  console.log(
-    `[server] GIPS Calcio running on port ${config.port} (${process.env.NODE_ENV ?? "development"})`,
-  );
-});
+export const app = createApp();
+
+export function startServer() {
+  initDb();
+  return app.listen(config.port, () => {
+    console.log(
+      `[server] GIPS Calcio running on port ${config.port} (${process.env.NODE_ENV ?? "development"})`,
+    );
+  });
+}
+
+if (require.main === module) startServer();
 
 export default app;

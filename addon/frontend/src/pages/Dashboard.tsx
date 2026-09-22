@@ -1,9 +1,10 @@
-import { Alert, Badge, Button, Card, Center, Group, Loader, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core";
+import { Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import { IconCalendarPlus, IconClipboardCheck, IconFileText, IconLayoutList, IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
+import PageLoader from "../components/PageLoader";
 import type { Attendance, Callup, Communication, EventTypeDef, Player, TeamEvent } from "../types";
 
 type EventChecklist = { callups: Callup[]; attendance: Attendance[] };
@@ -15,10 +16,12 @@ export default function Dashboard() {
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [checklist, setChecklist] = useState<EventChecklist | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setError(null);
       try {
         const today = new Date().toISOString().slice(0, 10);
         const [playersRes, eventsRes, typesRes, communicationsRes] = await Promise.all([
@@ -33,12 +36,14 @@ export default function Dashboard() {
           const [callupsRes, attendanceRes] = await Promise.all([api.getCallups(events[0].id), api.getAttendance(events[0].id)]);
           setChecklist({ callups: callupsRes.data, attendance: attendanceRes.data });
         } else setChecklist(null);
+      } catch {
+        setError("Impossibile caricare la panoramica della squadra. Riprova tra poco.");
       } finally { setLoading(false); }
     };
     void load();
   }, []);
 
-  if (loading) return <Center py="xl"><Loader /></Center>;
+  if (loading) return <PageLoader />;
   const nextEvent = upcomingEvents[0];
   const typeOf = (key: string) => eventTypes.find((type) => type.key === key);
   const calledUpCount = checklist?.callups.filter((callup) => callup.calledUp).length ?? 0;
@@ -47,6 +52,7 @@ export default function Dashboard() {
 
   return <Stack gap="lg">
     <div><Title order={3}>Gestione squadra</Title><Text c="dimmed">Una vista operativa per preparare il prossimo appuntamento.</Text></div>
+    {error && <Alert color="red" title="Caricamento non riuscito">{error}</Alert>}
     <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
       <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Giocatori</Text><Text size="xl" fw={700}>{players.length}</Text></div><ThemeIcon variant="light" color="blue" size="lg"><IconUsersGroup /></ThemeIcon></Group></Card>
       <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Prossimo evento</Text><Text size="lg" fw={700}>{nextEvent ? nextEvent.date : "—"}</Text></div><ThemeIcon variant="light" color="green" size="lg"><IconClipboardCheck /></ThemeIcon></Group></Card>

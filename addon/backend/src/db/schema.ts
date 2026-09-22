@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import path from "path";
 import { config } from "../config";
 
-let db: DatabaseSync;
+let db: DatabaseSync | undefined;
 
 const SCHEMA_V1 = `
   CREATE TABLE IF NOT EXISTS schema_version (
@@ -128,17 +128,19 @@ export function initDb(): void {
 }
 
 function ensureColumn(table: string, column: string, definition: string): void {
-  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
-  if (!columns.some((item) => item.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  const database = getDb();
+  const columns = database.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (!columns.some((item) => item.name === column)) database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
 function seedDefaultEventTypes(): void {
-  const count = db.prepare("SELECT COUNT(*) AS n FROM event_types").get() as {
+  const database = getDb();
+  const count = database.prepare("SELECT COUNT(*) AS n FROM event_types").get() as {
     n: number;
   };
   if (count.n > 0) return;
 
-  const insert = db.prepare(
+  const insert = database.prepare(
     `INSERT INTO event_types (key, label, icon, has_opponent, sort_order)
      VALUES (?, ?, ?, ?, ?)`,
   );
@@ -152,4 +154,10 @@ export function getDb(): DatabaseSync {
     throw new Error("Database not initialized — call initDb() first");
   }
   return db;
+}
+
+/** Chiude il database, utile per i test e per uno shutdown controllato. */
+export function closeDb(): void {
+  db?.close();
+  db = undefined;
 }

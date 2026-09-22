@@ -6,7 +6,6 @@ import {
   Card,
   Checkbox,
   Group,
-  Loader,
   Select,
   SimpleGrid,
   Stack,
@@ -19,6 +18,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
+import PageLoader from "../components/PageLoader";
 import type {
   Attendance,
   AttendanceStatus,
@@ -177,7 +177,7 @@ export default function EventDetail() {
     navigate("/calendar");
   }
 
-  if (loading) return <Loader />;
+  if (loading) return <PageLoader />;
   if (!event) return <Text c="dimmed">Evento non trovato.</Text>;
 
   const type = eventTypes.find((t) => t.key === event.type);

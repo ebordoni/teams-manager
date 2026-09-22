@@ -3,4 +3,8 @@
 body {
   margin: 0;
   font-family: Roboto, Arial, sans-serif;
+  min-width: 320px;
+  -webkit-font-smoothing: antialiased;
 }
+
+button, a { -webkit-tap-highlight-color: transparent; }

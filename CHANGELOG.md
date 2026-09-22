@@ -7,6 +7,18 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.0] — 2026-09-22
+
+### Aggiunto
+
+- Pagine frontend caricate su richiesta, schermata di caricamento uniforme e boundary di recupero dagli errori di rendering.
+- Smoke test API eseguiti in CI: healthcheck, flusso giocatore/evento/convocazione e validazione del tipo evento.
+
+### Modificato
+
+- Bundle frontend suddiviso per pagina e libreria: eliminato il warning di build sul chunk oltre 500 kB e migliorata la fruizione iniziale su mobile.
+- Avvio del server separato dalla costruzione dell'app Express, con chiusura esplicita della connessione SQLite per test e shutdown ordinati.
+
 ## [0.8.0] — 2026-09-22
 
 ### Aggiunto

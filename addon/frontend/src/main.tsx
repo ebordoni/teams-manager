@@ -5,16 +5,19 @@ import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 import "./index.css";
 
 const theme = {
   primaryColor: "green",
-  fontFamily: "system-ui, -apple-system, sans-serif",
+  fontFamily: "Roboto, Arial, sans-serif",
 };
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <MantineProvider theme={theme} defaultColorScheme="auto">
-    <Notifications position="top-right" />
-    <App />
-  </MantineProvider>,
+  <AppErrorBoundary>
+    <MantineProvider theme={theme} defaultColorScheme="auto">
+      <Notifications position="top-right" />
+      <App />
+    </MantineProvider>
+  </AppErrorBoundary>,
 );

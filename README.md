@@ -4,7 +4,7 @@
 
 **Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le convocazioni della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
 
-[![Version](https://img.shields.io/badge/version-0.8.0-blue)](addon/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.0-blue)](addon/CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Home%20Assistant-41BDF5)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20aarch64-lightgrey)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
@@ -13,7 +13,7 @@
 
 ---
 
-> ✅ **Stato: MVP operativo (v0.8.0).** Calendario, giocatori, convocazioni, presenze, formazioni e comunicazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
+> ✅ **Stato: MVP operativo (v0.9.0).** Calendario, giocatori, convocazioni, presenze, formazioni e comunicazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
 
 ## 🎯 Obiettivo
 

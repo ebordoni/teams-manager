@@ -11,8 +11,8 @@ npm ci --prefix addon/frontend
 npm run check
 ```
 
-`npm run check` verifica l'allineamento delle versioni e compila backend e
-frontend. La CI esegue gli stessi controlli e costruisce l'immagine Docker
+`npm run check` verifica l'allineamento delle versioni, esegue gli smoke test
+API e compila backend e frontend. La CI esegue gli stessi controlli e costruisce l'immagine Docker
 dell'add-on.
 
 ## Versioni, changelog e commit

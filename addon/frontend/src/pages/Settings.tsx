@@ -7,7 +7,6 @@ import {
   Checkbox,
   Divider,
   Group,
-  Loader,
   Stack,
   Select,
   Text,
@@ -18,6 +17,7 @@ import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { EventTypeIcon, eventTypeIconOptions } from "../components/EventTypeIcon";
+import PageLoader from "../components/PageLoader";
 import type { EventTypeDef, GoogleStatus } from "../types";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -181,7 +181,7 @@ export default function Settings() {
     }
   }
 
-  if (loading) return <Loader />;
+  if (loading) return <PageLoader />;
 
   return (
     <Stack gap="xl">

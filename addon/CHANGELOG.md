@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.0] - 2026-09-22
+
+### Added
+
+- Caricamento lazy delle pagine, indicatore uniforme e recupero da errori di rendering.
+- Smoke test API integrati nel comando di qualità e nella CI.
+
+### Changed
+
+- Bundle frontend diviso per pagina e libreria, senza warning per chunk oltre 500 kB; avvio Express e database resi testabili e chiudibili correttamente.
+
 ## [0.8.0] - 2026-09-22
 
 ### Added
