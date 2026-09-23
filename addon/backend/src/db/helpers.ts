@@ -15,6 +15,13 @@ export function rowToPlayer(row: PlayerRow): Player {
     name: row.name,
     role: row.role,
     secondaryRoles: JSON.parse(row.secondary_roles) as string[],
+    preferredFoot: row.preferred_foot,
+    fitness: row.fitness,
+    speed: row.speed,
+    technique: row.technique,
+    shooting: row.shooting,
+    defending: row.defending,
+    attacking: row.attacking,
     notes: row.notes,
     createdAt: row.created_at,
   };

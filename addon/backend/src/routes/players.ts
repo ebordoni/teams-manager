@@ -10,6 +10,13 @@ const PlayerSchema = z.object({
   name: z.string().trim().min(1),
   role: z.string().trim().optional().nullable(),
   secondaryRoles: z.array(z.string()).optional().default([]),
+  preferredFoot: z.enum(["right", "left", "both"]).optional(),
+  fitness: z.number().int().min(0).max(100).optional(),
+  speed: z.number().int().min(0).max(100).optional(),
+  technique: z.number().int().min(0).max(100).optional(),
+  shooting: z.number().int().min(0).max(100).optional(),
+  defending: z.number().int().min(0).max(100).optional(),
+  attacking: z.number().int().min(0).max(100).optional(),
   notes: z.string().optional().nullable(),
 });
 
@@ -42,13 +49,15 @@ router.post("/", (req: Request, res: Response) => {
     res.status(400).json({ error: parse.error.flatten() });
     return;
   }
-  const { name, role, secondaryRoles, notes } = parse.data;
+  const { name, role, secondaryRoles, preferredFoot, fitness, speed, technique, shooting, defending, attacking, notes } = parse.data;
   const db = getDb();
   const result = db
     .prepare(
-      "INSERT INTO players (name, role, secondary_roles, notes) VALUES (?, ?, ?, ?)",
+      `INSERT INTO players
+        (name, role, secondary_roles, preferred_foot, fitness, speed, technique, shooting, defending, attacking, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(name, role ?? null, JSON.stringify(secondaryRoles), notes ?? null);
+    .run(name, role ?? null, JSON.stringify(secondaryRoles), preferredFoot ?? "both", fitness ?? 50, speed ?? 50, technique ?? 50, shooting ?? 50, defending ?? 50, attacking ?? 50, notes ?? null);
 
   const row = db
     .prepare("SELECT * FROM players WHERE id = ?")
@@ -72,13 +81,22 @@ router.put("/:id", (req: Request, res: Response) => {
     return;
   }
 
-  const { name, role, secondaryRoles, notes } = parse.data;
+  const { name, role, secondaryRoles, preferredFoot, fitness, speed, technique, shooting, defending, attacking, notes } = parse.data;
   db.prepare(
-    "UPDATE players SET name = ?, role = ?, secondary_roles = ?, notes = ? WHERE id = ?",
+    `UPDATE players SET name = ?, role = ?, secondary_roles = ?, preferred_foot = ?,
+      fitness = ?, speed = ?, technique = ?, shooting = ?, defending = ?, attacking = ?, notes = ?
+     WHERE id = ?`,
   ).run(
     name ?? existing.name,
     role !== undefined ? role : existing.role,
     secondaryRoles ? JSON.stringify(secondaryRoles) : existing.secondary_roles,
+    preferredFoot ?? existing.preferred_foot,
+    fitness ?? existing.fitness,
+    speed ?? existing.speed,
+    technique ?? existing.technique,
+    shooting ?? existing.shooting,
+    defending ?? existing.defending,
+    attacking ?? existing.attacking,
     notes !== undefined ? notes : existing.notes,
     req.params.id,
   );

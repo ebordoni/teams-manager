@@ -1,11 +1,15 @@
 import {
   ActionIcon,
+  Badge,
   Button,
   Card,
   Collapse,
   Group,
   Loader,
   MultiSelect,
+  NumberInput,
+  Select,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -15,202 +19,97 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { Player } from "../types";
+import type { Player, PreferredFoot } from "../types";
+
+const ROLES = ["Portiere", "Difensore", "Centrocampista", "Esterno", "Attaccante"];
+const FOOT_OPTIONS = [
+  { value: "right", label: "Destro" },
+  { value: "left", label: "Sinistro" },
+  { value: "both", label: "Ambidestro" },
+];
+const FOOT_LABEL: Record<PreferredFoot, string> = { right: "Destro", left: "Sinistro", both: "Ambidestro" };
+const SKILLS = [
+  ["fitness", "Forma fisica"], ["speed", "Velocità"], ["technique", "Tecnica"],
+  ["shooting", "Tiro"], ["defending", "Difesa"], ["attacking", "Attacco"],
+] as const;
+
+type PlayerDraft = Pick<Player, "name" | "role" | "secondaryRoles" | "preferredFoot" | "fitness" | "speed" | "technique" | "shooting" | "defending" | "attacking" | "notes">;
+const EMPTY_PLAYER: PlayerDraft = { name: "", role: null, secondaryRoles: [], preferredFoot: "both", fitness: 50, speed: 50, technique: 50, shooting: 50, defending: 50, attacking: 50, notes: null };
+
+function numericValue(value: string | number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function PlayerFields({ value, onChange, includeNotes = false }: { value: PlayerDraft; onChange: (next: PlayerDraft) => void; includeNotes?: boolean }) {
+  const roles = [value.role, ...value.secondaryRoles].filter(Boolean) as string[];
+  return <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+    <TextInput label="Nome" required value={value.name} onChange={(event) => onChange({ ...value, name: event.currentTarget.value })} />
+    <MultiSelect label="Ruoli" data={ROLES} value={roles} onChange={(nextRoles) => onChange({ ...value, role: nextRoles[0] ?? null, secondaryRoles: nextRoles.slice(1) })} searchable />
+    <Select label="Piede preferito" data={FOOT_OPTIONS} value={value.preferredFoot} onChange={(preferredFoot) => onChange({ ...value, preferredFoot: (preferredFoot ?? "both") as PreferredFoot })} allowDeselect={false} />
+    {SKILLS.map(([key, label]) => <NumberInput key={key} label={label} description="0–100" value={value[key]} min={0} max={100} clampBehavior="strict" onChange={(nextValue) => onChange({ ...value, [key]: numericValue(nextValue) })} />)}
+    {includeNotes && <TextInput label="Note" value={value.notes ?? ""} onChange={(event) => onChange({ ...value, notes: event.currentTarget.value || null })} />}
+  </SimpleGrid>;
+}
 
 export default function Players() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [roles, setRoles] = useState<string[]>([]);
+  const [draft, setDraft] = useState<PlayerDraft>(EMPTY_PLAYER);
   const [editing, setEditing] = useState<Player | null>(null);
-  const [showForm, { toggle: toggleForm, close: closeForm }] =
-    useDisclosure(false);
+  const [showForm, { toggle: toggleForm, close: closeForm }] = useDisclosure(false);
 
   function loadPlayers() {
     setLoading(true);
-    api
-      .getPlayers()
-      .then((res) => setPlayers(res.data))
-      .finally(() => setLoading(false));
+    api.getPlayers().then((res) => setPlayers(res.data)).finally(() => setLoading(false));
   }
 
-  useEffect(() => {
-    loadPlayers();
-  }, []);
+  useEffect(() => { loadPlayers(); }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    await api.createPlayer({
-      name: name.trim(),
-      role: roles[0] ?? null,
-      secondaryRoles: roles.slice(1),
-    });
-    setName("");
-    setRoles([]);
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!draft.name.trim()) return;
+    await api.createPlayer({ ...draft, name: draft.name.trim() });
+    setDraft(EMPTY_PLAYER);
     closeForm();
     loadPlayers();
   }
 
-  async function handleDelete(id: number) {
-    await api.deletePlayer(id);
-    loadPlayers();
-  }
-
-  async function handleUpdate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editing) return;
-    const nextRoles = [editing.role, ...editing.secondaryRoles].filter(
-      Boolean,
-    ) as string[];
-    await api.updatePlayer(editing.id, {
-      name: editing.name,
-      role: nextRoles[0] ?? null,
-      secondaryRoles: nextRoles.slice(1),
-      notes: editing.notes,
-    });
+  async function handleUpdate(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editing || !editing.name.trim()) return;
+    await api.updatePlayer(editing.id, { ...editing, name: editing.name.trim() });
     setEditing(null);
     loadPlayers();
   }
 
-  return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Title order={4}>Giocatori</Title>
-        <Button onClick={toggleForm}>
-          {showForm ? "Annulla" : "+ Nuovo giocatore"}
-        </Button>
-      </Group>
+  async function handleDelete(id: number) {
+    if (!window.confirm("Eliminare questo giocatore?")) return;
+    await api.deletePlayer(id);
+    if (editing?.id === id) setEditing(null);
+    loadPlayers();
+  }
 
-      <Collapse expanded={showForm}>
-        <Card withBorder padding="md" radius="md">
-          <form onSubmit={handleSubmit}>
-            <Group align="flex-end">
-              <TextInput
-                label="Nome"
-                required
-                value={name}
-                onChange={(e) => setName(e.currentTarget.value)}
-                style={{ flex: 1 }}
-              />
-              <MultiSelect
-                label="Ruoli"
-                data={[
-                  "Portiere",
-                  "Difensore",
-                  "Centrocampista",
-                  "Esterno",
-                  "Attaccante",
-                ]}
-                value={roles}
-                onChange={setRoles}
-                searchable
-                style={{ flex: 1 }}
-              />
-              <Button type="submit">Salva</Button>
-            </Group>
-          </form>
-        </Card>
-      </Collapse>
+  function startEditing(player: Player) {
+    setEditing({ ...player, secondaryRoles: [...player.secondaryRoles] });
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }
 
-      {loading ? (
-        <Loader />
-      ) : players.length === 0 ? (
-        <Text c="dimmed">Nessun giocatore in anagrafica.</Text>
-      ) : (
-        <Stack gap="xs">
-          {players.map((player) => (
-            <Card key={player.id} withBorder padding="sm" radius="md">
-              <Group justify="space-between" wrap="nowrap">
-                <Text>
-                  <Text span fw={600}>
-                    {player.name}
-                  </Text>
-                  {(player.role || player.secondaryRoles.length > 0) && (
-                    <Text span c="dimmed" ml="xs">
-                      {[player.role, ...player.secondaryRoles]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </Text>
-                  )}
-                </Text>
-                <Group gap="xs" wrap="nowrap">
-                  <ActionIcon
-                    variant="subtle"
-                    onClick={() => setEditing({ ...player })}
-                    aria-label="Modifica"
-                  >
-                    <IconPencil size={18} />
-                  </ActionIcon>
-                  <ActionIcon
-                    color="red"
-                    variant="subtle"
-                    onClick={() => handleDelete(player.id)}
-                    aria-label="Elimina"
-                  >
-                    <IconTrash size={18} />
-                  </ActionIcon>
-                </Group>
-              </Group>
-            </Card>
-          ))}
-        </Stack>
-      )}
-      {editing && (
-        <Card withBorder>
-          <form onSubmit={handleUpdate}>
-            <Stack>
-              <Title order={5}>Modifica giocatore</Title>
-              <TextInput
-                label="Nome"
-                value={editing.name}
-                onChange={(e) =>
-                  setEditing({ ...editing, name: e.currentTarget.value })
-                }
-                required
-              />
-              <MultiSelect
-                label="Ruoli"
-                data={[
-                  "Portiere",
-                  "Difensore",
-                  "Centrocampista",
-                  "Esterno",
-                  "Attaccante",
-                ]}
-                value={
-                  [editing.role, ...editing.secondaryRoles].filter(
-                    Boolean,
-                  ) as string[]
-                }
-                onChange={(values) =>
-                  setEditing({
-                    ...editing,
-                    role: values[0] ?? null,
-                    secondaryRoles: values.slice(1),
-                  })
-                }
-              />
-              <TextInput
-                label="Note"
-                value={editing.notes ?? ""}
-                onChange={(e) =>
-                  setEditing({
-                    ...editing,
-                    notes: e.currentTarget.value || null,
-                  })
-                }
-              />
-              <Group>
-                <Button type="submit">Salva</Button>
-                <Button variant="subtle" onClick={() => setEditing(null)}>
-                  Annulla
-                </Button>
-              </Group>
-            </Stack>
-          </form>
-        </Card>
-      )}
-    </Stack>
-  );
+  return <Stack gap="md">
+    <Group justify="space-between"><Title order={4}>Giocatori</Title><Button onClick={toggleForm}>{showForm ? "Annulla" : "+ Nuovo giocatore"}</Button></Group>
+    {editing && <Card withBorder padding="md" radius="md" style={{ borderColor: "var(--mantine-primary-color-filled)" }}><form onSubmit={handleUpdate}><Stack gap="md">
+      <Group justify="space-between"><div><Title order={5}>Modifica giocatore</Title><Text size="sm" c="dimmed">Aggiorna ruolo, piede preferito e caratteristiche tecniche.</Text></div><Button variant="subtle" onClick={() => setEditing(null)}>Annulla</Button></Group>
+      <PlayerFields value={editing} onChange={(next) => setEditing({ ...editing, ...next })} includeNotes />
+      <Button type="submit" style={{ alignSelf: "flex-start" }}>Salva modifiche</Button>
+    </Stack></form></Card>}
+    <Collapse expanded={showForm}><Card withBorder padding="md" radius="md"><form onSubmit={handleSubmit}><Stack gap="md">
+      <Title order={5}>Nuovo giocatore</Title><PlayerFields value={draft} onChange={setDraft} includeNotes />
+      <Button type="submit" style={{ alignSelf: "flex-start" }}>Salva</Button>
+    </Stack></form></Card></Collapse>
+    {loading ? <Loader /> : players.length === 0 ? <Text c="dimmed">Nessun giocatore in anagrafica.</Text> : <Stack gap="xs">
+      {players.map((player) => <Card key={player.id} withBorder padding="sm" radius="md"><Group justify="space-between" wrap="nowrap">
+        <div style={{ minWidth: 0 }}><Text fw={600} truncate>{player.name}</Text><Group gap="xs" mt={3}><Badge variant="light">{FOOT_LABEL[player.preferredFoot]}</Badge>{(player.role || player.secondaryRoles.length > 0) && <Text size="sm" c="dimmed" truncate>{[player.role, ...player.secondaryRoles].filter(Boolean).join(", ")}</Text>}</Group></div>
+        <Group gap="xs" wrap="nowrap"><ActionIcon variant="subtle" onClick={() => startEditing(player)} aria-label={`Modifica ${player.name}`}><IconPencil size={18} /></ActionIcon><ActionIcon color="red" variant="subtle" onClick={() => handleDelete(player.id)} aria-label={`Elimina ${player.name}`}><IconTrash size={18} /></ActionIcon></Group>
+      </Group></Card>)}
+    </Stack>}
+  </Stack>;
 }

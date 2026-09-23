@@ -2,12 +2,20 @@
 // di una riga in `event_types`, configurabile dall'utente (vedi EventTypeDef).
 export type EventType = string;
 export type EventStatus = "scheduled" | "modified" | "cancelled";
+export type PreferredFoot = "right" | "left" | "both";
 
 export interface Player {
   id: number;
   name: string;
   role: string | null;
   secondaryRoles: string[];
+  preferredFoot: PreferredFoot;
+  fitness: number;
+  speed: number;
+  technique: number;
+  shooting: number;
+  defending: number;
+  attacking: number;
   notes: string | null;
   createdAt: string;
 }
@@ -17,6 +25,13 @@ export interface PlayerRow {
   name: string;
   role: string | null;
   secondary_roles: string;
+  preferred_foot: PreferredFoot;
+  fitness: number;
+  speed: number;
+  technique: number;
+  shooting: number;
+  defending: number;
+  attacking: number;
   notes: string | null;
   created_at: string;
 }

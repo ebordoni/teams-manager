@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.14.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
+> Stato attuale: **MVP operativo (v0.15.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -96,7 +96,7 @@ addon/
 
 | ID  | Funzionalità                     | Descrizione                                                                                                                            | Stato |
 | --- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| F01 | **Anagrafica giocatori**         | CRUD giocatori: nome, ruolo, ruoli secondari, note. Statistiche (presenze, gol) di base.                                               | WIP   |
+| F01 | **Anagrafica giocatori**         | CRUD giocatori: nome, ruoli, piede preferito, profilo tecnico 0–100 e note.                                                            | DONE  |
 | F02 | **Calendario eventi**            | CRUD eventi (allenamento/partita/torneo): data, ora, luogo, indirizzo, avversario, ritrovo, note, stato.                               | WIP   |
 | F03 | **Rosa automatica**              | Ogni evento include l'intera rosa; non è prevista una selezione manuale dei convocati.                                                 | DONE  |
 | F04 | **Presenze**                     | Registrazione presenze effettive per allenamenti/partite (base per statistiche future).                                                | DONE  |
@@ -133,6 +133,13 @@ id
 name
 role
 secondary_roles     -- JSON array
+preferred_foot      -- right | left | both
+fitness              -- 0..100
+speed                -- 0..100
+technique            -- 0..100
+shooting             -- 0..100
+defending            -- 0..100
+attacking            -- 0..100
 notes
 created_at
 

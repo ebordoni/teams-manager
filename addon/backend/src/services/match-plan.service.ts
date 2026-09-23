@@ -10,6 +10,13 @@ function loadPlayers(eventId: number): RotationPlayer[] {
   return rows.map((row) => ({
     id: row.id,
     roles: [row.role, ...(JSON.parse(row.secondary_roles) as string[])].filter((role): role is string => Boolean(role)),
+    preferredFoot: row.preferred_foot,
+    fitness: row.fitness,
+    speed: row.speed,
+    technique: row.technique,
+    shooting: row.shooting,
+    defending: row.defending,
+    attacking: row.attacking,
   }));
 }
 

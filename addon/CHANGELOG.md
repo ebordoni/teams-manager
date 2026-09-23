@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.15.0] — 2026-09-23
+
+### Added
+
+- Piede preferito e valutazioni 0–100 per forma fisica, velocità, tecnica, tiro, difesa e attacco nella scheda giocatore.
+- Pianificazione AI e fallback locale sensibili a piede, ruoli e profilo tecnico per preferire destra/sinistra e rendere equilibrati i tempi.
+
+### Changed
+
+- Il pannello di modifica giocatore viene mostrato sopra l'elenco e raggiunto automaticamente con scroll fluido.
+
 ## [0.14.0] — 2026-09-23
 
 ### Changed

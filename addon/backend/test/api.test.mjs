@@ -54,9 +54,14 @@ test("health endpoint reports the running service", async () => {
 test("player and event workflow is available through the API", async () => {
   const player = await request("/api/players", {
     method: "POST",
-    body: JSON.stringify({ name: "Giocatore test", role: "Centrocampista" }),
+    body: JSON.stringify({
+      name: "Giocatore test", role: "Centrocampista", preferredFoot: "left",
+      fitness: 72, speed: 81, technique: 76, shooting: 64, defending: 58, attacking: 70,
+    }),
   });
   assert.equal(player.response.status, 201);
+  assert.equal(player.body.preferredFoot, "left");
+  assert.equal(player.body.speed, 81);
 
   const event = await request("/api/events", {
     method: "POST",

@@ -2,6 +2,7 @@
 // configurabile dall'utente nelle Impostazioni.
 export type EventType = string;
 export type EventStatus = "scheduled" | "modified" | "cancelled";
+export type PreferredFoot = "right" | "left" | "both";
 
 export interface EventTypeDef {
   id: number;
@@ -17,6 +18,13 @@ export interface Player {
   name: string;
   role: string | null;
   secondaryRoles: string[];
+  preferredFoot: PreferredFoot;
+  fitness: number;
+  speed: number;
+  technique: number;
+  shooting: number;
+  defending: number;
+  attacking: number;
   notes: string | null;
   createdAt: string;
 }

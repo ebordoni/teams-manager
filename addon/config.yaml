@@ -1,6 +1,6 @@
 name: "GIPS Calcio"
 description: "Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni per i genitori"
-version: "0.14.0"
+version: "0.15.0"
 slug: "gips_calcio"
 init: false
 arch:

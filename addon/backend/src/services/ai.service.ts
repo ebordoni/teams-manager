@@ -73,7 +73,16 @@ export class AIService {
 
   async generateRotations(request: RotationRequest): Promise<GeneratedRotation> {
     const aliases = new Map(request.players.map((player, index) => [`P${index + 1}`, player.id]));
-    const anonymizedPlayers = request.players.map((player, index) => ({ playerRef: `P${index + 1}`, roles: player.roles }));
+    const anonymizedPlayers = request.players.map((player, index) => ({
+      playerRef: `P${index + 1}`,
+      roles: player.roles,
+      preferredFoot: player.preferredFoot ?? "both",
+      technicalProfile: {
+        fitness: player.fitness ?? 50, speed: player.speed ?? 50,
+        technique: player.technique ?? 50, shooting: player.shooting ?? 50,
+        defending: player.defending ?? 50, attacking: player.attacking ?? 50,
+      },
+    }));
     const slots = slotsFor(request.playersOnField).map(([slot, role]) => ({ slot, role }));
     const totalSpots = request.periodCount * request.playersOnField;
     const minAppearances = Math.floor(totalSpots / request.players.length);
@@ -88,6 +97,8 @@ VINCOLI OBBLIGATORI:
 - fai giocare ogni convocato tra ${minAppearances} e ${maxAppearances} tempi, se compatibile con il vincolo del portiere;
 - limita i cambi agli intervalli tra i tempi;
 - rispetta i ruoli con modalità ${request.rolePolicy};
+- per gli slot sinistri (difensoreSinistro, fasciaSinistra) preferisci piede sinistro o ambidestro; per quelli destri, piede destro o ambidestro, senza violare i vincoli più importanti;
+- usa il profilo tecnico 0-100 per assegnare ruoli adatti e mantieni il livello complessivo delle formazioni dei vari tempi il più equilibrato possibile;
 - varia le combinazioni tra i tempi quando possibile.
 
 DATI PARTITA:

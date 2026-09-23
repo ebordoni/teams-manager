@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.15.0] — 2026-09-23
+
+### Aggiunto
+
+- Anagrafica giocatori con piede preferito e valutazioni 0–100 per forma fisica, velocità, tecnica, tiro, difesa e attacco.
+- Il pianificatore AI e il fallback locale considerano profilo tecnico e piede per preferire le fasce corrette e distribuire qualità tra i tempi.
+
+### Modificato
+
+- Il pannello di modifica giocatore compare in alto e porta automaticamente la vista all'inizio della pagina.
+
 ## [0.14.0] — 2026-09-23
 
 ### Modificato

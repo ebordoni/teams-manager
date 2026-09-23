@@ -1,6 +1,16 @@
-import type { MatchPeriod, MatchPeriodAssignment, RolePolicy } from "../types";
+import type { MatchPeriod, MatchPeriodAssignment, PreferredFoot, RolePolicy } from "../types";
 
-export interface RotationPlayer { id: number; roles: string[] }
+export interface RotationPlayer {
+  id: number;
+  roles: string[];
+  preferredFoot?: PreferredFoot;
+  fitness?: number;
+  speed?: number;
+  technique?: number;
+  shooting?: number;
+  defending?: number;
+  attacking?: number;
+}
 export interface RotationRequest {
   periodCount: number;
   minutesPerPeriod: number;
@@ -28,6 +38,38 @@ function roleMatches(player: RotationPlayer, requiredRole: string): boolean {
     const candidate = normalize(role);
     return candidate === required || (required === "esterno" && ["fascia", "centrocampista"].includes(candidate));
   });
+}
+
+function score(value: number | undefined): number {
+  return value ?? 50;
+}
+
+function roleAbility(player: RotationPlayer, role: string): number {
+  const fitness = score(player.fitness);
+  const speed = score(player.speed);
+  const technique = score(player.technique);
+  const shooting = score(player.shooting);
+  const defending = score(player.defending);
+  const attacking = score(player.attacking);
+  switch (normalize(role)) {
+    case "portiere": return (fitness + technique + defending) / 3;
+    case "difensore": return (defending * 2 + fitness + speed) / 4;
+    case "centrocampista": return (technique * 2 + fitness + speed + attacking + defending) / 6;
+    case "esterno": return (speed * 2 + technique + attacking + fitness) / 5;
+    case "attaccante": return (shooting * 2 + attacking * 2 + technique + speed) / 6;
+    default: return (fitness + speed + technique + shooting + defending + attacking) / 6;
+  }
+}
+
+function footBonus(player: RotationPlayer, slot: string): number {
+  if (!slot.endsWith("Sinistro") && !slot.endsWith("Destro")) return 0;
+  if (player.preferredFoot === "both") return 4;
+  const isLeftSlot = slot.endsWith("Sinistro");
+  return (isLeftSlot && player.preferredFoot === "left") || (!isLeftSlot && player.preferredFoot === "right") ? 12 : -5;
+}
+
+function overallAbility(player: RotationPlayer): number {
+  return (score(player.fitness) + score(player.speed) + score(player.technique) + score(player.shooting) + score(player.defending) + score(player.attacking)) / 6;
 }
 
 export function validateRotation(request: RotationRequest, periods: MatchPeriod[]): { errors: string[]; warnings: string[] } {
@@ -74,23 +116,29 @@ export function generateFallbackRotation(request: RotationRequest): MatchPeriod[
   const remaining = new Map(request.players.map((player, index) => [player.id, base + (index < extras ? 1 : 0)]));
   const appearances = new Map(request.players.map((player) => [player.id, 0]));
   const slots = slotsFor(request.playersOnField);
+  const targetPeriodStrength = request.players.reduce((sum, player) => sum + overallAbility(player), 0)
+    / request.players.length * request.playersOnField;
 
   return Array.from({ length: request.periodCount }, (_, periodIndex) => {
     const used = new Set<number>();
+    let periodStrength = 0;
     const assignments: MatchPeriodAssignment[] = slots.map(([slot, role]) => {
       const candidates = request.players.filter((player) => !used.has(player.id));
       candidates.sort((a, b) => {
-        const score = (player: RotationPlayer) => {
-          const matches = roleMatches(player, role);
-          const roleScore = request.rolePolicy === "strict" ? (matches ? 10_000 : -10_000) : matches ? 20 : 0;
-          return (remaining.get(player.id) ?? 0) * 100 + roleScore - (appearances.get(player.id) ?? 0) * 2;
-        };
-        return score(b) - score(a) || a.id - b.id;
+          const candidateScore = (player: RotationPlayer) => {
+            const matches = roleMatches(player, role);
+            const roleScore = request.rolePolicy === "strict" ? (matches ? 10_000 : -10_000) : matches ? 20 : 0;
+            const ability = roleAbility(player, role);
+            const balanceScore = -Math.abs(periodStrength + ability - targetPeriodStrength) * 0.6;
+            return (remaining.get(player.id) ?? 0) * 100 + roleScore + ability * 0.5 + footBonus(player, slot) + balanceScore - (appearances.get(player.id) ?? 0) * 2;
+          };
+        return candidateScore(b) - candidateScore(a) || a.id - b.id;
       });
       const selected = candidates[0];
       used.add(selected.id);
       remaining.set(selected.id, (remaining.get(selected.id) ?? 0) - 1);
       appearances.set(selected.id, (appearances.get(selected.id) ?? 0) + 1);
+      periodStrength += roleAbility(selected, role);
       return { slot, playerId: selected.id, role };
     });
     return {

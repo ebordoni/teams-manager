@@ -21,7 +21,7 @@ avversario (mostra il campo "Avversario").
 
 ### Giocatori
 
-Anagrafica della squadra: nome, ruolo, ruoli secondari e note.
+Anagrafica della squadra: nome, ruolo, ruoli secondari, piede preferito e valutazioni 0–100 di forma fisica, velocità, tecnica, tiro, difesa e attacco. Questi dati migliorano le proposte del piano partita AI.
 
 ### Rosa e presenze
 
@@ -35,7 +35,7 @@ Indica numero e durata dei tempi, giocatori in campo e rigidità dei ruoli. L'ap
 formazione per ciascun tempo cercando la distribuzione di minuti più uniforme possibile senza
 cambi durante il tempo. La proposta può essere modificata, confermata o eliminata.
 
-I nomi non vengono inviati al provider: l'AI riceve pseudonimi e ruoli. Se il provider non è
+I nomi non vengono inviati al provider: l'AI riceve pseudonimi, ruoli, piede preferito e valori tecnici. Se il provider non è
 configurato o non risponde, viene usato automaticamente il motore locale.
 
 ### Comunicazioni

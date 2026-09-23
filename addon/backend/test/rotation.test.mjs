@@ -26,3 +26,21 @@ test("strict roles keep the only goalkeeper in goal", () => {
   assert.ok(periods.every((period) => period.assignments.find((assignment) => assignment.slot === "portiere")?.playerId === 1));
   assert.equal(validateRotation(request, periods).errors.length, 0);
 });
+
+test("local rotation prefers the natural foot on left and right slots", () => {
+  const players = [
+    { id: 1, roles: ["Portiere"], preferredFoot: "both" },
+    { id: 2, roles: ["Difensore"], preferredFoot: "left" },
+    { id: 3, roles: ["Difensore"], preferredFoot: "right" },
+    { id: 4, roles: ["Centrocampista"], preferredFoot: "both" },
+    { id: 5, roles: ["Esterno"], preferredFoot: "left" },
+    { id: 6, roles: ["Esterno"], preferredFoot: "right" },
+    { id: 7, roles: ["Attaccante"], preferredFoot: "both" },
+  ];
+  const request = { periodCount: 1, minutesPerPeriod: 20, playersOnField: 7, rolePolicy: "strict", players };
+  const [period] = generateFallbackRotation(request);
+  assert.equal(period.assignments.find((assignment) => assignment.slot === "difensoreSinistro")?.playerId, 2);
+  assert.equal(period.assignments.find((assignment) => assignment.slot === "difensoreDestro")?.playerId, 3);
+  assert.equal(period.assignments.find((assignment) => assignment.slot === "fasciaSinistra")?.playerId, 5);
+  assert.equal(period.assignments.find((assignment) => assignment.slot === "fasciaDestra")?.playerId, 6);
+});

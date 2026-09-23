@@ -16,6 +16,13 @@ const SCHEMA_V1 = `
     name            TEXT    NOT NULL,
     role            TEXT,
     secondary_roles TEXT    NOT NULL DEFAULT '[]',
+    preferred_foot  TEXT    NOT NULL DEFAULT 'both',
+    fitness         INTEGER NOT NULL DEFAULT 50,
+    speed           INTEGER NOT NULL DEFAULT 50,
+    technique       INTEGER NOT NULL DEFAULT 50,
+    shooting        INTEGER NOT NULL DEFAULT 50,
+    defending       INTEGER NOT NULL DEFAULT 50,
+    attacking       INTEGER NOT NULL DEFAULT 50,
     notes           TEXT,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
@@ -144,6 +151,13 @@ export function initDb(): void {
     "formation_id",
     "INTEGER REFERENCES formations(id) ON DELETE SET NULL",
   );
+  ensureColumn("players", "preferred_foot", "TEXT NOT NULL DEFAULT 'both'");
+  ensureColumn("players", "fitness", "INTEGER NOT NULL DEFAULT 50");
+  ensureColumn("players", "speed", "INTEGER NOT NULL DEFAULT 50");
+  ensureColumn("players", "technique", "INTEGER NOT NULL DEFAULT 50");
+  ensureColumn("players", "shooting", "INTEGER NOT NULL DEFAULT 50");
+  ensureColumn("players", "defending", "INTEGER NOT NULL DEFAULT 50");
+  ensureColumn("players", "attacking", "INTEGER NOT NULL DEFAULT 50");
   seedDefaultEventTypes();
 
   console.log(`[db] SQLite ready at ${dbPath}`);
