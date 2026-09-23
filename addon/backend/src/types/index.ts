@@ -49,6 +49,8 @@ export interface Event {
   notes: string | null;
   status: EventStatus;
   formationId: number | null;
+  attendanceFinalizedAt: string | null;
+  result?: MatchResult | null;
   createdAt: string;
 }
 
@@ -65,6 +67,7 @@ export interface EventRow {
   notes: string | null;
   status: EventStatus;
   formation_id: number | null;
+  attendance_finalized_at: string | null;
   created_at: string;
 }
 
@@ -83,6 +86,23 @@ export interface Attendance {
   status: AttendanceStatus;
   /** false quando lo stato è solo il default proposto e non è mai stato salvato */
   recorded: boolean;
+}
+
+export interface AttendanceHistoryItem {
+  eventId: number;
+  date: string;
+  type: string;
+  opponent: string | null;
+  status: AttendanceStatus;
+}
+
+export interface MatchResult {
+  eventId: number;
+  teamScore: number;
+  opponentScore: number;
+  venue: "home" | "away" | "neutral";
+  notes: string | null;
+  completedAt: string;
 }
 
 export interface GoogleTokensRow {

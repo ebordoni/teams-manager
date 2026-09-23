@@ -25,6 +25,50 @@ const FiltersSchema = z.object({
   to: z.string().optional(),
   type: z.string().optional(),
 });
+const ResultSchema = z.object({
+  teamScore: z.number().int().min(0).max(99),
+  opponentScore: z.number().int().min(0).max(99),
+  venue: z.enum(["home", "away", "neutral"]),
+  notes: z.string().trim().max(1000).optional().nullable(),
+});
+
+function findResultEvent(id: string) {
+  return getDb().prepare(
+    `SELECT e.id FROM events e JOIN event_types t ON t.key = e.type
+     WHERE e.id = ? AND t.has_opponent = 1`,
+  ).get(id) as { id: number } | undefined;
+}
+
+router.get("/:id/result", (req: Request, res: Response) => {
+  if (!findResultEvent(req.params.id)) return void res.status(404).json({ error: "Evento partita non trovato" });
+  const row = getDb().prepare("SELECT * FROM match_results WHERE event_id = ?").get(req.params.id) as {
+    event_id: number; team_score: number; opponent_score: number; venue: "home" | "away" | "neutral"; notes: string | null; completed_at: string;
+  } | undefined;
+  res.json(row ? { eventId: row.event_id, teamScore: row.team_score, opponentScore: row.opponent_score, venue: row.venue, notes: row.notes, completedAt: row.completed_at } : null);
+});
+
+router.put("/:id/result", (req: Request, res: Response) => {
+  const parse = ResultSchema.safeParse(req.body);
+  if (!parse.success) return void res.status(400).json({ error: parse.error.flatten() });
+  if (!findResultEvent(req.params.id)) return void res.status(404).json({ error: "Evento partita non trovato" });
+  const result = parse.data;
+  getDb().prepare(
+    `INSERT INTO match_results (event_id, team_score, opponent_score, venue, notes)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(event_id) DO UPDATE SET team_score = excluded.team_score, opponent_score = excluded.opponent_score,
+       venue = excluded.venue, notes = excluded.notes, completed_at = CURRENT_TIMESTAMP`,
+  ).run(req.params.id, result.teamScore, result.opponentScore, result.venue, result.notes?.trim() || null);
+  const row = getDb().prepare("SELECT * FROM match_results WHERE event_id = ?").get(req.params.id) as {
+    event_id: number; team_score: number; opponent_score: number; venue: "home" | "away" | "neutral"; notes: string | null; completed_at: string;
+  };
+  res.json({ eventId: row.event_id, teamScore: row.team_score, opponentScore: row.opponent_score, venue: row.venue, notes: row.notes, completedAt: row.completed_at });
+});
+
+router.delete("/:id/result", (req: Request, res: Response) => {
+  if (!findResultEvent(req.params.id)) return void res.status(404).json({ error: "Evento partita non trovato" });
+  getDb().prepare("DELETE FROM match_results WHERE event_id = ?").run(req.params.id);
+  res.status(204).send();
+});
 
 function isKnownEventType(type: string): boolean {
   const db = getDb();
@@ -89,7 +133,16 @@ router.get("/", (req: Request, res: Response) => {
     .prepare(`SELECT * FROM events ${where} ORDER BY date ASC, start_time ASC`)
     .all(...params) as unknown as EventRow[];
 
-  res.json(rows.map(rowToEvent));
+  const events = rows.map(rowToEvent);
+  const ids = events.map((event) => event.id);
+  const resultRows = ids.length
+    ? (db.prepare(`SELECT * FROM match_results WHERE event_id IN (${ids.map(() => "?").join(",")})`).all(...ids) as Array<{ event_id: number; team_score: number; opponent_score: number; venue: "home" | "away" | "neutral"; notes: string | null; completed_at: string }>)
+    : [];
+  const results = new Map(resultRows.map((result) => [result.event_id, {
+    eventId: result.event_id, teamScore: result.team_score, opponentScore: result.opponent_score,
+    venue: result.venue, notes: result.notes, completedAt: result.completed_at,
+  }]));
+  res.json(events.map((event) => ({ ...event, result: results.get(event.id) ?? null })));
 });
 
 // GET /api/events/:id

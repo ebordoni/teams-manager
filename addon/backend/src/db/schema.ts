@@ -40,6 +40,7 @@ const SCHEMA_V1 = `
     notes         TEXT,
     status        TEXT    NOT NULL DEFAULT 'scheduled', -- scheduled | modified | cancelled
     formation_id  INTEGER REFERENCES formations(id) ON DELETE SET NULL,
+    attendance_finalized_at DATETIME,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -55,6 +56,15 @@ const SCHEMA_V1 = `
 
   CREATE INDEX IF NOT EXISTS idx_attendance_event  ON attendance(event_id);
   CREATE INDEX IF NOT EXISTS idx_attendance_player ON attendance(player_id);
+
+  CREATE TABLE IF NOT EXISTS match_results (
+    event_id       INTEGER PRIMARY KEY REFERENCES events(id) ON DELETE CASCADE,
+    team_score     INTEGER NOT NULL CHECK (team_score >= 0),
+    opponent_score INTEGER NOT NULL CHECK (opponent_score >= 0),
+    venue          TEXT NOT NULL DEFAULT 'home' CHECK (venue IN ('home', 'away', 'neutral')),
+    notes          TEXT,
+    completed_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 
   -- Riga singola (id = 1): token OAuth 2.0 dell'account Google collegato.
   CREATE TABLE IF NOT EXISTS google_tokens (
@@ -158,6 +168,7 @@ export function initDb(): void {
     "formation_id",
     "INTEGER REFERENCES formations(id) ON DELETE SET NULL",
   );
+  ensureColumn("events", "attendance_finalized_at", "DATETIME");
   ensureColumn("players", "preferred_foot", "TEXT NOT NULL DEFAULT 'both'");
   ensureColumn("players", "fitness", "INTEGER NOT NULL DEFAULT 50");
   ensureColumn("players", "speed", "INTEGER NOT NULL DEFAULT 50");

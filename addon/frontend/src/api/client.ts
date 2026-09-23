@@ -60,6 +60,25 @@ export const api = {
       `/events/${eventId}/attendance`,
       { records },
     ),
+  getAttendanceStatus: (eventId: number) =>
+    apiClient.get<{ finalizedAt: string | null }>(`/events/${eventId}/attendance/status`),
+  finalizeAttendance: (eventId: number, records: { playerId: number; status: AttendanceStatus }[]) =>
+    apiClient.post<{ eventId: number; finalizedAt: string; recordCount: number }>(`/events/${eventId}/attendance/finalize`, { records }),
+  reopenAttendance: (eventId: number) =>
+    apiClient.post(`/events/${eventId}/attendance/reopen`),
+  getPlayerAttendanceHistory: (playerId: number) =>
+    apiClient.get<import("../types").AttendanceHistoryItem[]>(`/players/${playerId}/attendance-history`),
+  getAttendanceReport: (filters?: { from?: string; to?: string; type?: string }) =>
+    apiClient.get<import("../types").AttendanceReport>("/reports/attendance", { params: filters }),
+  getTeamSummary: () =>
+    apiClient.get<import("../types").TeamSummary>("/reports/summary"),
+
+  getMatchResult: (eventId: number) =>
+    apiClient.get<import("../types").MatchResult | null>(`/events/${eventId}/result`),
+  saveMatchResult: (eventId: number, data: { teamScore: number; opponentScore: number; venue: "home" | "away" | "neutral"; notes?: string | null }) =>
+    apiClient.put<import("../types").MatchResult>(`/events/${eventId}/result`, data),
+  deleteMatchResult: (eventId: number) =>
+    apiClient.delete(`/events/${eventId}/result`),
 
   // ── Google ─────────────────────────────────────────────────────────────
   getGoogleStatus: () => apiClient.get<GoogleStatus>("/google/status"),

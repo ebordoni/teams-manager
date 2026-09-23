@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.19.0] — 2026-09-23
+
+### Added
+
+- Match results with score, venue, notes and complete create, update and delete operations.
+- Finalizable attendance register: confirmation stores an explicit roster snapshot and locks changes until reopened.
+- Per-player attendance history based on finalized registers, including participation percentage.
+- Team attendance register with period/type filters and a player-event matrix.
+- Dashboard KPIs for results, goals and finalized attendance, plus recent results.
+
+### Changed
+
+- The event page now combines results, draft attendance and register finalization in one workflow.
+- Calendar enriched with match score and finalized-attendance indicators.
+
 ## [0.18.2] — 2026-09-23
 
 ### Added

@@ -6,6 +6,7 @@ import {
   Card,
   Checkbox,
   Group,
+  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -24,6 +25,7 @@ import type {
   EventStatus,
   EventTypeDef,
   Formation,
+  MatchResult,
   TeamEvent,
 } from "../types";
 
@@ -49,6 +51,12 @@ export default function EventDetail() {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingAttendance, setSavingAttendance] = useState(false);
+  const [attendanceFinalizedAt, setAttendanceFinalizedAt] = useState<string | null>(null);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [result, setResult] = useState<MatchResult | null>(null);
+  const [resultDraft, setResultDraft] = useState({ teamScore: 0, opponentScore: 0, venue: "home" as MatchResult["venue"], notes: "" });
+  const [savingResult, setSavingResult] = useState(false);
+  const [resultError, setResultError] = useState<string | null>(null);
   const [statusDraft, setStatusDraft] = useState<EventStatus>("scheduled");
   const [notesDraft, setNotesDraft] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
@@ -68,13 +76,15 @@ export default function EventDetail() {
     Promise.all([
       api.getEvent(eventId),
       api.getAttendance(eventId),
+      api.getAttendanceStatus(eventId),
       api.getEventTypes(),
       api.getFormations(),
     ])
       .then(
-        ([eventRes, attendanceRes, typesRes, formationsRes]) => {
+        async ([eventRes, attendanceRes, attendanceStatusRes, typesRes, formationsRes]) => {
           setEvent(eventRes.data);
           setAttendance(attendanceRes.data);
+          setAttendanceFinalizedAt(attendanceStatusRes.data.finalizedAt);
           setEventTypes(typesRes.data);
           setFormations(formationsRes.data);
           setStatusDraft(eventRes.data.status);
@@ -92,6 +102,11 @@ export default function EventDetail() {
               ? String(eventRes.data.formationId)
               : null,
           );
+          if (typesRes.data.some((item) => item.key === eventRes.data.type && item.hasOpponent)) {
+            const resultRes = await api.getMatchResult(eventId);
+            setResult(resultRes.data);
+            if (resultRes.data) setResultDraft({ teamScore: resultRes.data.teamScore, opponentScore: resultRes.data.opponentScore, venue: resultRes.data.venue, notes: resultRes.data.notes ?? "" });
+          }
         },
       )
       .finally(() => setLoading(false));
@@ -108,6 +123,7 @@ export default function EventDetail() {
   }
 
   async function handleSaveAttendance() {
+    setAttendanceError(null);
     setSavingAttendance(true);
     try {
       await api.setAttendance(
@@ -115,9 +131,42 @@ export default function EventDetail() {
         attendance.map((a) => ({ playerId: a.playerId, status: a.status })),
       );
       setAttendance((prev) => prev.map((a) => ({ ...a, recorded: true })));
+    } catch (err) {
+      setAttendanceError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Errore durante il salvataggio delle presenze");
     } finally {
       setSavingAttendance(false);
     }
+  }
+
+  async function handleFinalizeAttendance() {
+    setAttendanceError(null); setSavingAttendance(true);
+    try {
+      const response = await api.finalizeAttendance(eventId, attendance.map((a) => ({ playerId: a.playerId, status: a.status })));
+      setAttendanceFinalizedAt(response.data.finalizedAt);
+      setAttendance((prev) => prev.map((a) => ({ ...a, recorded: true })));
+    } catch (err) {
+      setAttendanceError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Errore durante la chiusura del registro");
+    } finally { setSavingAttendance(false); }
+  }
+
+  async function handleReopenAttendance() {
+    if (!window.confirm("Riaprire il registro? Le presenze storiche potranno essere modificate.")) return;
+    setAttendanceError(null); setSavingAttendance(true);
+    try { await api.reopenAttendance(eventId); setAttendanceFinalizedAt(null); }
+    catch (err) { setAttendanceError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Errore durante la riapertura del registro"); }
+    finally { setSavingAttendance(false); }
+  }
+
+  async function handleSaveResult() {
+    setResultError(null); setSavingResult(true);
+    try { const response = await api.saveMatchResult(eventId, resultDraft); setResult(response.data); }
+    catch (err) { setResultError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Errore durante il salvataggio del risultato"); }
+    finally { setSavingResult(false); }
+  }
+
+  async function handleDeleteResult() {
+    if (!window.confirm("Eliminare il risultato salvato?")) return;
+    await api.deleteMatchResult(eventId); setResult(null); setResultDraft({ teamScore: 0, opponentScore: 0, venue: "home", notes: "" });
   }
 
   async function handleSaveStatus() {
@@ -182,6 +231,7 @@ export default function EventDetail() {
   const presentAttendance = attendance.filter(
     (record) => record.status === "present",
   ).length;
+  const supportsResult = Boolean(type?.hasOpponent);
 
   return (
     <Stack gap="lg">
@@ -315,6 +365,20 @@ export default function EventDetail() {
         </Stack>
       </Card>
 
+      {supportsResult && (
+        <Card withBorder padding="md" radius="md"><Stack gap="sm">
+          <Group justify="space-between"><div><Title order={5}>Risultato partita</Title><Text size="sm" c="dimmed">Registra il risultato finale della partita.</Text></div>{result && <Badge color="green">Salvato</Badge>}</Group>
+          <SimpleGrid cols={{ base: 1, sm: 3 }}>
+            <NumberInput label="Gol squadra" min={0} max={99} value={resultDraft.teamScore} onChange={(value) => setResultDraft((draft) => ({ ...draft, teamScore: Number(value) || 0 }))} />
+            <NumberInput label="Gol avversario" min={0} max={99} value={resultDraft.opponentScore} onChange={(value) => setResultDraft((draft) => ({ ...draft, opponentScore: Number(value) || 0 }))} />
+            <Select label="Campo" data={[{ value: "home", label: "Casa" }, { value: "away", label: "Trasferta" }, { value: "neutral", label: "Campo neutro" }]} value={resultDraft.venue} onChange={(value) => setResultDraft((draft) => ({ ...draft, venue: (value ?? "home") as MatchResult["venue"] }))} allowDeselect={false} />
+          </SimpleGrid>
+          <TextInput label="Note sul risultato" value={resultDraft.notes} onChange={(event) => setResultDraft((draft) => ({ ...draft, notes: event.currentTarget.value }))} />
+          {resultError && <Alert color="red" title="Errore">{resultError}</Alert>}
+          <Group><Button onClick={handleSaveResult} loading={savingResult}>Salva risultato</Button>{result && <Button color="red" variant="subtle" onClick={handleDeleteResult}>Elimina risultato</Button>}</Group>
+        </Stack></Card>
+      )}
+
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between">
           <div><Title order={5}>Rotazioni della partita</Title><Text size="sm" c="dimmed">Genera una formazione per ogni tempo bilanciando automaticamente il minutaggio.</Text></div>
@@ -345,6 +409,7 @@ export default function EventDetail() {
         <Group justify="space-between" mb="xs">
           <Group gap="xs">
             <Title order={5}>Presenze</Title>
+            {attendanceFinalizedAt && <Badge color="green">Registro chiuso</Badge>}
             {attendance.length > 0 && (
               <Badge
                 variant="light"
@@ -356,15 +421,17 @@ export default function EventDetail() {
               </Badge>
             )}
           </Group>
-          <Button
+          {attendanceFinalizedAt ? <Button onClick={handleReopenAttendance} loading={savingAttendance} size="sm">Riapri registro</Button> : <Group gap="xs"><Button
             onClick={handleSaveAttendance}
             loading={savingAttendance}
             disabled={attendance.length === 0}
             size="sm"
           >
             Salva presenze
-          </Button>
+          </Button><Button color="green" onClick={handleFinalizeAttendance} loading={savingAttendance} disabled={attendance.length === 0}>Conferma registro</Button></Group>}
         </Group>
+        {attendanceError && <Alert color="red" title="Errore">{attendanceError}</Alert>}
+        {attendanceFinalizedAt && <Text size="sm" c="dimmed" mb="xs">Presenze storicizzate il {new Date(attendanceFinalizedAt).toLocaleString("it-IT")}.</Text>}
         {attendance.length === 0 ? (
           <Text c="dimmed">
             Nessun giocatore in anagrafica: aggiungili dalla pagina Giocatori.
@@ -378,6 +445,7 @@ export default function EventDetail() {
                   <Checkbox
                     label="Presente"
                     checked={a.status === "present"}
+                    disabled={Boolean(attendanceFinalizedAt)}
                     onChange={(event) =>
                       setPlayerPresent(a.playerId, event.currentTarget.checked)
                     }

@@ -42,6 +42,8 @@ export interface TeamEvent {
   notes: string | null;
   status: EventStatus;
   formationId: number | null;
+  attendanceFinalizedAt: string | null;
+  result?: MatchResult | null;
   createdAt: string;
 }
 
@@ -89,6 +91,35 @@ export interface Attendance {
   status: AttendanceStatus;
   /** false quando lo stato è solo il default proposto e non è mai stato salvato */
   recorded: boolean;
+}
+
+export interface AttendanceHistoryItem {
+  eventId: number;
+  date: string;
+  type: string;
+  opponent: string | null;
+  status: AttendanceStatus;
+}
+
+export interface MatchResult {
+  eventId: number;
+  teamScore: number;
+  opponentScore: number;
+  venue: "home" | "away" | "neutral";
+  notes: string | null;
+  completedAt: string;
+}
+
+export interface AttendanceReport {
+  events: Array<{ id: number; date: string; type: string; opponent: string | null }>;
+  players: Array<{ id: number; name: string }>;
+  records: Array<{ eventId: number; playerId: number; status: AttendanceStatus }>;
+}
+
+export interface TeamSummary {
+  results: { played: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number };
+  attendance: { total: number; present: number };
+  recentResults: Array<{ eventId: number; date: string; opponent: string | null; teamScore: number; opponentScore: number }>;
 }
 
 export interface EventFilters {

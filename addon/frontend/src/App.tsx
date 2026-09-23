@@ -12,6 +12,7 @@ const Players = lazy(() => import("./pages/Players"));
 const Settings = lazy(() => import("./pages/Settings"));
 const AISettings = lazy(() => import("./pages/AISettings"));
 const MatchPlan = lazy(() => import("./pages/MatchPlan"));
+const AttendanceRegister = lazy(() => import("./pages/AttendanceRegister"));
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/players" element={<Players />} />
+            <Route path="/attendance" element={<AttendanceRegister />} />
             <Route path="/formations" element={<Formations />} />
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/events/:id/match-plan" element={<MatchPlan />} />

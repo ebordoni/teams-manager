@@ -14,6 +14,7 @@ import formationsRouter from "./routes/formations";
 import googleRouter from "./routes/google";
 import matchPlansRouter from "./routes/match-plans";
 import playersRouter from "./routes/players";
+import reportsRouter from "./routes/reports";
 import settingsRouter from "./routes/settings";
 
 function resolveVersion(): string {
@@ -58,6 +59,7 @@ export function createApp() {
   app.use("/api/communications", communicationsRouter);
   app.use("/api/settings", settingsRouter);
   app.use("/api/ai", aiRouter);
+  app.use("/api/reports", reportsRouter);
 
   app.get("/api/health", (_req: Request, res: Response) => {
     res.json({

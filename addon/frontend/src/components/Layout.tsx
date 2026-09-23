@@ -8,6 +8,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconCalendarEvent,
+  IconClipboardList,
   IconFileText,
   IconLayoutDashboard,
   IconLayoutList,
@@ -22,6 +23,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: IconLayoutDashboard },
   { to: "/calendar", label: "Calendario", icon: IconCalendarEvent },
   { to: "/players", label: "Giocatori", icon: IconUsers },
+  { to: "/attendance", label: "Registro presenze", icon: IconClipboardList },
   { to: "/formations", label: "Formazioni", icon: IconLayoutList },
   { to: "/communications", label: "Comunicazioni", icon: IconFileText },
   { to: "/ai-settings", label: "Intelligenza artificiale", icon: IconRobot },

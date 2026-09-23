@@ -7,6 +7,21 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.0] — 2026-09-23
+
+### Aggiunto
+
+- Risultati partita con punteggio, campo, note e operazioni complete di creazione, modifica ed eliminazione.
+- Registro presenze chiudibile: alla conferma viene salvata una fotografia esplicita di tutta la rosa e le modifiche successive sono bloccate fino alla riapertura.
+- Storico presenze per ciascun giocatore, filtrato sui registri confermati e con percentuale di partecipazione.
+- Pagina “Registro presenze” di squadra con filtri per periodo/tipo e matrice giocatori-eventi.
+- Dashboard con KPI su risultati, gol e presenze confermate, oltre agli ultimi risultati.
+
+### Modificato
+
+- La pagina evento riunisce risultato, presenze provvisorie e chiusura del registro in un unico flusso operativo.
+- Calendario arricchito con punteggio partita e indicazione dei registri presenze chiusi.
+
 ## [0.18.2] — 2026-09-23
 
 ### Aggiunto

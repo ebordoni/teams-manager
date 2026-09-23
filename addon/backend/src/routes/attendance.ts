@@ -14,12 +14,24 @@ const AttendanceSchema = z.object({
   ),
 });
 
+function findEvent(eventId: string) {
+  return getDb()
+    .prepare("SELECT id, attendance_finalized_at FROM events WHERE id = ?")
+    .get(eventId) as { id: number; attendance_finalized_at: string | null } | undefined;
+}
+
+router.get("/status", (req: Request, res: Response) => {
+  const event = findEvent(req.params.id);
+  if (!event) return void res.status(404).json({ error: "Event not found" });
+  res.json({ finalizedAt: event.attendance_finalized_at });
+});
+
 // GET /api/events/:id/attendance — tutti i giocatori sono presenti di default.
 router.get("/", (req: Request, res: Response) => {
   const db = getDb();
   const eventId = req.params.id;
 
-  const event = db.prepare("SELECT id FROM events WHERE id = ?").get(eventId);
+  const event = findEvent(eventId);
   if (!event) {
     res.status(404).json({ error: "Event not found" });
     return;
@@ -53,10 +65,15 @@ router.put("/", (req: Request, res: Response) => {
 
   const db = getDb();
   const eventId = req.params.id;
-  const event = db.prepare("SELECT id FROM events WHERE id = ?").get(eventId);
+  const event = findEvent(eventId);
   if (!event) {
     res.status(404).json({ error: "Event not found" });
     return;
+  }
+  if (event.attendance_finalized_at) {
+    return void res.status(409).json({
+      error: "Il registro presenze è chiuso: riaprilo prima di modificarlo",
+    });
   }
 
   const { records } = parse.data;
@@ -77,6 +94,49 @@ router.put("/", (req: Request, res: Response) => {
   }
 
   res.json({ eventId: Number(eventId), recordCount: records.length });
+});
+
+// POST /api/events/:id/attendance/finalize — salva una fotografia completa della rosa.
+router.post("/finalize", (req: Request, res: Response) => {
+  const parse = AttendanceSchema.safeParse(req.body);
+  if (!parse.success) return void res.status(400).json({ error: parse.error.flatten() });
+  const db = getDb();
+  const event = findEvent(req.params.id);
+  if (!event) return void res.status(404).json({ error: "Event not found" });
+  if (event.attendance_finalized_at) {
+    return void res.status(409).json({ error: "Il registro presenze è già chiuso" });
+  }
+
+  const submitted = new Map(parse.data.records.map((record) => [record.playerId, record.status]));
+  const players = db.prepare("SELECT id FROM players ORDER BY id").all() as Array<{ id: number }>;
+  const existing = new Map(
+    (db.prepare("SELECT player_id, status FROM attendance WHERE event_id = ?").all(req.params.id) as Array<{ player_id: number; status: Attendance["status"] }>).
+      map((record) => [record.player_id, record.status]),
+  );
+  const upsert = db.prepare(
+    `INSERT INTO attendance (event_id, player_id, status) VALUES (?, ?, ?)
+     ON CONFLICT(event_id, player_id) DO UPDATE SET status = excluded.status`,
+  );
+  db.exec("BEGIN");
+  try {
+    for (const player of players) {
+      upsert.run(req.params.id, player.id, submitted.get(player.id) ?? existing.get(player.id) ?? "present");
+    }
+    db.prepare("UPDATE events SET attendance_finalized_at = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+  const finalized = findEvent(req.params.id)!;
+  res.json({ eventId: finalized.id, finalizedAt: finalized.attendance_finalized_at, recordCount: players.length });
+});
+
+router.post("/reopen", (req: Request, res: Response) => {
+  const event = findEvent(req.params.id);
+  if (!event) return void res.status(404).json({ error: "Event not found" });
+  getDb().prepare("UPDATE events SET attendance_finalized_at = NULL WHERE id = ?").run(req.params.id);
+  res.status(204).send();
 });
 
 export default router;

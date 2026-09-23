@@ -462,7 +462,7 @@ export default function Calendar() {
                           }
                         >
                           {event.startTime ? `${event.startTime} ` : ""}
-                          {type?.label ?? event.type}
+                          {event.result ? `${event.result.teamScore}–${event.result.opponentScore} ` : ""}{type?.label ?? event.type}
                         </Text>
                       </Group>
                       );
@@ -532,6 +532,8 @@ export default function Calendar() {
                                   {event.startTime}
                                 </Badge>
                               )}
+                              {event.result && <Badge color={event.result.teamScore > event.result.opponentScore ? "green" : event.result.teamScore < event.result.opponentScore ? "red" : "gray"}>{event.result.teamScore}–{event.result.opponentScore}</Badge>}
+                              {event.attendanceFinalizedAt && <Badge variant="light" color="violet">Presenze chiuse</Badge>}
                             </Group>
                           </Group>
                         </Link>

@@ -30,6 +30,19 @@ router.get("/", (_req: Request, res: Response) => {
 });
 
 // GET /api/players/:id
+router.get("/:id/attendance-history", (req: Request, res: Response) => {
+  const db = getDb();
+  const player = db.prepare("SELECT id FROM players WHERE id = ?").get(req.params.id);
+  if (!player) return void res.status(404).json({ error: "Player not found" });
+  const rows = db.prepare(
+    `SELECT e.id AS eventId, e.date AS date, e.type AS type, e.opponent AS opponent, a.status AS status
+     FROM attendance a JOIN events e ON e.id = a.event_id
+     WHERE a.player_id = ? AND e.attendance_finalized_at IS NOT NULL
+     ORDER BY e.date DESC, e.id DESC`,
+  ).all(req.params.id);
+  res.json(rows);
+});
+
 router.get("/:id", (req: Request, res: Response) => {
   const db = getDb();
   const row = db

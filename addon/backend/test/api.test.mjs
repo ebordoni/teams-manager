@@ -150,6 +150,58 @@ test("attendance reports whether each record was actually saved", async () => {
   );
 });
 
+test("match results and finalized attendance are retained in player history", async () => {
+  const player = await request("/api/players", {
+    method: "POST",
+    body: JSON.stringify({ name: "Storico risultato" }),
+  });
+  const event = await request("/api/events", {
+    method: "POST",
+    body: JSON.stringify({ type: "match", date: "2026-10-06", opponent: "Avversari" }),
+  });
+
+  const result = await request(`/api/events/${event.body.id}/result`, {
+    method: "PUT",
+    body: JSON.stringify({ teamScore: 4, opponentScore: 3, venue: "away", notes: "Bella partita" }),
+  });
+  assert.equal(result.response.status, 200);
+  assert.deepEqual(result.body, {
+    eventId: event.body.id, teamScore: 4, opponentScore: 3,
+    venue: "away", notes: "Bella partita", completedAt: result.body.completedAt,
+  });
+
+  const summary = await request("/api/reports/summary");
+  assert.equal(summary.response.status, 200);
+  assert.ok(summary.body.results.played >= 1);
+
+  const finalized = await request(`/api/events/${event.body.id}/attendance/finalize`, {
+    method: "POST",
+    body: JSON.stringify({ records: [{ playerId: player.body.id, status: "present" }] }),
+  });
+  assert.equal(finalized.response.status, 200);
+  assert.equal(typeof finalized.body.finalizedAt, "string");
+
+  const closedUpdate = await request(`/api/events/${event.body.id}/attendance`, {
+    method: "PUT",
+    body: JSON.stringify({ records: [{ playerId: player.body.id, status: "absent" }] }),
+  });
+  assert.equal(closedUpdate.response.status, 409);
+
+  const history = await request(`/api/players/${player.body.id}/attendance-history`);
+  assert.equal(history.response.status, 200);
+  assert.ok(history.body.some((item) => item.eventId === event.body.id && item.status === "present"));
+
+  const report = await request("/api/reports/attendance", { headers: { "content-type": "application/json" } });
+  assert.equal(report.response.status, 200);
+  assert.ok(report.body.events.some((item) => item.id === event.body.id));
+  assert.ok(report.body.records.some((item) => item.eventId === event.body.id && item.playerId === player.body.id));
+
+  const reopened = await request(`/api/events/${event.body.id}/attendance/reopen`, { method: "POST" });
+  assert.equal(reopened.response.status, 204);
+  const removed = await request(`/api/events/${event.body.id}/result`, { method: "DELETE" });
+  assert.equal(removed.response.status, 204);
+});
+
 test("generating a communication without a linked Google account asks to connect it", async () => {
   const event = await request("/api/events", {
     method: "POST",

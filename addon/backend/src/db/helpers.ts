@@ -41,6 +41,7 @@ export function rowToEvent(row: EventRow): Event {
     notes: row.notes,
     status: row.status,
     formationId: row.formation_id,
+    attendanceFinalizedAt: row.attendance_finalized_at,
     createdAt: row.created_at,
   };
 }

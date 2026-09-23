@@ -15,6 +15,7 @@ import {
   IconClipboardCheck,
   IconFileText,
   IconLayoutList,
+  IconTrophy,
   IconUsersGroup,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
@@ -28,6 +29,7 @@ import type {
   EventTypeDef,
   Player,
   TeamEvent,
+  TeamSummary,
 } from "../types";
 
 type EventChecklist = { attendance: Attendance[] };
@@ -38,6 +40,7 @@ export default function Dashboard() {
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [checklist, setChecklist] = useState<EventChecklist | null>(null);
+  const [summary, setSummary] = useState<TeamSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,18 +50,20 @@ export default function Dashboard() {
       setError(null);
       try {
         const today = new Date().toISOString().slice(0, 10);
-        const [playersRes, eventsRes, typesRes, communicationsRes] =
+        const [playersRes, eventsRes, typesRes, communicationsRes, summaryRes] =
           await Promise.all([
             api.getPlayers(),
             api.getEvents({ from: today }),
             api.getEventTypes(),
             api.getCommunications(),
+            api.getTeamSummary(),
           ]);
         const events = eventsRes.data.slice(0, 5);
         setPlayers(playersRes.data);
         setUpcomingEvents(events);
         setEventTypes(typesRes.data);
         setCommunications(communicationsRes.data);
+        setSummary(summaryRes.data);
         if (events[0]) {
           const attendanceRes = await api.getAttendance(events[0].id);
           setChecklist({ attendance: attendanceRes.data });
@@ -161,6 +166,11 @@ export default function Dashboard() {
         </Card>
       </SimpleGrid>
 
+      <SimpleGrid cols={{ base: 1, md: 2 }}>
+        <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Partite disputate</Text><Text size="xl" fw={700}>{summary?.results.played ?? 0}</Text><Text size="sm" c="dimmed">{summary ? `${summary.results.wins} V · ${summary.results.draws} N · ${summary.results.losses} P · ${summary.results.goalsFor}-${summary.results.goalsAgainst}` : "—"}</Text></div><ThemeIcon variant="light" color="yellow" size="lg"><IconTrophy /></ThemeIcon></Group></Card>
+        <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Presenze confermate</Text><Text size="xl" fw={700}>{summary?.attendance.total ? `${Math.round((summary.attendance.present / summary.attendance.total) * 100)}%` : "—"}</Text><Text size="sm" c="dimmed">{summary ? `${summary.attendance.present}/${summary.attendance.total} registrazioni` : "Nessun registro chiuso"}</Text></div><ThemeIcon variant="light" color="violet" size="lg"><IconClipboardCheck /></ThemeIcon></Group></Card>
+      </SimpleGrid>
+
       <Card withBorder padding="lg">
         <Group justify="space-between" mb="sm">
           <Title order={4}>Azioni rapide</Title>
@@ -189,8 +199,11 @@ export default function Dashboard() {
           >
             Comunicazioni
           </Button>
+          <Button component={Link} to="/attendance" variant="light" leftSection={<IconClipboardCheck size={18} />}>Registro presenze</Button>
         </Group>
       </Card>
+
+      {summary && summary.recentResults.length > 0 && <Card withBorder padding="lg"><Group justify="space-between" mb="sm"><Title order={4}>Ultimi risultati</Title><Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Apri calendario</Button></Group><Stack gap="xs">{summary.recentResults.map((match) => <Group key={match.eventId} justify="space-between"><Text>{match.date}{match.opponent ? ` · vs ${match.opponent}` : ""}</Text><Badge color={match.teamScore > match.opponentScore ? "green" : match.teamScore < match.opponentScore ? "red" : "gray"}>{match.teamScore}–{match.opponentScore}</Badge></Group>)}</Stack></Card>}
 
       {nextEvent && (
         <Alert

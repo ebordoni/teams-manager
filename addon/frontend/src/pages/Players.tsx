@@ -16,10 +16,10 @@ import {
   Title,
 } from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
-import { IconPencil, IconTrash } from "@tabler/icons-react";
+import { IconChartBar, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { Player, PreferredFoot } from "../types";
+import type { AttendanceHistoryItem, Player, PreferredFoot } from "../types";
 
 const ROLES = ["Portiere", "Difensore", "Centrocampista", "Esterno", "Attaccante"];
 const FOOT_OPTIONS = [
@@ -59,6 +59,8 @@ export default function Players() {
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<PlayerDraft>(EMPTY_PLAYER);
   const [editing, setEditing] = useState<Player | null>(null);
+  const [history, setHistory] = useState<{ player: Player; items: AttendanceHistoryItem[] } | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [showForm, { toggle: toggleForm, close: closeForm }] = useDisclosure(false);
   const showTechnicalProfile = useMediaQuery("(min-width: 75em)") ?? false;
 
@@ -98,6 +100,13 @@ export default function Players() {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   }
 
+  async function showHistory(player: Player) {
+    if (history?.player.id === player.id) { setHistory(null); return; }
+    setLoadingHistory(true);
+    try { const response = await api.getPlayerAttendanceHistory(player.id); setHistory({ player, items: response.data }); }
+    finally { setLoadingHistory(false); }
+  }
+
   return <Stack gap="md">
     <Group justify="space-between"><Title order={4}>Giocatori</Title><Button onClick={toggleForm}>{showForm ? "Annulla" : "+ Nuovo giocatore"}</Button></Group>
     {editing && <Card withBorder padding="md" radius="md" style={{ borderColor: "var(--mantine-primary-color-filled)" }}><form onSubmit={handleUpdate}><Stack gap="md">
@@ -105,6 +114,7 @@ export default function Players() {
       <PlayerFields value={editing} onChange={(next) => setEditing({ ...editing, ...next })} includeNotes />
       <Button type="submit" style={{ alignSelf: "flex-start" }}>Salva modifiche</Button>
     </Stack></form></Card>}
+    {history && <Card withBorder padding="md" radius="md"><Stack gap="xs"><Group justify="space-between"><div><Title order={5}>Storico presenze · {history.player.name}</Title><Text size="sm" c="dimmed">Solo registri confermati.</Text></div><Button variant="subtle" onClick={() => setHistory(null)}>Chiudi</Button></Group>{history.items.length === 0 ? <Text c="dimmed">Nessuna presenza storicizzata.</Text> : <><Text fw={600}>{history.items.filter((item) => item.status === "present").length}/{history.items.length} presenze ({Math.round((history.items.filter((item) => item.status === "present").length / history.items.length) * 100)}%)</Text>{history.items.map((item) => <Group key={item.eventId} justify="space-between"><Text size="sm">{item.date} · {item.type}{item.opponent ? ` · ${item.opponent}` : ""}</Text><Badge color={item.status === "present" ? "green" : "red"}>{item.status === "present" ? "Presente" : "Assente"}</Badge></Group>)}</>}</Stack></Card>}
     <Collapse expanded={showForm}><Card withBorder padding="md" radius="md"><form onSubmit={handleSubmit}><Stack gap="md">
       <Title order={5}>Nuovo giocatore</Title><PlayerFields value={draft} onChange={setDraft} includeNotes />
       <Button type="submit" style={{ alignSelf: "flex-start" }}>Salva</Button>
@@ -112,7 +122,7 @@ export default function Players() {
     {loading ? <Loader /> : players.length === 0 ? <Text c="dimmed">Nessun giocatore in anagrafica.</Text> : <Stack gap="xs">
       {players.map((player) => <Card key={player.id} withBorder padding="sm" radius="md"><Group justify="space-between" wrap="nowrap">
         <div style={{ minWidth: 0, flex: 1 }}><Text fw={600} truncate>{player.name}</Text><Group gap="xs" mt={3}><Badge variant="light">{FOOT_LABEL[player.preferredFoot]}</Badge>{(player.role || player.secondaryRoles.length > 0) && <Text size="sm" c="dimmed" truncate>{[player.role, ...player.secondaryRoles].filter(Boolean).join(", ")}</Text>}</Group>{showTechnicalProfile && <Group gap={4} mt={6} wrap="nowrap" aria-label={`Profilo tecnico di ${player.name}`}>{SKILLS.map(([key, label]) => <Badge key={key} size="sm" variant="light" color="gray" title={label}>{SKILL_SHORT_LABEL[key]} {player[key]}</Badge>)}</Group>}</div>
-        <Group gap="xs" wrap="nowrap"><ActionIcon variant="subtle" onClick={() => startEditing(player)} aria-label={`Modifica ${player.name}`}><IconPencil size={18} /></ActionIcon><ActionIcon color="red" variant="subtle" onClick={() => handleDelete(player.id)} aria-label={`Elimina ${player.name}`}><IconTrash size={18} /></ActionIcon></Group>
+        <Group gap="xs" wrap="nowrap"><ActionIcon variant="subtle" loading={loadingHistory && history?.player.id !== player.id} onClick={() => void showHistory(player)} aria-label={`Storico presenze ${player.name}`}><IconChartBar size={18} /></ActionIcon><ActionIcon variant="subtle" onClick={() => startEditing(player)} aria-label={`Modifica ${player.name}`}><IconPencil size={18} /></ActionIcon><ActionIcon color="red" variant="subtle" onClick={() => handleDelete(player.id)} aria-label={`Elimina ${player.name}`}><IconTrash size={18} /></ActionIcon></Group>
       </Group></Card>)}
     </Stack>}
   </Stack>;
