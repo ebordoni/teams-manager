@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.18.2] — 2026-09-23
+
+### Added
+
+- Fix export piano partita
+
 ## [0.18.1] — 2026-09-23
 
 ### Added
