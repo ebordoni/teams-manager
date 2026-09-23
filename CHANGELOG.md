@@ -7,6 +7,15 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.14.0] — 2026-09-23
+
+### Modificato
+
+- Calendario: gli eventi nelle celle sono ora mostrati come etichette leggibili con icona, orario e accento di stato.
+- Rimossa la gestione manuale delle convocazioni: ogni evento, comunicazione e piano partita usa automaticamente l'intera rosa.
+- Presenze semplificate: tutti i giocatori sono presenti per impostazione predefinita e si deselezionano soltanto gli assenti.
+- Eliminata la registrazione duplicata dei router API di convocazioni e presenze.
+
 ## [0.13.0] — 2026-09-22
 
 ### Modificato

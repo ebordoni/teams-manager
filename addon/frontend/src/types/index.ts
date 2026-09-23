@@ -37,12 +37,6 @@ export interface TeamEvent {
   createdAt: string;
 }
 
-export interface Callup {
-  playerId: number;
-  playerName: string;
-  calledUp: boolean;
-}
-
 export interface GoogleStatus {
   configured: boolean;
   connected: boolean;

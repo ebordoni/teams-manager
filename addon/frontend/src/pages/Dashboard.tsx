@@ -24,14 +24,13 @@ import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
 import type {
   Attendance,
-  Callup,
   Communication,
   EventTypeDef,
   Player,
   TeamEvent,
 } from "../types";
 
-type EventChecklist = { callups: Callup[]; attendance: Attendance[] };
+type EventChecklist = { attendance: Attendance[] };
 
 export default function Dashboard() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -61,14 +60,8 @@ export default function Dashboard() {
         setEventTypes(typesRes.data);
         setCommunications(communicationsRes.data);
         if (events[0]) {
-          const [callupsRes, attendanceRes] = await Promise.all([
-            api.getCallups(events[0].id),
-            api.getAttendance(events[0].id),
-          ]);
-          setChecklist({
-            callups: callupsRes.data,
-            attendance: attendanceRes.data,
-          });
+          const attendanceRes = await api.getAttendance(events[0].id);
+          setChecklist({ attendance: attendanceRes.data });
         } else setChecklist(null);
       } catch {
         setError(
@@ -84,10 +77,8 @@ export default function Dashboard() {
   if (loading) return <PageLoader />;
   const nextEvent = upcomingEvents[0];
   const typeOf = (key: string) => eventTypes.find((type) => type.key === key);
-  const calledUpCount =
-    checklist?.callups.filter((callup) => callup.calledUp).length ?? 0;
-  const attendanceRecorded =
-    checklist?.attendance.filter((record) => record.recorded).length ?? 0;
+  const presentCount =
+    checklist?.attendance.filter((record) => record.status === "present").length ?? 0;
   const hasCommunication = nextEvent
     ? communications.some((communication) =>
         communication.eventIds.includes(nextEvent.id),
@@ -142,10 +133,10 @@ export default function Dashboard() {
           <Group justify="space-between">
             <div>
               <Text size="sm" c="dimmed">
-                Convocati
+                Rosa coinvolta
               </Text>
               <Text size="xl" fw={700}>
-                {nextEvent ? `${calledUpCount}/${players.length}` : "—"}
+                {nextEvent ? `${players.length}/${players.length}` : "—"}
               </Text>
             </div>
             <ThemeIcon variant="light" color="orange" size="lg">
@@ -157,10 +148,10 @@ export default function Dashboard() {
           <Group justify="space-between">
             <div>
               <Text size="sm" c="dimmed">
-                Presenze registrate
+                Presenze
               </Text>
               <Text size="xl" fw={700}>
-                {nextEvent ? `${attendanceRecorded}/${calledUpCount}` : "—"}
+                {nextEvent ? `${presentCount}/${players.length}` : "—"}
               </Text>
             </div>
             <ThemeIcon variant="light" color="violet" size="lg">
@@ -203,15 +194,11 @@ export default function Dashboard() {
 
       {nextEvent && (
         <Alert
-          color={
-            calledUpCount === 0 ? "yellow" : hasCommunication ? "green" : "blue"
-          }
+          color={hasCommunication ? "green" : "blue"}
           title="Preparazione prossimo appuntamento"
         >
-          {calledUpCount === 0
-            ? "Manca la convocazione per il prossimo evento."
-            : !hasCommunication
-              ? "Convocazioni pronte: genera ora la comunicazione per i genitori dal calendario."
+          {!hasCommunication
+              ? "La rosa è inclusa automaticamente: genera ora la comunicazione per i genitori dal calendario."
               : "La comunicazione per il prossimo evento è già stata generata."}
           <Button
             component={Link}

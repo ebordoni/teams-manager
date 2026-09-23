@@ -38,17 +38,6 @@ const SCHEMA_V1 = `
 
   CREATE INDEX IF NOT EXISTS idx_events_date ON events(date);
 
-  CREATE TABLE IF NOT EXISTS callups (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_id    INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-    player_id   INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    called_up   INTEGER NOT NULL DEFAULT 1,
-    UNIQUE(event_id, player_id)
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_callups_event  ON callups(event_id);
-  CREATE INDEX IF NOT EXISTS idx_callups_player ON callups(player_id);
-
   CREATE TABLE IF NOT EXISTS attendance (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id    INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,

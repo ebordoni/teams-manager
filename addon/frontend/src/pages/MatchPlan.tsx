@@ -1,11 +1,11 @@
 import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, SimpleGrid, Stack, Table, Text, TextInput, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconRobot, IconTrash } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import PageLoader from "../components/PageLoader";
-import type { Callup, MatchPeriod, MatchPlan as MatchPlanType, Player, RolePolicy, TeamEvent } from "../types";
+import type { MatchPeriod, MatchPlan as MatchPlanType, Player, RolePolicy, TeamEvent } from "../types";
 
 const SLOT_LABELS: Record<string, string> = {
   portiere: "Portiere", difensoreSinistro: "Difensore sinistro", difensoreDestro: "Difensore destro",
@@ -16,7 +16,6 @@ export default function MatchPlan() {
   const eventId = Number(useParams<{ id: string }>().id);
   const [event, setEvent] = useState<TeamEvent | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [callups, setCallups] = useState<Callup[]>([]);
   const [plans, setPlans] = useState<MatchPlanType[]>([]);
   const [selected, setSelected] = useState<MatchPlanType | null>(null);
   const [draftPeriods, setDraftPeriods] = useState<MatchPeriod[]>([]);
@@ -27,16 +26,15 @@ export default function MatchPlan() {
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    const [eventRes, playersRes, callupsRes, plansRes, configRes] = await Promise.all([
-      api.getEvent(eventId), api.getPlayers(), api.getCallups(eventId), api.getMatchPlans(eventId), api.getAIConfig(),
+    const [eventRes, playersRes, plansRes, configRes] = await Promise.all([
+      api.getEvent(eventId), api.getPlayers(), api.getMatchPlans(eventId), api.getAIConfig(),
     ]);
-    setEvent(eventRes.data); setPlayers(playersRes.data); setCallups(callupsRes.data); setPlans(plansRes.data);
+    setEvent(eventRes.data); setPlayers(playersRes.data); setPlans(plansRes.data);
     setForm((current) => ({ ...current, periodCount: configRes.data.defaultPeriodCount, minutesPerPeriod: configRes.data.defaultMinutesPerPeriod, playersOnField: configRes.data.defaultPlayersOnField, rolePolicy: configRes.data.defaultRolePolicy }));
     const first = plansRes.data[0] ?? null; setSelected(first); setDraftPeriods(first ? structuredClone(first.periods) : []);
   };
   useEffect(() => { load().catch(() => setError("Impossibile caricare i dati della partita")).finally(() => setLoading(false)); }, [eventId]);
-  const calledPlayers = useMemo(() => players.filter((player) => callups.some((callup) => callup.playerId === player.id && callup.calledUp)), [players, callups]);
-  const playerOptions = calledPlayers.map((player) => ({ value: String(player.id), label: player.name }));
+  const playerOptions = players.map((player) => ({ value: String(player.id), label: player.name }));
 
   const selectPlan = (plan: MatchPlanType) => { setSelected(plan); setDraftPeriods(structuredClone(plan.periods)); setError(null); };
   const generate = async () => {
@@ -53,7 +51,7 @@ export default function MatchPlan() {
       if (index !== periodIndex) return period;
       const assignments = period.assignments.map((assignment, itemIndex) => itemIndex === assignmentIndex ? { ...assignment, playerId } : assignment);
       const used = new Set(assignments.map((assignment) => assignment.playerId));
-      return { ...period, assignments, benchPlayerIds: calledPlayers.map((player) => player.id).filter((id) => !used.has(id)) };
+      return { ...period, assignments, benchPlayerIds: players.map((player) => player.id).filter((id) => !used.has(id)) };
     }));
   };
   const saveManual = async () => {
@@ -65,7 +63,7 @@ export default function MatchPlan() {
   const confirm = async () => { if (!selected) return; setError(null); try { const response = await api.confirmMatchPlan(eventId, selected.id); setSelected(response.data); setPlans((current) => current.map((plan) => plan.id === response.data.id ? response.data : plan)); notifications.show({ color: "green", message: "Piano partita confermato" }); } catch (err) { setError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Conferma non riuscita"); } };
   const remove = async (plan: MatchPlanType) => { if (!window.confirm(`Eliminare “${plan.name}”?`)) return; await api.deleteMatchPlan(eventId, plan.id); const next = plans.filter((item) => item.id !== plan.id); setPlans(next); const nextSelected = next[0] ?? null; setSelected(nextSelected); setDraftPeriods(nextSelected ? structuredClone(nextSelected.periods) : []); };
 
-  const summary = calledPlayers.map((player) => {
+  const summary = players.map((player) => {
     const appearances = draftPeriods.reduce((count, period) => count + (period.assignments.some((assignment) => assignment.playerId === player.id) ? 1 : 0), 0);
     const roles = [...new Set(draftPeriods.flatMap((period) => period.assignments.filter((assignment) => assignment.playerId === player.id).map((assignment) => assignment.role)))];
     return { player, appearances, minutes: appearances * (selected?.minutesPerPeriod ?? form.minutesPerPeriod), roles };
@@ -83,8 +81,8 @@ export default function MatchPlan() {
         <NumberInput label="In campo" min={2} max={11} value={form.playersOnField} onChange={(value) => setForm({ ...form, playersOnField: Number(value) })} />
         <Select label="Ruoli" data={[{ value: "strict", label: "Rigidi" }, { value: "preferred", label: "Preferiti" }, { value: "free", label: "Liberi" }]} value={form.rolePolicy} onChange={(value) => setForm({ ...form, rolePolicy: (value ?? "preferred") as RolePolicy })} />
       </SimpleGrid>
-      <Text size="sm" c="dimmed">{calledPlayers.length} convocati. I cambi vengono effettuati soltanto tra un tempo e il successivo.</Text>
-      <Button onClick={generate} loading={generating} disabled={calledPlayers.length < form.playersOnField} style={{ alignSelf: "flex-start" }}>Genera rotazioni</Button>
+      <Text size="sm" c="dimmed">{players.length} giocatori nella rosa. I cambi vengono effettuati soltanto tra un tempo e il successivo.</Text>
+      <Button onClick={generate} loading={generating} disabled={players.length < form.playersOnField} style={{ alignSelf: "flex-start" }}>Genera rotazioni</Button>
     </Stack></Card>
 
     {plans.length > 0 && <Group align="flex-start" wrap="wrap"><Stack gap="xs" w={{ base: "100%", md: 250 }}>{plans.map((plan) => <Card key={plan.id} withBorder onClick={() => selectPlan(plan)} style={{ cursor: "pointer", borderColor: selected?.id === plan.id ? "var(--mantine-primary-color-filled)" : undefined }}><Group justify="space-between" wrap="nowrap"><div><Text fw={600}>{plan.name}</Text><Group gap={4}><Badge size="xs" color={plan.source === "ai" ? "green" : plan.source === "manual" ? "blue" : "yellow"}>{plan.source}</Badge><Badge size="xs" variant="light">{plan.status}</Badge></Group></div><ActionIcon color="red" variant="subtle" onClick={(event) => { event.stopPropagation(); void remove(plan); }}><IconTrash size={16} /></ActionIcon></Group></Card>)}</Stack>

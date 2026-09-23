@@ -21,8 +21,6 @@ import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
 import type {
   Attendance,
-  AttendanceStatus,
-  Callup,
   EventStatus,
   EventTypeDef,
   Formation,
@@ -41,12 +39,6 @@ const STATUS_COLOR: Record<EventStatus, string> = {
   cancelled: "red",
 };
 
-const ATTENDANCE_LABEL: Record<AttendanceStatus, string> = {
-  present: "Presente",
-  absent: "Assente",
-  excused: "Giustificato",
-};
-
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -54,10 +46,8 @@ export default function EventDetail() {
   const [event, setEvent] = useState<TeamEvent | null>(null);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [formations, setFormations] = useState<Formation[]>([]);
-  const [callups, setCallups] = useState<Callup[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
-  const [savingCallups, setSavingCallups] = useState(false);
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [statusDraft, setStatusDraft] = useState<EventStatus>("scheduled");
   const [notesDraft, setNotesDraft] = useState("");
@@ -77,15 +67,13 @@ export default function EventDetail() {
     if (!eventId) return;
     Promise.all([
       api.getEvent(eventId),
-      api.getCallups(eventId),
       api.getAttendance(eventId),
       api.getEventTypes(),
       api.getFormations(),
     ])
       .then(
-        ([eventRes, callupsRes, attendanceRes, typesRes, formationsRes]) => {
+        ([eventRes, attendanceRes, typesRes, formationsRes]) => {
           setEvent(eventRes.data);
-          setCallups(callupsRes.data);
           setAttendance(attendanceRes.data);
           setEventTypes(typesRes.data);
           setFormations(formationsRes.data);
@@ -109,32 +97,13 @@ export default function EventDetail() {
       .finally(() => setLoading(false));
   }, [eventId]);
 
-  function toggleCallup(playerId: number) {
-    setCallups((prev) =>
-      prev.map((c) =>
-        c.playerId === playerId ? { ...c, calledUp: !c.calledUp } : c,
-      ),
-    );
-  }
-
-  async function handleSaveCallups() {
-    setSavingCallups(true);
-    try {
-      const playerIds = callups
-        .filter((c) => c.calledUp)
-        .map((c) => c.playerId);
-      await api.setCallups(eventId, playerIds);
-      // Ricarica le presenze: la lista dipende dai convocati appena salvati.
-      const attendanceRes = await api.getAttendance(eventId);
-      setAttendance(attendanceRes.data);
-    } finally {
-      setSavingCallups(false);
-    }
-  }
-
-  function setAttendanceStatus(playerId: number, status: AttendanceStatus) {
+  function setPlayerPresent(playerId: number, present: boolean) {
     setAttendance((prev) =>
-      prev.map((a) => (a.playerId === playerId ? { ...a, status } : a)),
+      prev.map((a) =>
+        a.playerId === playerId
+          ? { ...a, status: present ? "present" : "absent" }
+          : a,
+      ),
     );
   }
 
@@ -189,7 +158,7 @@ export default function EventDetail() {
     if (!event) return;
     if (
       !window.confirm(
-        `Eliminare questo evento del ${event.date}? Verranno eliminate anche convocazioni e presenze collegate.`,
+        `Eliminare questo evento del ${event.date}? Verranno eliminate anche le presenze collegate.`,
       )
     ) {
       return;
@@ -210,18 +179,8 @@ export default function EventDetail() {
         (playerId): playerId is number => playerId !== null,
       )
     : [];
-  const calledUpIds = new Set(
-    callups
-      .filter((callup) => callup.calledUp)
-      .map((callup) => callup.playerId),
-  );
-  const missingCallups = callups.filter(
-    (callup) =>
-      formationPlayerIds.includes(callup.playerId) &&
-      !calledUpIds.has(callup.playerId),
-  );
-  const recordedAttendance = attendance.filter(
-    (record) => record.recorded,
+  const presentAttendance = attendance.filter(
+    (record) => record.status === "present",
   ).length;
 
   return (
@@ -376,46 +335,11 @@ export default function EventDetail() {
               {formationPlayerIds.length}/7 giocatori
             </Badge>
           </Group>
-          {missingCallups.length > 0 ? (
-            <Alert color="yellow">
-              Convoca anche:{" "}
-              {missingCallups.map((callup) => callup.playerName).join(", ")}.
-            </Alert>
-          ) : (
-            <Text size="sm" c="dimmed">
-              La formazione è coerente con le convocazioni attuali.
-            </Text>
-          )}
+          <Text size="sm" c="dimmed">
+            Tutta la rosa è inclusa automaticamente nell'evento.
+          </Text>
         </Card>
       )}
-
-      <div>
-        <Group justify="space-between" mb="xs">
-          <Title order={5}>Convocazioni</Title>
-          <Button onClick={handleSaveCallups} loading={savingCallups} size="sm">
-            Salva convocazioni
-          </Button>
-        </Group>
-        {callups.length === 0 ? (
-          <Text c="dimmed">
-            Nessun giocatore in anagrafica: aggiungili dalla pagina Giocatori.
-          </Text>
-        ) : (
-          <Stack gap="xs">
-            {callups.map((c) => (
-              <Card key={c.playerId} withBorder padding="sm" radius="md">
-                <Group justify="space-between">
-                  <Text>{c.playerName}</Text>
-                  <Checkbox
-                    checked={c.calledUp}
-                    onChange={() => toggleCallup(c.playerId)}
-                  />
-                </Group>
-              </Card>
-            ))}
-          </Stack>
-        )}
-      </div>
 
       <div>
         <Group justify="space-between" mb="xs">
@@ -425,10 +349,10 @@ export default function EventDetail() {
               <Badge
                 variant="light"
                 color={
-                  recordedAttendance === attendance.length ? "green" : "gray"
+                  presentAttendance === attendance.length ? "green" : "yellow"
                 }
               >
-                {recordedAttendance}/{attendance.length} registrate
+                {presentAttendance}/{attendance.length} presenti
               </Badge>
             )}
           </Group>
@@ -443,8 +367,7 @@ export default function EventDetail() {
         </Group>
         {attendance.length === 0 ? (
           <Text c="dimmed">
-            Salva prima le convocazioni: le presenze si registrano solo per i
-            giocatori convocati.
+            Nessun giocatore in anagrafica: aggiungili dalla pagina Giocatori.
           </Text>
         ) : (
           <Stack gap="xs">
@@ -452,19 +375,12 @@ export default function EventDetail() {
               <Card key={a.playerId} withBorder padding="sm" radius="md">
                 <Group justify="space-between">
                   <Text>{a.playerName}</Text>
-                  <Select
-                    data={Object.entries(ATTENDANCE_LABEL).map(
-                      ([value, label]) => ({ value, label }),
-                    )}
-                    value={a.status}
-                    onChange={(value) =>
-                      setAttendanceStatus(
-                        a.playerId,
-                        (value ?? "present") as AttendanceStatus,
-                      )
+                  <Checkbox
+                    label="Presente"
+                    checked={a.status === "present"}
+                    onChange={(event) =>
+                      setPlayerPresent(a.playerId, event.currentTarget.checked)
                     }
-                    allowDeselect={false}
-                    w={160}
                   />
                 </Group>
               </Card>

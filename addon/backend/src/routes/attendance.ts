@@ -14,7 +14,7 @@ const AttendanceSchema = z.object({
   ),
 });
 
-// GET /api/events/:id/attendance — stato presenza di tutti i convocati
+// GET /api/events/:id/attendance — tutti i giocatori sono presenti di default.
 router.get("/", (req: Request, res: Response) => {
   const db = getDb();
   const eventId = req.params.id;
@@ -25,19 +25,18 @@ router.get("/", (req: Request, res: Response) => {
     return;
   }
 
-  // Solo i giocatori convocati per l'evento hanno senso di presenza/assenza.
-  // `recorded` distingue lo stato realmente salvato dal default proposto.
+  // La presenza riguarda tutta la rosa: l'assenza è l'unica eccezione che
+  // l'operatore deve indicare. `recorded` distingue il default dal salvataggio.
   const rows = db
     .prepare(
       `SELECT p.id AS playerId, p.name AS playerName,
               COALESCE(a.status, 'present') AS status,
               a.status IS NOT NULL AS recorded
        FROM players p
-       JOIN callups c ON c.player_id = p.id AND c.event_id = ?
        LEFT JOIN attendance a ON a.player_id = p.id AND a.event_id = ?
        ORDER BY p.name ASC`,
     )
-    .all(eventId, eventId) as unknown as Array<
+    .all(eventId) as unknown as Array<
     Omit<Attendance, "recorded"> & { recorded: number }
   >;
 

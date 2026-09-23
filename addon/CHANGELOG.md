@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.14.0] — 2026-09-23
+
+### Changed
+
+- Eventi nel calendario resi più visibili con etichetta, icona, orario e accento di stato.
+- Convocazioni manuali rimosse: l'intera rosa è automaticamente inclusa in eventi, comunicazioni e piani partita AI.
+- Presenze a checkbox, tutte selezionate inizialmente; si deselezionano solo gli assenti.
+- Rimossa la doppia registrazione dei router API e i riferimenti client alla vecchia funzionalità convocazioni.
+
 ## [0.13.0] — 2026-09-22
 
 ### Modificato

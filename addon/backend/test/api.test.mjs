@@ -51,7 +51,7 @@ test("health endpoint reports the running service", async () => {
   assert.equal(typeof body.version, "string");
 });
 
-test("player, event and callup workflow is available through the API", async () => {
+test("player and event workflow is available through the API", async () => {
   const player = await request("/api/players", {
     method: "POST",
     body: JSON.stringify({ name: "Giocatore test", role: "Centrocampista" }),
@@ -68,18 +68,16 @@ test("player, event and callup workflow is available through the API", async () 
   });
   assert.equal(event.response.status, 201);
 
-  const callups = await request(`/api/events/${event.body.id}/callups`, {
-    method: "PUT",
-    body: JSON.stringify({ playerIds: [player.body.id] }),
-  });
-  assert.equal(callups.response.status, 200);
-  assert.equal(callups.body.callupCount, 1);
-
-  const list = await request(`/api/events/${event.body.id}/callups`);
-  assert.equal(list.response.status, 200);
-  assert.deepEqual(list.body, [
-    { playerId: player.body.id, playerName: "Giocatore test", calledUp: true },
-  ]);
+  const attendance = await request(`/api/events/${event.body.id}/attendance`);
+  assert.equal(attendance.response.status, 200);
+  assert.ok(
+    attendance.body.some(
+      (record) =>
+        record.playerId === player.body.id &&
+        record.status === "present" &&
+        record.recorded === false,
+    ),
+  );
 });
 
 test("unknown event types are rejected", async () => {
@@ -113,21 +111,12 @@ test("attendance reports whether each record was actually saved", async () => {
     method: "POST",
     body: JSON.stringify({ type: "training", date: "2026-10-04" }),
   });
-  await request(`/api/events/${event.body.id}/callups`, {
-    method: "PUT",
-    body: JSON.stringify({ playerIds: [player.body.id] }),
-  });
-
   const proposed = await request(`/api/events/${event.body.id}/attendance`);
   assert.equal(proposed.response.status, 200);
-  assert.deepEqual(proposed.body, [
-    {
-      playerId: player.body.id,
-      playerName: "Presenze test",
-      status: "present",
-      recorded: false,
-    },
-  ]);
+  assert.deepEqual(
+    proposed.body.find((record) => record.playerId === player.body.id),
+    { playerId: player.body.id, playerName: "Presenze test", status: "present", recorded: false },
+  );
 
   await request(`/api/events/${event.body.id}/attendance`, {
     method: "PUT",
@@ -137,14 +126,10 @@ test("attendance reports whether each record was actually saved", async () => {
   });
 
   const saved = await request(`/api/events/${event.body.id}/attendance`);
-  assert.deepEqual(saved.body, [
-    {
-      playerId: player.body.id,
-      playerName: "Presenze test",
-      status: "absent",
-      recorded: true,
-    },
-  ]);
+  assert.deepEqual(
+    saved.body.find((record) => record.playerId === player.body.id),
+    { playerId: player.body.id, playerName: "Presenze test", status: "absent", recorded: true },
+  );
 });
 
 test("generating a communication without a linked Google account asks to connect it", async () => {
@@ -188,7 +173,6 @@ test("match plans use the validated local fallback when AI is not configured", a
     "Esterno",
     "Attaccante",
   ];
-  const playerIds = [];
   for (let index = 0; index < roles.length; index += 1) {
     const player = await request("/api/players", {
       method: "POST",
@@ -198,7 +182,6 @@ test("match plans use the validated local fallback when AI is not configured", a
       }),
     });
     assert.equal(player.response.status, 201);
-    playerIds.push(player.body.id);
   }
   const event = await request("/api/events", {
     method: "POST",
@@ -207,10 +190,6 @@ test("match plans use the validated local fallback when AI is not configured", a
       date: "2026-10-03",
       opponent: "Avversario rotazioni",
     }),
-  });
-  await request(`/api/events/${event.body.id}/callups`, {
-    method: "PUT",
-    body: JSON.stringify({ playerIds }),
   });
   const generated = await request(
     `/api/events/${event.body.id}/match-plans/generate`,

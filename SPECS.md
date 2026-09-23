@@ -1,7 +1,7 @@
 # GIPS Calcio — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.13.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
+> Stato attuale: **MVP operativo (v0.14.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -9,7 +9,7 @@
 ## 1. Obiettivo
 
 Realizzare un **Home Assistant Addon** che permetta di gestire gli appuntamenti della squadra di
-calcio (allenamenti, partite, tornei), l'anagrafica dei giocatori e le convocazioni, e che generi su
+calcio (allenamenti, partite, tornei), l'anagrafica dei giocatori e le presenze, e che generi su
 richiesta un **Google Document** da condividere con i genitori tramite WhatsApp.
 
 Il database (SQLite) rimane locale all'addon: Google Docs è solo il formato di **pubblicazione /
@@ -68,7 +68,7 @@ addon/
 │   │   ├── config.ts
 │   │   ├── index.ts
 │   │   ├── db/
-│   │   ├── routes/            # players, events, callups, attendance,
+│   │   ├── routes/            # players, events, attendance,
 │   │   │                      # event-types, settings, google, communications
 │   │   ├── services/
 │   │   │   ├── communication.service.ts
@@ -98,7 +98,7 @@ addon/
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----- |
 | F01 | **Anagrafica giocatori**                                                                                                                                            | CRUD giocatori: nome, ruolo, ruoli secondari, note. Statistiche (presenze, gol) di base.                 | WIP   |
 | F02 | **Calendario eventi**                                                                                                                                               | CRUD eventi (allenamento/partita/torneo): data, ora, luogo, indirizzo, avversario, ritrovo, note, stato. | WIP   |
-| F03 | **Convocazioni**                                                                                                                                                    | Per ogni evento, selezione dei giocatori convocati (checklist).                                          | WIP   |
+| F03 | **Rosa automatica**                                                                                                                                                 | Ogni evento include l'intera rosa; non è prevista una selezione manuale dei convocati.                  | DONE  |
 | F04 | **Presenze**                                                                                                                                                        | Registrazione presenze effettive per allenamenti/partite (base per statistiche future).                  | DONE  |
 | F05 | **Dashboard**                                                                                                                                                       | Prossimi eventi, numero giocatori, riepilogo rapido.                                                     | DONE  |
 | F06 | **App Home Assistant**                                                                                                                                              | Addon con Ingress, persistenza dati in `/data`, healthcheck.                                             | DONE  |
@@ -157,15 +157,8 @@ id
 key                  -- es. "training", "match", "friendly"...
 label                -- es. "Allenamento"
 icon                 -- emoji
-has_opponent         -- boolean: mostra avversario + convocazioni
+has_opponent         -- boolean: mostra avversario
 sort_order
-
-callups             -- convocazioni per evento
--------
-id
-event_id
-player_id
-called_up           -- boolean
 
 attendance           -- presenze effettive (F04)
 ----------
@@ -228,9 +221,6 @@ POST   /api/events
 GET    /api/events/:id
 PUT    /api/events/:id
 DELETE /api/events/:id
-
-GET    /api/events/:id/callups
-PUT    /api/events/:id/callups     -- body: { playerIds: number[] }
 
 GET    /api/events/:id/attendance
 PUT    /api/events/:id/attendance  -- body: { records: { playerId, status }[] }
@@ -306,20 +296,20 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 
 - struttura addon Home Assistant (Docker, Ingress, config.yaml)
 - backend Express + SQLite, frontend React + Vite
-- schema dati players/events/callups
+- schema dati players/events/attendance
 
 ## Fase 2 — Backend MVP
 
 - CRUD giocatori
 - CRUD eventi
-- gestione convocazioni
+- presenze con rosa inclusa automaticamente
 
 ## Fase 3 — Frontend MVP
 
 - dashboard
 - calendario
 - pagina giocatori
-- dettaglio evento + convocazioni
+- dettaglio evento + presenze
 
 ## Fase 4 — Rifinitura MVP (completata)
 

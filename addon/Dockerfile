@@ -23,10 +23,10 @@ RUN npm run build
 FROM node:24-alpine
 LABEL \
   io.hass.name="GIPS Calcio" \
-  io.hass.description="Gestionale squadra calcio: calendario, giocatori, convocazioni e comunicazioni" \
+  io.hass.description="Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni" \
   io.hass.arch="aarch64|amd64" \
   io.hass.type="addon" \
-  io.hass.version="0.13.0"
+  io.hass.version="0.14.0"
 
 WORKDIR /app
 

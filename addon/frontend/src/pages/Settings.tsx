@@ -310,7 +310,7 @@ export default function Settings() {
           <Text size="sm" c="dimmed">
             Gestisci i tipi disponibili nel calendario (es. Allenamento,
             Partita, Torneo, Amichevole…). "Ha avversario" mostra il campo
-            avversario e le convocazioni per quel tipo. L’icona è ricercabile e
+            avversario per quel tipo. L’icona è ricercabile e
             viene mostrata in anteprima prima del salvataggio.
           </Text>
 

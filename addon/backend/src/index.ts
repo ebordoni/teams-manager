@@ -7,7 +7,6 @@ import { initDb } from "./db/schema";
 import aiRouter from "./routes/ai";
 import attendanceRouter from "./routes/attendance";
 import calendarExportRouter from "./routes/calendar-export";
-import callupsRouter from "./routes/callups";
 import communicationsRouter from "./routes/communications";
 import eventTypesRouter from "./routes/event-types";
 import eventsRouter from "./routes/events";
@@ -50,7 +49,6 @@ export function createApp() {
   // ── API routes ─────────────────────────────────────────────────────────────
   app.use("/api/players", playersRouter);
   app.use("/api/events", eventsRouter);
-  app.use("/api/events/:id/callups", callupsRouter);
   app.use("/api/events/:id/attendance", attendanceRouter);
   app.use("/api/events/:id/match-plans", matchPlansRouter);
   app.use("/api/event-types", eventTypesRouter);
@@ -60,18 +58,6 @@ export function createApp() {
   app.use("/api/communications", communicationsRouter);
   app.use("/api/settings", settingsRouter);
   app.use("/api/ai", aiRouter);
-
-  // ── API routes ─────────────────────────────────────────────────────────────
-  app.use("/api/players", playersRouter);
-  app.use("/api/events", eventsRouter);
-  app.use("/api/events/:id/callups", callupsRouter);
-  app.use("/api/events/:id/attendance", attendanceRouter);
-  app.use("/api/event-types", eventTypesRouter);
-  app.use("/api/formations", formationsRouter);
-  app.use("/api/google", googleRouter);
-  app.use("/api/google/calendar", calendarExportRouter);
-  app.use("/api/communications", communicationsRouter);
-  app.use("/api/settings", settingsRouter);
 
   app.get("/api/health", (_req: Request, res: Response) => {
     res.json({

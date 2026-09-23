@@ -95,8 +95,8 @@ export default function Calendar() {
   const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
   const [exporting, setExporting] = useState(false);
   const [needsGoogleAuth, setNeedsGoogleAuth] = useState(false);
-  // Su schermi stretti nella cella resta la sola icona: gli orari si leggono
-  // nell'agenda del giorno selezionato.
+  // Le etichette restano leggibili anche su schermi stretti: l'agenda sotto
+  // il calendario conserva comunque tutti i dettagli della giornata.
   const compactDays = useMediaQuery("(max-width: 48em)") ?? false;
 
   function loadEvents(date = displayedDate) {
@@ -209,7 +209,7 @@ export default function Calendar() {
     const type = typeOf(event.type);
     if (
       !window.confirm(
-        `Eliminare l'evento "${type?.label ?? event.type}" del ${event.date}? Verranno eliminate anche convocazioni e presenze collegate.`,
+        `Eliminare l'evento "${type?.label ?? event.type}" del ${event.date}? Verranno eliminate anche le presenze collegate.`,
       )
     ) {
       return;
@@ -428,36 +428,45 @@ export default function Calendar() {
                     <Text fz={15} fw={600} lh={1}>
                       {dayjs(date).date()}
                     </Text>
-                    {visible.map((event) => (
+                    {visible.map((event) => {
+                      const type = typeOf(event.type);
+                      return (
                       <Group
                         key={event.id}
-                        gap={4}
-                        justify="center"
+                        gap={3}
+                        justify="flex-start"
                         wrap="nowrap"
-                        maw="100%"
-                        fz={13}
+                        w="100%"
+                        px={4}
+                        py={3}
+                        style={{
+                          background: "var(--mantine-color-default-hover)",
+                          borderLeft: `3px solid var(--mantine-color-${event.status === "scheduled" ? "blue" : STATUS_COLOR[event.status]}-6)`,
+                          borderRadius: "var(--mantine-radius-sm)",
+                        }}
                         c={STATUS_ACCENT[event.status]}
                       >
                         <EventTypeIcon
-                          name={typeOf(event.type)?.icon ?? "IconBallFootball"}
-                          size={compactDays ? 18 : 16}
+                          name={type?.icon ?? "IconBallFootball"}
+                          size={compactDays ? 17 : 16}
                         />
-                        {!compactDays && event.startTime && (
-                          <Text
-                            fz={10}
-                            fw={500}
-                            lh={1}
-                            td={
-                              event.status === "cancelled"
-                                ? "line-through"
-                                : undefined
-                            }
-                          >
-                            {event.startTime}
-                          </Text>
-                        )}
+                        <Text
+                          fz={compactDays ? 10 : 11}
+                          fw={700}
+                          lh={1.1}
+                          truncate
+                          td={
+                            event.status === "cancelled"
+                              ? "line-through"
+                              : undefined
+                          }
+                        >
+                          {event.startTime ? `${event.startTime} ` : ""}
+                          {type?.label ?? event.type}
+                        </Text>
                       </Group>
-                    ))}
+                      );
+                    })}
                     {dayEvents.length > visible.length && (
                       <Text fz={10} fw={700} lh={1} opacity={0.7}>
                         +{dayEvents.length - visible.length}

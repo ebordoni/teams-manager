@@ -62,7 +62,7 @@ export function validateRotation(request: RotationRequest, periods: MatchPeriod[
   const totalSpots = request.periodCount * request.playersOnField;
   const theoreticalDifference = Math.ceil(totalSpots / request.players.length) - Math.floor(totalSpots / request.players.length);
   const actualDifference = Math.max(...counts) - Math.min(...counts);
-  if (totalSpots >= request.players.length && counts.some((count) => count === 0)) errors.push("Non tutti i convocati hanno un tempo di gioco");
+  if (totalSpots >= request.players.length && counts.some((count) => count === 0)) errors.push("Non tutti i giocatori hanno un tempo di gioco");
   if (actualDifference > theoreticalDifference) warnings.push(`La differenza di minutaggio è ${actualDifference * request.minutesPerPeriod} minuti; il minimo teorico è ${theoreticalDifference * request.minutesPerPeriod}`);
   return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
 }

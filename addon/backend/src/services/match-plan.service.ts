@@ -5,9 +5,8 @@ import { validateRotation, type RotationPlayer, type RotationRequest } from "./r
 
 function loadPlayers(eventId: number): RotationPlayer[] {
   const rows = getDb().prepare(
-    `SELECT p.* FROM players p JOIN callups c ON c.player_id = p.id
-     WHERE c.event_id = ? AND c.called_up = 1 ORDER BY p.name ASC`,
-  ).all(eventId) as unknown as PlayerRow[];
+    "SELECT p.* FROM players p ORDER BY p.name ASC",
+  ).all() as unknown as PlayerRow[];
   return rows.map((row) => ({
     id: row.id,
     roles: [row.role, ...(JSON.parse(row.secondary_roles) as string[])].filter((role): role is string => Boolean(role)),
@@ -59,7 +58,7 @@ export async function generateMatchPlan(eventId: number, input: {
   const event = db.prepare("SELECT id, date FROM events WHERE id = ?").get(eventId) as { id: number; date: string } | undefined;
   if (!event) throw new Error("Evento non trovato");
   const players = loadPlayers(eventId);
-  if (players.length < input.playersOnField) throw new Error(`Servono almeno ${input.playersOnField} convocati`);
+  if (players.length < input.playersOnField) throw new Error(`Servono almeno ${input.playersOnField} giocatori nella rosa`);
   const request: RotationRequest = { ...input, players };
   const generated = await new AIService().generateRotations(request);
 

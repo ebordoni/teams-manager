@@ -53,19 +53,6 @@ export interface EventRow {
   created_at: string;
 }
 
-export interface CallupRow {
-  id: number;
-  event_id: number;
-  player_id: number;
-  called_up: number;
-}
-
-export interface Callup {
-  playerId: number;
-  playerName: string;
-  calledUp: boolean;
-}
-
 export type AttendanceStatus = "present" | "absent" | "excused";
 
 export interface AttendanceRow {

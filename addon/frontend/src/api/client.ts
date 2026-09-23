@@ -2,7 +2,6 @@ import axios from "axios";
 import type {
   Attendance,
   AttendanceStatus,
-  Callup,
   Communication,
   EventFilters,
   EventTypeDef,
@@ -48,15 +47,6 @@ export const api = {
   updateEvent: (id: number, data: Partial<TeamEvent>) =>
     apiClient.put<TeamEvent>(`/events/${id}`, data),
   deleteEvent: (id: number) => apiClient.delete(`/events/${id}`),
-
-  // ── Callups ────────────────────────────────────────────────────────────
-  getCallups: (eventId: number) =>
-    apiClient.get<Callup[]>(`/events/${eventId}/callups`),
-  setCallups: (eventId: number, playerIds: number[]) =>
-    apiClient.put<{ eventId: number; callupCount: number }>(
-      `/events/${eventId}/callups`,
-      { playerIds },
-    ),
 
   // ── Attendance ─────────────────────────────────────────────────────────
   getAttendance: (eventId: number) =>

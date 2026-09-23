@@ -69,17 +69,13 @@ function formatDateIt(isoDate: string): string {
   return `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }
 
-function getCallupNames(eventId: number): string[] {
+function getTeamPlayerNames(): string[] {
   const db = getDb();
   const rows = db
     .prepare(
-      `SELECT p.name AS name
-       FROM callups c
-       JOIN players p ON p.id = c.player_id
-       WHERE c.event_id = ? AND c.called_up = 1
-       ORDER BY p.name ASC`,
+      "SELECT name FROM players ORDER BY name ASC",
     )
-    .all(eventId) as unknown as { name: string }[];
+    .all() as unknown as { name: string }[];
   return rows.map((r) => r.name);
 }
 
@@ -176,11 +172,11 @@ function formatEvent(
   if (event.notes && event.status === "scheduled") lines.push(event.notes);
 
   if (typeDef?.hasOpponent) {
-    const callups = getCallupNames(event.id);
-    if (callups.length > 0) {
+    const teamPlayers = getTeamPlayerNames();
+    if (teamPlayers.length > 0) {
       lines.push("");
       lines.push("CONVOCATI");
-      for (const name of callups) lines.push(`- ${name}`);
+      for (const name of teamPlayers) lines.push(`- ${name}`);
     }
   }
 
@@ -250,11 +246,11 @@ function buildStyledDocument(
     }
 
     if (typeDef?.hasOpponent) {
-      const callups = getCallupNames(event.id);
-      if (callups.length > 0) {
+      const teamPlayers = getTeamPlayerNames();
+      if (teamPlayers.length > 0) {
         builder
           .addParagraph("Convocati", documentStyles.match)
-          .addParagraph(callups.join(" · "), documentStyles.normal);
+          .addParagraph(teamPlayers.join(" · "), documentStyles.normal);
       }
     }
 

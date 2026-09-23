@@ -3,7 +3,7 @@
 ## Panoramica
 
 **GIPS Calcio** è un addon per Home Assistant che permette di gestire il calendario, l'anagrafica
-dei giocatori e le convocazioni della squadra, con generazione automatica di comunicazioni per i
+dei giocatori e le presenze della squadra, con generazione automatica di comunicazioni per i
 genitori (Google Docs + WhatsApp). Interfaccia realizzata con Mantine UI.
 
 ## Funzionalità
@@ -17,19 +17,20 @@ avversario e note. Ogni evento può essere programmato, modificato o annullato.
 
 Dalla pagina **Impostazioni** puoi creare, modificare ed eliminare i tipi di evento disponibili nel
 calendario (es. Allenamento, Partita, Torneo, Amichevole…), indicando per ciascuno se prevede un
-avversario (mostra il campo "Avversario" e le convocazioni).
+avversario (mostra il campo "Avversario").
 
 ### Giocatori
 
 Anagrafica della squadra: nome, ruolo, ruoli secondari e note.
 
-### Convocazioni
+### Rosa e presenze
 
-Per ogni evento, selezione rapida dei giocatori convocati.
+Ogni evento include automaticamente tutta la rosa. Nella scheda evento tutti i giocatori sono
+selezionati come presenti: deseleziona soltanto chi non ha partecipato.
 
 ### Piani partita AI
 
-Dopo avere salvato le convocazioni, apri la scheda della partita e seleziona **Piano partita AI**.
+Apri la scheda della partita e seleziona **Piano partita AI**.
 Indica numero e durata dei tempi, giocatori in campo e rigidità dei ruoli. L'app prepara una
 formazione per ciascun tempo cercando la distribuzione di minuti più uniforme possibile senza
 cambi durante il tempo. La proposta può essere modificata, confermata o eliminata.

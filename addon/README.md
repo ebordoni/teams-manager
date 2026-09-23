@@ -2,9 +2,9 @@
 
 # ⚽ GIPS Calcio
 
-**Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le convocazioni della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
+**Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le presenze della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
 
-[![Version](https://img.shields.io/badge/version-0.12.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.14.0-blue)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Home%20Assistant-41BDF5)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20aarch64-lightgrey)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
@@ -13,7 +13,7 @@
 
 ---
 
-> ✅ **Stato: MVP operativo (v0.13.0).** Calendario, giocatori, convocazioni, presenze, formazioni, piani partita AI e comunicazioni Google sono disponibili.
+> ✅ **Stato: MVP operativo (v0.14.0).** Calendario, giocatori, presenze, formazioni, piani partita AI e comunicazioni Google sono disponibili.
 
 ## 🎯 Obiettivo
 
@@ -21,7 +21,7 @@ GIPS Calcio è il gestionale della squadra pensato per essere installato come ad
 
 - **Calendario** — allenamenti, partite, tornei, eventi speciali.
 - **Anagrafica giocatori** — ruoli, presenze, gol, note.
-- **Convocazioni** — selezione rapida dei convocati per ogni evento.
+- **Rosa automatica** — tutti i giocatori sono inclusi in ogni evento; le presenze partono da “presente”.
 - **Comunicazioni** — generazione di un Google Document condivisibile via WhatsApp con i genitori.
 - **Piani partita AI** — rotazioni per ciascun tempo con minutaggio bilanciato, ruoli e fallback locale.
 
