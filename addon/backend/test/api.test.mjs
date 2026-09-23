@@ -163,6 +163,15 @@ test("generating a communication without a linked Google account asks to connect
   assert.match(body.error, /Google non è collegato/);
 });
 
+test("Google Calendar verification explains when Calendar authorization is missing", async () => {
+  const { response, body } = await request("/api/google/calendar/test", {
+    method: "POST",
+    body: JSON.stringify({ calendarId: "primary" }),
+  });
+  assert.equal(response.status, 403);
+  assert.match(body.error, /Ricollega Google/);
+});
+
 test("AI configuration never exposes API keys", async () => {
   const updated = await request("/api/ai/config", {
     method: "PUT",
@@ -234,6 +243,13 @@ test("match plans use the validated local fallback when AI is not configured", a
   );
   assert.equal(confirmed.response.status, 200);
   assert.equal(confirmed.body.status, "confirmed");
+
+  const exportWithoutGoogle = await request(
+    `/api/events/${event.body.id}/match-plans/${generated.body.id}/export`,
+    { method: "POST" },
+  );
+  assert.equal(exportWithoutGoogle.response.status, 403);
+  assert.match(exportWithoutGoogle.body.error, /Google non è collegato/);
 
   const removed = await request(
     `/api/events/${event.body.id}/match-plans/${generated.body.id}`,

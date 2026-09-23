@@ -60,6 +60,8 @@ export default function Settings() {
   const [templateSaved, setTemplateSaved] = useState(false);
   const [calendarId, setCalendarId] = useState("primary");
   const [savingCalendar, setSavingCalendar] = useState(false);
+  const [testingCalendar, setTestingCalendar] = useState(false);
+  const [calendarTest, setCalendarTest] = useState<{ color: "green" | "red"; message: string } | null>(null);
   const [teamName, setTeamName] = useState("");
   const [savingTeamName, setSavingTeamName] = useState(false);
   const [teamNameSaved, setTeamNameSaved] = useState(false);
@@ -183,6 +185,7 @@ export default function Settings() {
 
   async function handleSaveCalendar() {
     setSavingCalendar(true);
+    setCalendarTest(null);
     try {
       await api.updateSettings({
         googleCalendarId: calendarId.trim() || "primary",
@@ -190,6 +193,28 @@ export default function Settings() {
       setCalendarId(calendarId.trim() || "primary");
     } finally {
       setSavingCalendar(false);
+    }
+  }
+
+  async function handleTestCalendar() {
+    setTestingCalendar(true);
+    setCalendarTest(null);
+    try {
+      const response = await api.verifyGoogleCalendar(calendarId.trim() || "primary");
+      setCalendarTest({
+        color: "green",
+        message: `Accesso verificato per il calendario “${response.data.calendarId}”.`,
+      });
+    } catch (err) {
+      setCalendarTest({
+        color: "red",
+        message: apiErrorMessage(
+          err,
+          "Impossibile verificare l'accesso al calendario.",
+        ),
+      });
+    } finally {
+      setTestingCalendar(false);
     }
   }
 
@@ -295,9 +320,9 @@ export default function Settings() {
         <Stack gap="sm">
           <Title order={5}>Google Calendar</Title>
           <Text size="sm" c="dimmed">
-            Gli eventi selezionati nel calendario vengono esportati e aggiornati
-            nel calendario indicato. Non importiamo né eliminiamo eventi da
-            Google Calendar.
+            L'esportazione dalla pagina Calendario è manuale e unidirezionale:
+            ripetendola, gli eventi già esportati vengono aggiornati. Non
+            importiamo né eliminiamo eventi da Google Calendar.
           </Text>
           <Group align="flex-end">
             <TextInput
@@ -309,10 +334,17 @@ export default function Settings() {
               onChange={(e) => setCalendarId(e.currentTarget.value)}
               style={{ flex: 1 }}
             />
-            <Button onClick={handleSaveCalendar} loading={savingCalendar}>
-              Salva
+            <Button onClick={handleSaveCalendar} loading={savingCalendar}>Salva</Button>
+            <Button variant="light" onClick={handleTestCalendar} loading={testingCalendar}>
+              Verifica accesso
             </Button>
           </Group>
+          {calendarTest && <Alert color={calendarTest.color} title={calendarTest.color === "green" ? "Calendario raggiungibile" : "Verifica non riuscita"}>{calendarTest.message}</Alert>}
+          <Text size="xs" c="dimmed">
+            Se la verifica fallisce, controlla l'ID e che il calendario sia
+            condiviso con l'account Google collegato. Dopo aver cambiato gli
+            scope o le credenziali, disconnetti e ricollega Google.
+          </Text>
         </Stack>
       </Card>
 

@@ -7,13 +7,49 @@ import {
   hasGoogleCalendarAccess,
   withGoogleAuth,
 } from "../services/google/auth";
-import { upsertCalendarEvent } from "../services/google/calendar";
+import {
+  upsertCalendarEvent,
+  verifyCalendarAccess,
+} from "../services/google/calendar";
 import { getSetting, SETTINGS_KEYS } from "../services/settings.service";
 import type { EventRow, EventTypeDefRow } from "../types";
 
 const router = Router();
 const ExportSchema = z.object({
   eventIds: z.array(z.number().int().positive()).min(1),
+});
+const VerifySchema = z.object({
+  calendarId: z.string().trim().min(1).optional(),
+});
+
+router.post("/test", async (req: Request, res: Response) => {
+  const parse = VerifySchema.safeParse(req.body);
+  if (!parse.success)
+    return void res.status(400).json({ error: parse.error.flatten() });
+  if (!hasGoogleCalendarAccess()) {
+    return void res
+      .status(403)
+      .json({ error: "Ricollega Google per autorizzare l'accesso a Calendar" });
+  }
+
+  const calendarId =
+    parse.data.calendarId ??
+    getSetting(SETTINGS_KEYS.googleCalendarId) ??
+    "primary";
+  try {
+    await withGoogleAuth((auth) => verifyCalendarAccess(auth, calendarId));
+    res.json({ calendarId, valid: true });
+  } catch (error) {
+    if (error instanceof GoogleAuthRequiredError) {
+      res.status(403).json({ error: error.message });
+      return;
+    }
+    console.error("[calendar] Verifica Google Calendar fallita", error);
+    res.status(422).json({
+      error:
+        "Calendario non raggiungibile: verifica l'ID e che sia condiviso con l'account Google collegato",
+    });
+  }
 });
 
 router.post("/export", async (req: Request, res: Response) => {

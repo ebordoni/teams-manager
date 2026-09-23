@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
+import { GoogleAuthRequiredError } from "../services/google/auth";
+import { exportMatchPlan } from "../services/match-plan-export.service";
 import { confirmMatchPlan, deleteMatchPlan, generateMatchPlan, getMatchPlan, listMatchPlans, updateMatchPlan } from "../services/match-plan.service";
 
 const router = Router({ mergeParams: true });
@@ -46,6 +48,19 @@ router.post("/:planId/confirm", (req, res) => {
   if (!params.success || !params.data.planId) return void res.status(400).json({ error: "Id non valido" });
   try { res.json(confirmMatchPlan(params.data.id, params.data.planId)); }
   catch (error) { res.status(400).json({ error: error instanceof Error ? error.message : "Conferma non riuscita" }); }
+});
+
+router.post("/:planId/export", async (req, res) => {
+  const params = ParamsSchema.safeParse(req.params);
+  if (!params.success || !params.data.planId) return void res.status(400).json({ error: "Id non valido" });
+  try {
+    res.status(201).json(await exportMatchPlan(params.data.id, params.data.planId));
+  } catch (error) {
+    if (error instanceof GoogleAuthRequiredError) return void res.status(403).json({ error: error.message });
+    if (error instanceof Error && /non trovato/.test(error.message)) return void res.status(404).json({ error: error.message });
+    console.error("[match-plans] Export Google Docs fallito", error);
+    res.status(502).json({ error: "Impossibile esportare il piano partita in Google Docs" });
+  }
 });
 
 router.delete("/:planId", (req, res) => {

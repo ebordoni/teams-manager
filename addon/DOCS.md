@@ -80,12 +80,23 @@ valori predefiniti e verificare la connessione.
 ### Collegare Google
 
 1. Su [Google Cloud Console](https://console.cloud.google.com/) crea un progetto, abilita **Google
-   Docs API** e **Google Drive API**, configura la schermata di consenso OAuth e crea una
+   Docs API**, **Google Drive API** e **Google Calendar API**, configura la schermata di consenso OAuth e crea una
    credenziale **OAuth 2.0 Client ID** di tipo "Applicazione web".
 2. Aggiungi come **URI di reindirizzamento autorizzato**:
    `http://<IP-HOME-ASSISTANT>:8102/api/google/oauth/callback`
 3. Inserisci Client ID e Client Secret nelle opzioni dell'addon.
 4. Apri la pagina **Impostazioni** dell'app e clicca **Collega Google**.
+
+### Google Calendar
+
+L'integrazione Calendar è un export **manuale e unidirezionale**: dalla pagina Calendario si
+selezionano gli eventi e si usa “Esporta in Google Calendar”. Una nuova esportazione degli stessi
+eventi li aggiorna senza duplicarli; non vengono importati o rimossi eventi di Google.
+
+In **Impostazioni → Google Calendar** puoi usare `primary` oppure l'ID di un calendario condiviso,
+poi scegliere “Verifica accesso”. Se la verifica fallisce, l'ID è errato oppure il calendario non è
+condiviso con l'account autorizzato. Se è stato aggiunto Calendar dopo il primo collegamento, usa
+“Disconnetti” e poi “Collega Google” per rilasciare nuovamente gli scope necessari.
 
 > Il redirect deve passare dalla porta diretta `8102` (non dall'iframe Ingress), per questo
 > l'addon espone anche quella porta oltre all'integrazione in sidebar.

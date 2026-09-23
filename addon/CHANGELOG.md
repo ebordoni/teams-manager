@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.18.0] — 2026-09-23
+
+### Added
+
+- Esportazione del piano partita in Google Docs con schieramento per tempo, panchina, ruoli e minutaggio complessivo.
+- Controllo dell'accesso al Google Calendar impostato, disponibile dalla schermata Impostazioni.
+
+### Changed
+
+- UI Calendar chiarita: l'export è manuale, unidirezionale e aggiorna gli eventi già presenti quando rieseguito.
+
 ## [0.17.0] — 2026-09-23
 
 ### Added

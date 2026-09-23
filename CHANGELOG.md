@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.18.0] — 2026-09-23
+
+### Aggiunto
+
+- Export del piano partita in Google Docs, con formazione per ogni tempo, panchina, ruoli e riepilogo del minutaggio.
+- Verifica dell'accesso al Google Calendar configurato direttamente dalle Impostazioni.
+
+### Modificato
+
+- Chiarito nella UI il comportamento dell'export Calendar: è unidirezionale, manuale e aggiorna gli eventi già esportati quando viene ripetuto.
+
 ## [0.17.0] — 2026-09-23
 
 ### Aggiunto

@@ -75,6 +75,8 @@ export const api = {
     apiClient.delete(`/communications/${id}`),
   exportToGoogleCalendar: (eventIds: number[]) =>
     apiClient.post<{ exported: number }>("/google/calendar/export", { eventIds }),
+  verifyGoogleCalendar: (calendarId: string) =>
+    apiClient.post<{ calendarId: string; valid: true }>("/google/calendar/test", { calendarId }),
 
   // ── Tipi evento ────────────────────────────────────────────────────────
   getEventTypes: () => apiClient.get<EventTypeDef[]>("/event-types"),
@@ -105,6 +107,8 @@ export const api = {
     apiClient.put<MatchPlan>(`/events/${eventId}/match-plans/${planId}`, data),
   confirmMatchPlan: (eventId: number, planId: number) =>
     apiClient.post<MatchPlan>(`/events/${eventId}/match-plans/${planId}/confirm`),
+  exportMatchPlan: (eventId: number, planId: number) =>
+    apiClient.post<import("../types").GeneratedMatchPlanExport>(`/events/${eventId}/match-plans/${planId}/export`),
   deleteMatchPlan: (eventId: number, planId: number) =>
     apiClient.delete(`/events/${eventId}/match-plans/${planId}`),
 };

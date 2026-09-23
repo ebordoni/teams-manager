@@ -85,3 +85,14 @@ export async function upsertCalendarEvent(
     throw new Error("Google Calendar non ha restituito l'id dell'evento");
   return created.data.id;
 }
+
+/** Verifica che il calendario indicato sia raggiungibile con l'account collegato. */
+export async function verifyCalendarAccess(
+  auth: OAuth2Client,
+  calendarId: string,
+): Promise<void> {
+  const calendar = google.calendar({ version: "v3", auth });
+  // calendar.events.list funziona con lo scope calendar.events già richiesto
+  // dall'app e distingue un ID errato da un calendario non condiviso.
+  await calendar.events.list({ calendarId, maxResults: 1 });
+}

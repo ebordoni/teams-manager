@@ -44,6 +44,14 @@ export async function ensureCommunicationsFolder(
   return findOrCreateFolder(auth, "Comunicazioni", rootFolder);
 }
 
+/** Assicura che esista Drive/Teams Manager/Piani partita e ne restituisce l'id. */
+export async function ensureMatchPlansFolder(
+  auth: OAuth2Client,
+): Promise<string> {
+  const rootFolder = await findOrCreateFolder(auth, "Teams Manager");
+  return findOrCreateFolder(auth, "Piani partita", rootFolder);
+}
+
 /** Sposta un file (es. il documento appena creato) dentro la cartella indicata. */
 export async function moveFileToFolder(
   auth: OAuth2Client,

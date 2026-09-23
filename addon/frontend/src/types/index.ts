@@ -75,6 +75,12 @@ export interface GeneratedCommunication {
   whatsappMessage: string;
 }
 
+export interface GeneratedMatchPlanExport {
+  title: string;
+  googleDocId: string;
+  googleDocUrl: string;
+}
+
 export type AttendanceStatus = "present" | "absent" | "excused";
 
 export interface Attendance {
