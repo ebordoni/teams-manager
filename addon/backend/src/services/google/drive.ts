@@ -36,11 +36,11 @@ async function findOrCreateFolder(
   return created.data.id;
 }
 
-/** Assicura che esista Drive/GIPS Calcio/Comunicazioni e ne restituisce l'id. */
+/** Assicura che esista Drive/Teams Manager/Comunicazioni e ne restituisce l'id. */
 export async function ensureCommunicationsFolder(
   auth: OAuth2Client,
 ): Promise<string> {
-  const rootFolder = await findOrCreateFolder(auth, "GIPS Calcio");
+  const rootFolder = await findOrCreateFolder(auth, "Teams Manager");
   return findOrCreateFolder(auth, "Comunicazioni", rootFolder);
 }
 

@@ -23,7 +23,7 @@ function eventResource(event: Event, type: EventTypeDef | undefined) {
       : null,
     event.meetingTime ? `Ritrovo: ${event.meetingTime}` : null,
     event.notes,
-    "Gestito da GIPS Calcio",
+    "Gestito da Teams Manager",
   ]
     .filter(Boolean)
     .join("\n");

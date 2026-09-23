@@ -51,6 +51,12 @@ export interface GoogleStatus {
   calendarConnected: boolean;
 }
 
+export interface AppSettings {
+  teamName: string;
+  googleTemplateDocId: string | null;
+  googleCalendarId: string;
+}
+
 export interface Communication {
   id: number;
   eventIds: number[];

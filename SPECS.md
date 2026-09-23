@@ -1,7 +1,7 @@
-# GIPS Calcio — Specifiche Applicative
+# Teams Manager — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.15.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
+> Stato attuale: **MVP operativo (v0.16.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -24,7 +24,7 @@ condivisione** della comunicazione verso i genitori, non lo storage principale.
                           │
                           ▼
               ┌─────────────────────┐
-              │  App "GIPS Calcio"  │
+              │ App "Teams Manager" │
               │                     │
               │  ┌───────────────┐  │
               │  │ Database      │  │
@@ -98,7 +98,7 @@ addon/
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----- |
 | F01 | **Anagrafica giocatori**                                                                                                                                            | CRUD giocatori: nome, ruoli, piede preferito, profilo tecnico 0–100 e note.                              | DONE  |
 | F02 | **Calendario eventi**                                                                                                                                               | CRUD eventi (allenamento/partita/torneo): data, ora, luogo, indirizzo, avversario, ritrovo, note, stato. | WIP   |
-| F03 | **Rosa automatica**                                                                                                                                                 | Ogni evento include l'intera rosa; non è prevista una selezione manuale dei convocati.                  | DONE  |
+| F03 | **Rosa automatica**                                                                                                                                                 | Ogni evento include l'intera rosa; non è prevista una selezione manuale dei convocati.                   | DONE  |
 | F04 | **Presenze**                                                                                                                                                        | Registrazione presenze effettive per allenamenti/partite (base per statistiche future).                  | DONE  |
 | F05 | **Dashboard**                                                                                                                                                       | Prossimi eventi, numero giocatori, riepilogo rapido.                                                     | DONE  |
 | F06 | **App Home Assistant**                                                                                                                                              | Addon con Ingress, persistenza dati in `/data`, healthcheck.                                             | DONE  |
@@ -327,7 +327,7 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 ## Fase 5 — Google (completata, verificata end-to-end dall'utente)
 
 - ✅ OAuth 2.0 (`services/google/auth.ts`, token persistiti in `google_tokens`)
-- ✅ Google Drive API (`services/google/drive.ts`: cartella "GIPS Calcio/Comunicazioni", condivisione, copia/eliminazione file)
+- ✅ Google Drive API (`services/google/drive.ts`: cartella "Teams Manager/Comunicazioni", condivisione, copia/eliminazione file)
 - ✅ Google Docs API (`services/google/docs.ts`: creazione documento con contenuto formattato o da template + `batchUpdate` sui placeholder)
 - ✅ pulsante "Genera comunicazione" (Calendario) + messaggio WhatsApp precompilato
 - ✅ pagina "Comunicazioni": storico, apertura documento, eliminazione (F10)

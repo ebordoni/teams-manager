@@ -1,12 +1,16 @@
-# GIPS Calcio - Documentazione
+# Teams Manager - Documentazione
 
 ## Panoramica
 
-**GIPS Calcio** è un addon per Home Assistant che permette di gestire il calendario, l'anagrafica
+**Teams Manager** è un addon per Home Assistant che permette di gestire il calendario, l'anagrafica
 dei giocatori e le presenze della squadra, con generazione automatica di comunicazioni per i
 genitori (Google Docs + WhatsApp). Interfaccia realizzata con Mantine UI.
 
 ## Funzionalità
+
+### Squadra
+
+Dalle **Impostazioni** puoi definire il nome della squadra. Viene usato nelle intestazioni delle comunicazioni e nella pagina del piano partita, senza modificare il nome generico dell'addon Teams Manager.
 
 ### Calendario
 
@@ -41,7 +45,7 @@ configurato o non risponde, viene usato automaticamente il motore locale.
 ### Comunicazioni
 
 Dalla pagina Calendario, seleziona uno o più eventi e premi "Genera comunicazione": l'app crea un
-Google Document con gli appuntamenti (nella cartella Drive "GIPS Calcio/Comunicazioni"), fornisce
+Google Document con gli appuntamenti (nella cartella Drive "Teams Manager/Comunicazioni"), fornisce
 il link al documento e un messaggio WhatsApp pronto da incollare nel gruppo genitori. Se hai
 configurato un **template** (vedi sotto), il documento viene generato a partire da quello.
 

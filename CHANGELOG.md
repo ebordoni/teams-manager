@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.16.0] — 2026-09-23
+
+### Aggiunto
+
+- Impostazione persistente del nome squadra, usata dinamicamente nelle pagine partita e nelle comunicazioni Google.
+
+### Modificato
+
+- Branding tecnico di Google Calendar e Drive aggiornato a Teams Manager.
+
 ## [0.15.0] — 2026-09-23
 
 ### Aggiunto

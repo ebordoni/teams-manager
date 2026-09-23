@@ -2,6 +2,7 @@ import axios from "axios";
 import type {
   Attendance,
   AttendanceStatus,
+  AppSettings,
   Communication,
   EventFilters,
   EventTypeDef,
@@ -89,9 +90,9 @@ export const api = {
 
   // ── Impostazioni app ───────────────────────────────────────────────────
   getSettings: () =>
-    apiClient.get<{ googleTemplateDocId: string | null; googleCalendarId: string }>("/settings"),
-  updateSettings: (data: { googleTemplateDocId?: string | null; googleCalendarId?: string | null }) =>
-    apiClient.put<{ googleTemplateDocId: string | null; googleCalendarId: string }>("/settings", data),
+    apiClient.get<AppSettings>("/settings"),
+  updateSettings: (data: Partial<AppSettings>) =>
+    apiClient.put<AppSettings>("/settings", data),
 
   // ── Intelligenza artificiale e piani partita ───────────────────────────
   getAIConfig: () => apiClient.get<AIConfig>("/ai/config"),

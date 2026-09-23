@@ -1,7 +1,7 @@
-name: "GIPS Calcio"
+name: "Teams Manager"
 description: "Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni per i genitori"
-version: "0.15.0"
-slug: "gips_calcio"
+version: "0.16.0"
+slug: "teams_manager"
 init: false
 arch:
   - aarch64
@@ -12,7 +12,7 @@ ingress: true
 ingress_port: 8101
 ingress_entry: /
 panel_icon: "mdi:soccer"
-panel_title: "GIPS Calcio"
+panel_title: "Teams Manager"
 ports:
   8101/tcp: 8101
 ports_description:

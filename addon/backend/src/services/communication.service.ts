@@ -19,7 +19,7 @@ import {
   makeShareableAndGetLink,
   moveFileToFolder,
 } from "./google/drive";
-import { getSetting, SETTINGS_KEYS } from "./settings.service";
+import { getSetting, getTeamName, SETTINGS_KEYS } from "./settings.service";
 
 const FORMATION_SLOTS: Array<[string, string]> = [
   ["portiere", "Portiere"],
@@ -72,9 +72,7 @@ function formatDateIt(isoDate: string): string {
 function getTeamPlayerNames(): string[] {
   const db = getDb();
   const rows = db
-    .prepare(
-      "SELECT name FROM players ORDER BY name ASC",
-    )
+    .prepare("SELECT name FROM players ORDER BY name ASC")
     .all() as unknown as { name: string }[];
   return rows.map((r) => r.name);
 }
@@ -145,6 +143,7 @@ function eventIcon(icon?: string): string {
 function formatEvent(
   event: Event,
   eventTypes: Map<string, EventTypeDef>,
+  teamName: string,
 ): string {
   const typeDef = eventTypes.get(event.type);
   const lines: string[] = [];
@@ -160,7 +159,7 @@ function formatEvent(
   }
 
   if (typeDef?.hasOpponent && event.opponent) {
-    lines.push(`⚽ GIPS Salizzole – ${event.opponent}`);
+    lines.push(`⚽ ${teamName} – ${event.opponent}`);
   }
   if (event.location) lines.push(`📍 ${event.location}`);
   if (event.meetingTime) lines.push(`⏰ Ritrovo: ${event.meetingTime}`);
@@ -195,9 +194,10 @@ function buildStyledDocument(
   eventTypes: Map<string, EventTypeDef>,
 ): { title: string; builder: DocumentBuilder } {
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
-  const title = `GIPS Salizzole – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
+  const teamName = getTeamName();
+  const title = `${teamName} – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
   const builder = new DocumentBuilder()
-    .addParagraph("GIPS SALIZZOLE", documentStyles.title)
+    .addParagraph(teamName.toLocaleUpperCase("it-IT"), documentStyles.title)
     .addParagraph(
       `Appuntamenti dal ${formatDateIt(sorted[0].date)}`,
       documentStyles.subtitle,
@@ -224,7 +224,7 @@ function buildStyledDocument(
 
     if (typeDef?.hasOpponent && event.opponent) {
       builder.addParagraph(
-        `GIPS Salizzole – ${event.opponent}`,
+        `${teamName} – ${event.opponent}`,
         documentStyles.match,
       );
     }
@@ -281,16 +281,17 @@ function buildTemplatePlaceholders(
   eventTypes: Map<string, EventTypeDef>,
 ): { title: string; replacements: Record<string, string> } {
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
-  const title = `GIPS Salizzole – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
+  const teamName = getTeamName();
+  const title = `${teamName} – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
 
   const matches = sorted.filter((e) => eventTypes.get(e.type)?.hasOpponent);
   const trainings = sorted.filter((e) => !eventTypes.get(e.type)?.hasOpponent);
 
   const partite = matches.length
-    ? matches.map((e) => formatEvent(e, eventTypes)).join("\n\n---\n\n")
+    ? matches.map((e) => formatEvent(e, eventTypes, teamName)).join("\n\n---\n\n")
     : "Nessuna partita/torneo in programma.";
   const allenamenti = trainings.length
-    ? trainings.map((e) => formatEvent(e, eventTypes)).join("\n\n---\n\n")
+    ? trainings.map((e) => formatEvent(e, eventTypes, teamName)).join("\n\n---\n\n")
     : "Nessun allenamento in programma.";
   const formazione =
     matches

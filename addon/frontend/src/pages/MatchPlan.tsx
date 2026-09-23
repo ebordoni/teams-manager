@@ -16,6 +16,7 @@ export default function MatchPlan() {
   const eventId = Number(useParams<{ id: string }>().id);
   const [event, setEvent] = useState<TeamEvent | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [teamName, setTeamName] = useState("");
   const [plans, setPlans] = useState<MatchPlanType[]>([]);
   const [selected, setSelected] = useState<MatchPlanType | null>(null);
   const [draftPeriods, setDraftPeriods] = useState<MatchPeriod[]>([]);
@@ -26,10 +27,10 @@ export default function MatchPlan() {
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    const [eventRes, playersRes, plansRes, configRes] = await Promise.all([
-      api.getEvent(eventId), api.getPlayers(), api.getMatchPlans(eventId), api.getAIConfig(),
+    const [eventRes, playersRes, plansRes, configRes, settingsRes] = await Promise.all([
+      api.getEvent(eventId), api.getPlayers(), api.getMatchPlans(eventId), api.getAIConfig(), api.getSettings(),
     ]);
-    setEvent(eventRes.data); setPlayers(playersRes.data); setPlans(plansRes.data);
+    setEvent(eventRes.data); setPlayers(playersRes.data); setPlans(plansRes.data); setTeamName(settingsRes.data.teamName);
     setForm((current) => ({ ...current, periodCount: configRes.data.defaultPeriodCount, minutesPerPeriod: configRes.data.defaultMinutesPerPeriod, playersOnField: configRes.data.defaultPlayersOnField, rolePolicy: configRes.data.defaultRolePolicy }));
     const first = plansRes.data[0] ?? null; setSelected(first); setDraftPeriods(first ? structuredClone(first.periods) : []);
   };
@@ -71,7 +72,7 @@ export default function MatchPlan() {
 
   if (loading) return <PageLoader />;
   return <Stack gap="lg">
-    <Group justify="space-between"><div><Title order={3}>Piano partita AI</Title><Text c="dimmed">{event?.date}{event?.opponent ? ` · GIPS Salizzole vs ${event.opponent}` : ""}</Text></div><Button component={Link} to={`/events/${eventId}`} variant="subtle">Torna all’evento</Button></Group>
+    <Group justify="space-between"><div><Title order={3}>Piano partita AI</Title><Text c="dimmed">{event?.date}{event?.opponent ? ` · ${teamName} vs ${event.opponent}` : ""}</Text></div><Button component={Link} to={`/events/${eventId}`} variant="subtle">Torna all’evento</Button></Group>
     {error && <Alert color="red" title="Errore">{error}</Alert>}
     <Card withBorder padding="lg"><Stack><Group><IconRobot /><Title order={4}>Genera una proposta</Title></Group>
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }}>

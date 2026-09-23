@@ -1,10 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap");
 
 body {
   margin: 0;
-  font-family: Roboto, Arial, sans-serif;
+  font-family: "Noto Sans", Arial, sans-serif;
+  font-optical-sizing: auto;
   min-width: 320px;
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
+  font-variation-settings: "wdth" 100;
 }
 
-button, a { -webkit-tap-highlight-color: transparent; }
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}

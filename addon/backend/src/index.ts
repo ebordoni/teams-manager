@@ -103,7 +103,7 @@ export function startServer() {
   initDb();
   return app.listen(config.port, () => {
     console.log(
-      `[server] GIPS Calcio running on port ${config.port} (${process.env.NODE_ENV ?? "development"})`,
+      `[server] Teams Manager running on port ${config.port} (${process.env.NODE_ENV ?? "development"})`,
     );
   });
 }

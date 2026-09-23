@@ -1,14 +1,14 @@
 import { Request, Response, Router } from "express";
 import { z } from "zod";
 import {
-  disconnectGoogle,
-  getAuthUrl,
-  isGoogleConfigured,
-  isGoogleConnected,
-  hasGoogleCalendarAccess,
-  exchangeCodeForTokens,
   consumeOAuthState,
   createOAuthState,
+  disconnectGoogle,
+  exchangeCodeForTokens,
+  getAuthUrl,
+  hasGoogleCalendarAccess,
+  isGoogleConfigured,
+  isGoogleConnected,
 } from "../services/google/auth";
 
 const router = Router();
@@ -53,7 +53,9 @@ router.get("/oauth/callback", async (req: Request, res: Response) => {
   // Va verificato anche in caso di errore restituito da Google, così lo stato
   // non resta valido dopo un tentativo di consenso annullato.
   if (!state || !consumeOAuthState(state)) {
-    res.status(400).send("Richiesta OAuth non valida o scaduta: riprova il collegamento");
+    res
+      .status(400)
+      .send("Richiesta OAuth non valida o scaduta: riprova il collegamento");
     return;
   }
 
@@ -70,7 +72,7 @@ router.get("/oauth/callback", async (req: Request, res: Response) => {
     await exchangeCodeForTokens(code);
     res.send(
       "<html><body><h3>Google collegato con successo ✅</h3>" +
-        "<p>Puoi chiudere questa finestra e tornare all'app GIPS Calcio.</p></body></html>",
+        "<p>Puoi chiudere questa finestra e tornare all'app Teams Manager.</p></body></html>",
     );
   } catch (err) {
     console.error("[google] OAuth callback error", err);

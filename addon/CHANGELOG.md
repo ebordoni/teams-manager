@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.16.0] — 2026-09-23
+
+### Added
+
+- Impostazione persistente del nome squadra, riutilizzata in piano partita e comunicazioni per i genitori.
+
+### Changed
+
+- Branding tecnico di Google Calendar e Drive aggiornato a Teams Manager.
+
 ## [0.15.0] — 2026-09-23
 
 ### Added
@@ -144,7 +154,7 @@
 - **Tipi di evento configurabili**: tabella `event_types`, endpoint `GET/POST/PUT/DELETE /api/event-types`, sezione "Tipi di evento" nelle Impostazioni (crea/elimina, flag "ha avversario"). Il campo "Tipo" nel Calendario è ora popolato dinamicamente
 - **Generazione documento da template Google Doc** (opzionale): impostabile in Impostazioni incollando il link del documento; supporta i placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}` sostituiti via `batchUpdate`. Se non configurato, si usa la generazione automatica esistente
 - **Pagina "Comunicazioni"**: storico dei documenti generati con apertura e **eliminazione** (rimuove anche il file da Google Drive tramite `DELETE /api/communications/:id`)
-- Fase 5 (Google): OAuth 2.0 con account personale (`services/google/auth.ts`), Google Drive API (cartella "GIPS Calcio/Comunicazioni", condivisione link), Google Docs API (creazione documento con appuntamenti formattati)
+- Fase 5 (Google): OAuth 2.0 con account personale (`services/google/auth.ts`), Google Drive API (cartella "Teams Manager/Comunicazioni", condivisione link), Google Docs API (creazione documento con appuntamenti formattati)
 - Endpoint `GET /api/google/status`, `GET /api/google/oauth/url`, `GET /api/google/oauth/callback`, `POST /api/google/disconnect`
 - Endpoint `GET/POST /api/communications` per generare e storicizzare le comunicazioni ai genitori
 - Pagina "Impostazioni" per collegare/scollegare l'account Google

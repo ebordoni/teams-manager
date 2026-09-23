@@ -60,6 +60,9 @@ export default function Settings() {
   const [templateSaved, setTemplateSaved] = useState(false);
   const [calendarId, setCalendarId] = useState("primary");
   const [savingCalendar, setSavingCalendar] = useState(false);
+  const [teamName, setTeamName] = useState("");
+  const [savingTeamName, setSavingTeamName] = useState(false);
+  const [teamNameSaved, setTeamNameSaved] = useState(false);
 
   function loadAll() {
     setLoading(true);
@@ -69,6 +72,7 @@ export default function Settings() {
         setEventTypes(typesRes.data);
         setTemplateDocId(settingsRes.data.googleTemplateDocId ?? "");
         setCalendarId(settingsRes.data.googleCalendarId);
+        setTeamName(settingsRes.data.teamName);
       })
       .finally(() => setLoading(false));
   }
@@ -189,11 +193,51 @@ export default function Settings() {
     }
   }
 
+  async function handleSaveTeamName() {
+    const nextTeamName = teamName.trim();
+    if (!nextTeamName) return;
+    setSavingTeamName(true);
+    setTeamNameSaved(false);
+    try {
+      const response = await api.updateSettings({ teamName: nextTeamName });
+      setTeamName(response.data.teamName);
+      setTeamNameSaved(true);
+    } finally {
+      setSavingTeamName(false);
+    }
+  }
+
   if (loading) return <PageLoader />;
 
   return (
     <Stack gap="xl">
       <Title order={4}>Impostazioni</Title>
+
+      <Card withBorder padding="md" radius="md">
+        <Stack gap="sm">
+          <Title order={5}>Squadra</Title>
+          <Text size="sm" c="dimmed">
+            Il nome viene usato nelle pagine partita e nelle comunicazioni per i genitori.
+          </Text>
+          <Group align="flex-end">
+            <TextInput
+              label="Nome squadra"
+              required
+              maxLength={100}
+              value={teamName}
+              onChange={(event) => {
+                setTeamName(event.currentTarget.value);
+                setTeamNameSaved(false);
+              }}
+              style={{ flex: 1 }}
+            />
+            <Button onClick={handleSaveTeamName} loading={savingTeamName} disabled={!teamName.trim()}>
+              Salva
+            </Button>
+          </Group>
+          {teamNameSaved && <Text size="sm" c="green">Nome squadra salvato.</Text>}
+        </Stack>
+      </Card>
 
       <Card withBorder padding="md" radius="md">
         <Stack gap="sm">
@@ -206,7 +250,8 @@ export default function Settings() {
           {!status?.configured && (
             <Alert color="orange" title="Configurazione mancante">
               Client ID/Secret Google non configurati: impostali nelle opzioni
-              dell'addon (Impostazioni → Add-on → GIPS Calcio → Configurazione).
+              dell'addon (Impostazioni → Add-on → Teams Manager →
+              Configurazione).
             </Alert>
           )}
 
@@ -310,8 +355,8 @@ export default function Settings() {
           <Text size="sm" c="dimmed">
             Gestisci i tipi disponibili nel calendario (es. Allenamento,
             Partita, Torneo, Amichevole…). "Ha avversario" mostra il campo
-            avversario per quel tipo. L’icona è ricercabile e
-            viene mostrata in anteprima prima del salvataggio.
+            avversario per quel tipo. L’icona è ricercabile e viene mostrata in
+            anteprima prima del salvataggio.
           </Text>
 
           {typeError && (

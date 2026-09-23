@@ -51,6 +51,19 @@ test("health endpoint reports the running service", async () => {
   assert.equal(typeof body.version, "string");
 });
 
+test("team name is configurable and retained in settings", async () => {
+  const initial = await request("/api/settings");
+  assert.equal(initial.response.status, 200);
+  assert.equal(initial.body.teamName, "GIPS Salizzole");
+
+  const updated = await request("/api/settings", {
+    method: "PUT",
+    body: JSON.stringify({ teamName: "Squadra test" }),
+  });
+  assert.equal(updated.response.status, 200);
+  assert.equal(updated.body.teamName, "Squadra test");
+});
+
 test("player and event workflow is available through the API", async () => {
   const player = await request("/api/players", {
     method: "POST",

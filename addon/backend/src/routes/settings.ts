@@ -1,10 +1,11 @@
 import { Request, Response, Router } from "express";
 import { z } from "zod";
-import { getSetting, setSetting, SETTINGS_KEYS } from "../services/settings.service";
+import { getSetting, getTeamName, setSetting, SETTINGS_KEYS } from "../services/settings.service";
 
 const router = Router();
 
 const UpdateSchema = z.object({
+  teamName: z.string().trim().min(1).max(100).optional(),
   googleTemplateDocId: z.string().trim().optional().nullable(),
   googleCalendarId: z.string().trim().min(1).optional().nullable(),
 });
@@ -18,6 +19,7 @@ function extractDocId(input: string): string {
 // GET /api/settings
 router.get("/", (_req: Request, res: Response) => {
   res.json({
+    teamName: getTeamName(),
     googleTemplateDocId: getSetting(SETTINGS_KEYS.googleTemplateDocId),
     googleCalendarId: getSetting(SETTINGS_KEYS.googleCalendarId) ?? "primary",
   });
@@ -30,7 +32,10 @@ router.put("/", (req: Request, res: Response) => {
     res.status(400).json({ error: parse.error.flatten() });
     return;
   }
-  const { googleTemplateDocId } = parse.data;
+  const { teamName, googleTemplateDocId } = parse.data;
+  if (teamName !== undefined) {
+    setSetting(SETTINGS_KEYS.teamName, teamName);
+  }
   if (googleTemplateDocId !== undefined) {
     const value = googleTemplateDocId?.trim()
       ? extractDocId(googleTemplateDocId.trim())
@@ -44,6 +49,7 @@ router.put("/", (req: Request, res: Response) => {
     );
   }
   res.json({
+    teamName: getTeamName(),
     googleTemplateDocId: getSetting(SETTINGS_KEYS.googleTemplateDocId),
     googleCalendarId: getSetting(SETTINGS_KEYS.googleCalendarId) ?? "primary",
   });

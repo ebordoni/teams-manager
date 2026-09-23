@@ -2,7 +2,7 @@ build_from:
   aarch64: ghcr.io/home-assistant/aarch64-base:3.19
   amd64: ghcr.io/home-assistant/amd64-base:3.19
 labels:
-  io.hass.name: "GIPS Calcio"
+  io.hass.name: "Teams Manager"
   io.hass.description: "Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni"
   io.hass.arch: "aarch64|amd64"
   io.hass.type: "addon"

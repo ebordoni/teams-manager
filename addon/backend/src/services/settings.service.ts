@@ -18,6 +18,7 @@ export function setSetting(key: string, value: string | null): void {
 }
 
 export const SETTINGS_KEYS = {
+  teamName: "team_name",
   googleTemplateDocId: "google_template_doc_id",
   googleCalendarId: "google_calendar_id",
   // Valore temporaneo per proteggere il redirect OAuth da callback forgiati.
@@ -32,3 +33,8 @@ export const SETTINGS_KEYS = {
   aiDefaultPlayersOnField: "ai_default_players_on_field",
   aiDefaultRolePolicy: "ai_default_role_policy",
 } as const;
+
+/** Nome mostrato in comunicazioni e pagine di partita; mantiene retrocompatibilità con le comunicazioni esistenti. */
+export function getTeamName(): string {
+  return getSetting(SETTINGS_KEYS.teamName)?.trim() || "GIPS Salizzole";
+}

@@ -1,12 +1,19 @@
-import { AppShell, Burger, Group, NavLink as MantineNavLink, Title } from "@mantine/core";
+import {
+  AppShell,
+  Burger,
+  Group,
+  NavLink as MantineNavLink,
+  Title,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconCalendarEvent,
   IconFileText,
-  IconLayoutList,
   IconLayoutDashboard,
-  IconSettings,
+  IconLayoutList,
+  IconPlayFootball,
   IconRobot,
+  IconSettings,
   IconUsers,
 } from "@tabler/icons-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
@@ -35,8 +42,15 @@ export default function Layout() {
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group gap="xs">
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Title order={3} fz={{ base: "h4", sm: "h3" }}>⚽ GIPS Calcio</Title>
+            <Burger
+              opened={opened}
+              onClick={toggle}
+              hiddenFrom="sm"
+              size="sm"
+            />
+            <Title order={3} fz={{ base: "h4", sm: "h3" }}>
+              <IconPlayFootball /> My Football Manager
+            </Title>
           </Group>
         </Group>
       </AppShell.Header>
