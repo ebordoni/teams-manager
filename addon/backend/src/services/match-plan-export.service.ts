@@ -1,7 +1,6 @@
 import { rowToEvent } from "../db/helpers";
 import { getDb } from "../db/schema";
 import type { EventRow, MatchPlan } from "../types";
-import { getMatchPlan } from "./match-plan.service";
 import { withGoogleAuth } from "./google/auth";
 import { createStyledDocument } from "./google/docs";
 import { documentStyles } from "./google/document-styles";
@@ -11,6 +10,7 @@ import {
   makeShareableAndGetLink,
   moveFileToFolder,
 } from "./google/drive";
+import { getMatchPlan } from "./match-plan.service";
 import { getTeamName } from "./settings.service";
 
 const SLOT_LABELS: Record<string, string> = {
@@ -40,7 +40,9 @@ function playerNames(plan: MatchPlan): Map<number, string> {
   ];
   if (!ids.length) return new Map();
   const rows = getDb()
-    .prepare(`SELECT id, name FROM players WHERE id IN (${ids.map(() => "?").join(", ")})`)
+    .prepare(
+      `SELECT id, name FROM players WHERE id IN (${ids.map(() => "?").join(", ")})`,
+    )
     .all(...ids) as Array<{ id: number; name: string }>;
   return new Map(rows.map((player) => [player.id, player.name]));
 }
@@ -72,18 +74,34 @@ function buildDocument(
     );
     for (const assignment of period.assignments) {
       const label = SLOT_LABELS[assignment.slot] ?? assignment.role;
-      builder.addParagraph(
-        `${label}: ${names.get(assignment.playerId) ?? "Giocatore non trovato"}`,
-        documentStyles.normal,
-      );
+      const playerName =
+        names.get(assignment.playerId) ?? "Giocatore non trovato";
+
+      builder
+        .addText(`${label}: `, {
+          textStyle: {
+            ...documentStyles.normal.textStyle,
+            bold: true,
+          },
+        })
+        .addParagraph(playerName, documentStyles.normal);
     }
     const bench = period.benchPlayerIds
       .map((id) => names.get(id))
       .filter((name): name is string => Boolean(name));
-    builder.addParagraph(
-      `Panchina: ${bench.length ? bench.join(" · ") : "nessuno"}`,
-      documentStyles.note,
-    );
+    builder.addEmptyLine();
+
+    builder
+      .addText(`Panchina: `, {
+        textStyle: {
+          ...documentStyles.note,
+          bold: true,
+        },
+      })
+      .addParagraph(
+        bench.length ? bench.join(" · ") : "nessuno",
+        documentStyles.note,
+      );
     builder.addEmptyLine();
   }
 
@@ -98,7 +116,9 @@ function buildDocument(
           plan.periods.flatMap((period) =>
             period.assignments
               .filter((assignment) => assignment.playerId === id)
-              .map((assignment) => SLOT_LABELS[assignment.slot] ?? assignment.role),
+              .map(
+                (assignment) => SLOT_LABELS[assignment.slot] ?? assignment.role,
+              ),
           ),
         ),
       ];
@@ -135,7 +155,11 @@ export async function exportMatchPlan(
   const built = buildDocument(plan, eventData);
 
   return withGoogleAuth(async (auth) => {
-    const googleDocId = await createStyledDocument(auth, built.title, built.builder);
+    const googleDocId = await createStyledDocument(
+      auth,
+      built.title,
+      built.builder,
+    );
     const folderId = await ensureMatchPlansFolder(auth);
     await moveFileToFolder(auth, googleDocId, folderId);
     return {

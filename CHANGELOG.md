@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.18.1] — 2026-09-23
+
+### Aggiunto
+
+- Dopo l'export del piano partita, la pagina mostra un link persistente e cliccabile al Google Doc appena creato.
+- Comando `npm run version:bump -- <patch|minor|major|X.Y.Z>` per aggiornare versioni, lockfile, artefatti Home Assistant e changelog.
+
+### Modificato
+
+- Il controllo di coerenza versioni comprende ora README, specifiche, changelog e package dell'add-on oltre agli artefatti di build.
+
 ## [0.18.0] — 2026-09-23
 
 ### Aggiunto

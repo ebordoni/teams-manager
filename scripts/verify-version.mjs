@@ -11,6 +11,13 @@ const checks = [
   ["addon/config.yaml", /version: "([^"]+)"/],
   ["addon/Dockerfile", /io\.hass\.version="([^"]+)"/],
   ["README.md", /version-([0-9]+\.[0-9]+\.[0-9]+)-blue/],
+  ["addon/README.md", /version-([0-9]+\.[0-9]+\.[0-9]+)-blue/],
+  ["README.md", /MVP operativo \(v([0-9]+\.[0-9]+\.[0-9]+)\)/],
+  ["addon/README.md", /MVP operativo \(v([0-9]+\.[0-9]+\.[0-9]+)\)/],
+  ["SPECS.md", /MVP operativo \(v([0-9]+\.[0-9]+\.[0-9]+)\)/],
+  ["addon/SPECS.md", /MVP operativo \(v([0-9]+\.[0-9]+\.[0-9]+)\)/],
+  ["CHANGELOG.md", /## \[([0-9]+\.[0-9]+\.[0-9]+)\]/],
+  ["addon/CHANGELOG.md", /## \[([0-9]+\.[0-9]+\.[0-9]+)\]/],
 ];
 
 const mismatches = checks.flatMap(([file, pattern]) => {
@@ -18,7 +25,7 @@ const mismatches = checks.flatMap(([file, pattern]) => {
   return found === version ? [] : [`${file}: atteso ${version}, trovato ${found ?? "nessuna versione"}`];
 });
 
-for (const file of ["addon/backend/package.json", "addon/frontend/package.json"]) {
+for (const file of ["addon/package.json", "addon/backend/package.json", "addon/frontend/package.json"]) {
   const found = readJson(file).version;
   if (found !== version) mismatches.push(`${file}: atteso ${version}, trovato ${found}`);
 }

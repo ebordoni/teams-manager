@@ -1,11 +1,11 @@
 import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, SimpleGrid, Stack, Table, Text, TextInput, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconCheck, IconFileExport, IconRobot, IconTrash } from "@tabler/icons-react";
+import { IconCheck, IconExternalLink, IconFileExport, IconRobot, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import PageLoader from "../components/PageLoader";
-import type { MatchPeriod, MatchPlan as MatchPlanType, Player, RolePolicy, TeamEvent } from "../types";
+import type { GeneratedMatchPlanExport, MatchPeriod, MatchPlan as MatchPlanType, Player, RolePolicy, TeamEvent } from "../types";
 
 const SLOT_LABELS: Record<string, string> = {
   portiere: "Portiere", difensoreSinistro: "Difensore sinistro", difensoreDestro: "Difensore destro",
@@ -25,6 +25,7 @@ export default function MatchPlan() {
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportedDocument, setExportedDocument] = useState<GeneratedMatchPlanExport | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
@@ -38,7 +39,7 @@ export default function MatchPlan() {
   useEffect(() => { load().catch(() => setError("Impossibile caricare i dati della partita")).finally(() => setLoading(false)); }, [eventId]);
   const playerOptions = players.map((player) => ({ value: String(player.id), label: player.name }));
 
-  const selectPlan = (plan: MatchPlanType) => { setSelected(plan); setDraftPeriods(structuredClone(plan.periods)); setError(null); };
+  const selectPlan = (plan: MatchPlanType) => { setSelected(plan); setDraftPeriods(structuredClone(plan.periods)); setExportedDocument(null); setError(null); };
   const generate = async () => {
     setGenerating(true); setError(null);
     try {
@@ -63,7 +64,7 @@ export default function MatchPlan() {
     finally { setSaving(false); }
   };
   const confirm = async () => { if (!selected) return; setError(null); try { const response = await api.confirmMatchPlan(eventId, selected.id); setSelected(response.data); setPlans((current) => current.map((plan) => plan.id === response.data.id ? response.data : plan)); notifications.show({ color: "green", message: "Piano partita confermato" }); } catch (err) { setError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Conferma non riuscita"); } };
-  const exportPlan = async () => { if (!selected) return; setExporting(true); setError(null); try { const response = await api.exportMatchPlan(eventId, selected.id); window.open(response.data.googleDocUrl, "_blank", "noopener,noreferrer"); notifications.show({ color: "green", message: "Piano partita esportato in Google Docs" }); } catch (err) { setError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Esportazione in Google Docs non riuscita"); } finally { setExporting(false); } };
+  const exportPlan = async () => { if (!selected) return; setExporting(true); setError(null); try { const response = await api.exportMatchPlan(eventId, selected.id); setExportedDocument(response.data); notifications.show({ color: "green", message: "Piano partita esportato in Google Docs" }); } catch (err) { setError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Esportazione in Google Docs non riuscita"); } finally { setExporting(false); } };
   const remove = async (plan: MatchPlanType) => { if (!window.confirm(`Eliminare “${plan.name}”?`)) return; await api.deleteMatchPlan(eventId, plan.id); const next = plans.filter((item) => item.id !== plan.id); setPlans(next); const nextSelected = next[0] ?? null; setSelected(nextSelected); setDraftPeriods(nextSelected ? structuredClone(nextSelected.periods) : []); };
 
   const summary = players.map((player) => {
@@ -94,6 +95,7 @@ export default function MatchPlan() {
         <SimpleGrid cols={{ base: 1, lg: 2 }}>{draftPeriods.map((period, periodIndex) => <Card key={period.periodNumber} withBorder><Title order={5} mb="sm">Tempo {period.periodNumber} · {selected.minutesPerPeriod} minuti</Title><Stack gap="xs">{period.assignments.map((assignment, assignmentIndex) => <Select key={assignment.slot} label={SLOT_LABELS[assignment.slot] ?? assignment.role} data={playerOptions} value={String(assignment.playerId)} onChange={(value) => value && changePlayer(periodIndex, assignmentIndex, Number(value))} searchable allowDeselect={false} />)}<Text size="sm" c="dimmed">Panchina: {period.benchPlayerIds.map((id) => players.find((player) => player.id === id)?.name).filter(Boolean).join(", ") || "nessuno"}</Text></Stack></Card>)}</SimpleGrid>
         <Card withBorder><Title order={5} mb="sm">Riepilogo minutaggio</Title><Table.ScrollContainer minWidth={500}><Table striped><Table.Thead><Table.Tr><Table.Th>Giocatore</Table.Th><Table.Th>Tempi</Table.Th><Table.Th>Minuti</Table.Th><Table.Th>Ruoli</Table.Th></Table.Tr></Table.Thead><Table.Tbody>{summary.map((row) => <Table.Tr key={row.player.id}><Table.Td>{row.player.name}</Table.Td><Table.Td>{row.appearances}</Table.Td><Table.Td>{row.minutes}</Table.Td><Table.Td>{row.roles.join(", ") || "—"}</Table.Td></Table.Tr>)}</Table.Tbody></Table></Table.ScrollContainer></Card>
         <Group><Button onClick={saveManual} loading={saving}>Salva modifiche</Button><Button color="green" leftSection={<IconCheck size={18} />} onClick={confirm} disabled={selected.status === "confirmed"}>Conferma piano</Button><Button variant="light" leftSection={<IconFileExport size={18} />} onClick={exportPlan} loading={exporting}>Esporta in Google Docs</Button></Group>
+        {exportedDocument && <Alert color="green" title="Piano partita esportato"><Text size="sm" mb="xs">{exportedDocument.title}</Text><Button component="a" href={exportedDocument.googleDocUrl} target="_blank" rel="noopener noreferrer" size="compact-sm" variant="light" rightSection={<IconExternalLink size={15} />}>Apri documento Google</Button></Alert>}
       </Stack>}
     </Group>}
     {plans.length === 0 && <Text c="dimmed">Non è ancora stato generato alcun piano per questa partita.</Text>}

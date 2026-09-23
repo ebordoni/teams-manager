@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.18.1] — 2026-09-23
+
+### Added
+
+- The match-plan page now keeps a visible, clickable link to the Google Doc just exported.
+- `npm run version:bump -- <patch|minor|major|X.Y.Z>` updates versions, lockfiles, Home Assistant artifacts and changelogs.
+
+### Changed
+
+- Version verification now also covers README, specs, changelogs and the add-on package.
+
 ## [0.18.0] — 2026-09-23
 
 ### Added

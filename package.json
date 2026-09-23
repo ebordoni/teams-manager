@@ -1,10 +1,11 @@
 {
   "name": "teams-manager",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "private": true,
   "scripts": {
     "check": "npm run verify:version && npm test --prefix addon/backend && npm run build --prefix addon/frontend",
-    "verify:version": "node scripts/verify-version.mjs"
+    "verify:version": "node scripts/verify-version.mjs",
+    "version:bump": "node scripts/bump-version.mjs"
   },
   "engines": {
     "node": ">=24"
