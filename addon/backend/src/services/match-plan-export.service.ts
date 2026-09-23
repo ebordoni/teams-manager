@@ -94,7 +94,7 @@ function buildDocument(
     builder
       .addText(`Panchina: `, {
         textStyle: {
-          ...documentStyles.note,
+          ...documentStyles.note.textStyle,
           bold: true,
         },
       })

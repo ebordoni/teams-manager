@@ -10,6 +10,7 @@
 ### Changed
 
 - Version verification now also covers README, specs, changelogs and the add-on package.
+- Fixed the “Panchina” style in the Google Docs export and return the API diagnostic when an export fails.
 
 ## [0.18.0] — 2026-09-23
 

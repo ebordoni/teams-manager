@@ -17,6 +17,7 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 ### Modificato
 
 - Il controllo di coerenza versioni comprende ora README, specifiche, changelog e package dell'add-on oltre agli artefatti di build.
+- Corretto lo stile della riga “Panchina” nell'export Google Docs e reso diagnostico l'errore restituito dall'API in caso di fallimento.
 
 ## [0.18.0] — 2026-09-23
 

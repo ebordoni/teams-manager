@@ -14,6 +14,26 @@ const GenerateSchema = z.object({
   system: z.string().trim().max(30).optional(), rolePolicy: z.enum(["strict", "preferred", "free"]),
 });
 
+/** Estrae il messaggio utile da Gaxios/Google senza esporre token o payload. */
+function exportErrorMessage(error: unknown): string {
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as {
+      message?: unknown;
+      response?: { data?: { error?: { message?: unknown } | unknown } };
+    };
+    const googleError = candidate.response?.data?.error;
+    if (
+      typeof googleError === "object" &&
+      googleError !== null &&
+      typeof (googleError as { message?: unknown }).message === "string"
+    ) {
+      return (googleError as { message: string }).message;
+    }
+    if (typeof candidate.message === "string") return candidate.message;
+  }
+  return "Errore sconosciuto durante l'esportazione Google";
+}
+
 router.get("/", (req, res) => {
   const parsed = ParamsSchema.safeParse(req.params);
   if (!parsed.success) return void res.status(400).json({ error: "Id evento non valido" });
@@ -59,7 +79,9 @@ router.post("/:planId/export", async (req, res) => {
     if (error instanceof GoogleAuthRequiredError) return void res.status(403).json({ error: error.message });
     if (error instanceof Error && /non trovato/.test(error.message)) return void res.status(404).json({ error: error.message });
     console.error("[match-plans] Export Google Docs fallito", error);
-    res.status(502).json({ error: "Impossibile esportare il piano partita in Google Docs" });
+    res.status(502).json({
+      error: `Impossibile esportare il piano partita in Google Docs: ${exportErrorMessage(error)}`,
+    });
   }
 });
 
