@@ -15,7 +15,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
@@ -32,6 +32,9 @@ const SKILLS = [
   ["fitness", "Forma fisica"], ["speed", "Velocità"], ["technique", "Tecnica"],
   ["shooting", "Tiro"], ["defending", "Difesa"], ["attacking", "Attacco"],
 ] as const;
+const SKILL_SHORT_LABEL: Record<(typeof SKILLS)[number][0], string> = {
+  fitness: "Fis", speed: "Vel", technique: "Tec", shooting: "Tir", defending: "Dif", attacking: "Att",
+};
 
 type PlayerDraft = Pick<Player, "name" | "role" | "secondaryRoles" | "preferredFoot" | "fitness" | "speed" | "technique" | "shooting" | "defending" | "attacking" | "notes">;
 const EMPTY_PLAYER: PlayerDraft = { name: "", role: null, secondaryRoles: [], preferredFoot: "both", fitness: 50, speed: 50, technique: 50, shooting: 50, defending: 50, attacking: 50, notes: null };
@@ -57,6 +60,7 @@ export default function Players() {
   const [draft, setDraft] = useState<PlayerDraft>(EMPTY_PLAYER);
   const [editing, setEditing] = useState<Player | null>(null);
   const [showForm, { toggle: toggleForm, close: closeForm }] = useDisclosure(false);
+  const showTechnicalProfile = useMediaQuery("(min-width: 75em)") ?? false;
 
   function loadPlayers() {
     setLoading(true);
@@ -107,7 +111,7 @@ export default function Players() {
     </Stack></form></Card></Collapse>
     {loading ? <Loader /> : players.length === 0 ? <Text c="dimmed">Nessun giocatore in anagrafica.</Text> : <Stack gap="xs">
       {players.map((player) => <Card key={player.id} withBorder padding="sm" radius="md"><Group justify="space-between" wrap="nowrap">
-        <div style={{ minWidth: 0 }}><Text fw={600} truncate>{player.name}</Text><Group gap="xs" mt={3}><Badge variant="light">{FOOT_LABEL[player.preferredFoot]}</Badge>{(player.role || player.secondaryRoles.length > 0) && <Text size="sm" c="dimmed" truncate>{[player.role, ...player.secondaryRoles].filter(Boolean).join(", ")}</Text>}</Group></div>
+        <div style={{ minWidth: 0, flex: 1 }}><Text fw={600} truncate>{player.name}</Text><Group gap="xs" mt={3}><Badge variant="light">{FOOT_LABEL[player.preferredFoot]}</Badge>{(player.role || player.secondaryRoles.length > 0) && <Text size="sm" c="dimmed" truncate>{[player.role, ...player.secondaryRoles].filter(Boolean).join(", ")}</Text>}</Group>{showTechnicalProfile && <Group gap={4} mt={6} wrap="nowrap" aria-label={`Profilo tecnico di ${player.name}`}>{SKILLS.map(([key, label]) => <Badge key={key} size="sm" variant="light" color="gray" title={label}>{SKILL_SHORT_LABEL[key]} {player[key]}</Badge>)}</Group>}</div>
         <Group gap="xs" wrap="nowrap"><ActionIcon variant="subtle" onClick={() => startEditing(player)} aria-label={`Modifica ${player.name}`}><IconPencil size={18} /></ActionIcon><ActionIcon color="red" variant="subtle" onClick={() => handleDelete(player.id)} aria-label={`Elimina ${player.name}`}><IconTrash size={18} /></ActionIcon></Group>
       </Group></Card>)}
     </Stack>}

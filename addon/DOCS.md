@@ -66,7 +66,7 @@ Se il campo è vuoto, il documento viene generato automaticamente senza template
 | ----------------------- | ------------------------------------------------------------------- |
 | `google_client_id`      | Client ID OAuth 2.0 Google (necessario per le Comunicazioni)        |
 | `google_client_secret`  | Client Secret OAuth 2.0 Google (necessario per le Comunicazioni)    |
-| `google_redirect_uri`   | Redirect URI OAuth (default: porta diretta `8101` dell'addon)       |
+| `google_redirect_uri`   | Redirect URI OAuth (default: porta diretta `8102` dell'addon)       |
 | `ai_provider`           | Provider principale: `openai`, `google`, `anthropic`, `groq`, `xai` |
 | `ai_model`              | Modello opzionale; vuoto usa il predefinito del provider            |
 | `ai_api_key`            | Chiave del provider principale (campo protetto)                     |
@@ -83,11 +83,11 @@ valori predefiniti e verificare la connessione.
    Docs API** e **Google Drive API**, configura la schermata di consenso OAuth e crea una
    credenziale **OAuth 2.0 Client ID** di tipo "Applicazione web".
 2. Aggiungi come **URI di reindirizzamento autorizzato**:
-   `http://<IP-HOME-ASSISTANT>:8101/api/google/oauth/callback`
+   `http://<IP-HOME-ASSISTANT>:8102/api/google/oauth/callback`
 3. Inserisci Client ID e Client Secret nelle opzioni dell'addon.
 4. Apri la pagina **Impostazioni** dell'app e clicca **Collega Google**.
 
-> Il redirect deve passare dalla porta diretta `8101` (non dall'iframe Ingress), per questo
+> Il redirect deve passare dalla porta diretta `8102` (non dall'iframe Ingress), per questo
 > l'addon espone anche quella porta oltre all'integrazione in sidebar.
 
 ### "Il collegamento Google non è più valido" (errore `invalid_grant`)

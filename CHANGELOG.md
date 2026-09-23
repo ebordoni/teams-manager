@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.17.0] — 2026-09-23
+
+### Aggiunto
+
+- Profilo tecnico compatto visibile direttamente nell'elenco giocatori sui display larghi.
+
+### Modificato
+
+- Rinominate identità, package, repository, CI e configurazione Home Assistant in Teams Manager.
+- Nuove installazioni usano il database `teams-manager.db`; quelle esistenti continuano a leggere automaticamente il database storico senza perdere dati.
+
 ## [0.16.0] — 2026-09-23
 
 ### Aggiunto

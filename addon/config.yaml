@@ -1,6 +1,6 @@
 name: "Teams Manager"
 description: "Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni per i genitori"
-version: "0.16.0"
+version: "0.17.0"
 slug: "teams_manager"
 init: false
 arch:
@@ -9,14 +9,14 @@ arch:
 startup: services
 boot: auto
 ingress: true
-ingress_port: 8101
+ingress_port: 8102
 ingress_entry: /
 panel_icon: "mdi:soccer"
 panel_title: "Teams Manager"
 ports:
-  8101/tcp: 8101
+  8102/tcp: 8102
 ports_description:
-  8101/tcp: "Accesso diretto (fuori dall'iframe Ingress), necessario per il redirect OAuth di Google"
+  8102/tcp: "Accesso diretto (fuori dall'iframe Ingress), necessario per il redirect OAuth di Google"
 options:
   google_client_id: ""
   google_client_secret: ""

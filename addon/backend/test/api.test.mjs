@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
 
-const dataDir = await mkdtemp(path.join(os.tmpdir(), "gips-calcio-test-"));
+const dataDir = await mkdtemp(path.join(os.tmpdir(), "teams-manager-test-"));
 process.env.DATA_DIR = dataDir;
 process.env.NODE_ENV = "test";
 process.env.OPENAI_API_KEY = "";

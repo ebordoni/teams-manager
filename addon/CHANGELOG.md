@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.17.0] — 2026-09-23
+
+### Added
+
+- Profilo tecnico sintetico nell'elenco giocatori per gli schermi desktop ampi.
+
+### Changed
+
+- Identità, package, repository, CI e configurazione Home Assistant rinominati in Teams Manager.
+- Nuove installazioni usano `teams-manager.db`; il database storico viene mantenuto automaticamente per gli aggiornamenti esistenti.
+
 ## [0.16.0] — 2026-09-23
 
 ### Added
@@ -159,7 +170,7 @@
 - Endpoint `GET/POST /api/communications` per generare e storicizzare le comunicazioni ai genitori
 - Pagina "Impostazioni" per collegare/scollegare l'account Google
 - Calendario: selezione multipla eventi + pulsante "Genera comunicazione" con link al documento e messaggio WhatsApp precompilato da copiare
-- Porta diretta `8101/tcp` esposta (oltre a Ingress) necessaria per il redirect URI OAuth di Google
+- Porta diretta `8102/tcp` esposta (oltre a Ingress) necessaria per il redirect URI OAuth di Google
 - Presenze (F04): tabella `attendance`, endpoint `GET/PUT /api/events/:id/attendance`, UI di registrazione presenze nel dettaglio evento
 - Validazione stato evento: le note sono obbligatorie quando un evento viene segnato come modificato o annullato, con badge di stato in calendario e dettaglio
 - UI responsive: menu a hamburger su mobile, form del calendario a colonna singola su schermi piccoli

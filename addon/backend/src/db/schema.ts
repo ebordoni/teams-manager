@@ -140,8 +140,15 @@ const SCHEMA_V1 = `
 `;
 
 export function initDb(): void {
-  const dbPath = path.join(config.dataDir, "gips-calcio.db");
   fs.mkdirSync(config.dataDir, { recursive: true });
+
+  const currentDbPath = path.join(config.dataDir, "teams-manager.db");
+  const legacyDbPath = path.join(config.dataDir, "gips-calcio.db");
+  // Le installazioni precedenti continuano a usare il loro database senza
+  // spostamenti impliciti; le nuove installazioni adottano il nome corrente.
+  const dbPath = fs.existsSync(currentDbPath) || !fs.existsSync(legacyDbPath)
+    ? currentDbPath
+    : legacyDbPath;
 
   db = new DatabaseSync(dbPath);
   db.exec("PRAGMA foreign_keys = ON;");

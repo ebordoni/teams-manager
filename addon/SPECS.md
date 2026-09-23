@@ -1,7 +1,7 @@
 # Teams Manager — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.16.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
+> Stato attuale: **MVP operativo (v0.17.0)** — include piani partita AI multi-provider con rotazioni validate e fallback locale.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -286,7 +286,7 @@ successive.
 Il redirect URI di Google deve essere un URL raggiungibile direttamente dal browser dell'utente.
 L'iframe Ingress di Home Assistant inietta un token di sessione nel path e non è adatto come
 redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **porta diretta**
-(`8101`, vedi `config.yaml`) da usare solo per il redirect URI di Google.
+(`8102`, vedi `config.yaml`) da usare solo per il redirect URI di Google.
 
 ### Setup richiesto su Google Cloud Console
 
@@ -296,7 +296,7 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
    aggiungere il tuo account come utente di test se l'app resta in modalità "Testing").
 4. Crea una **credenziale OAuth 2.0 Client ID** di tipo "Applicazione web".
 5. In **URI di reindirizzamento autorizzati** aggiungi:
-   `http://<IP-O-HOST-HOME-ASSISTANT>:8101/api/google/oauth/callback`
+   `http://<IP-O-HOST-HOME-ASSISTANT>:8102/api/google/oauth/callback`
 6. Copia **Client ID** e **Client secret** e impostali nelle opzioni dell'addon
    (`google_client_id`, `google_client_secret`) oppure nel file `.env` in sviluppo
    (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`).

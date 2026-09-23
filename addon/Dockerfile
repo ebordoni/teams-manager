@@ -26,7 +26,7 @@ LABEL \
   io.hass.description="Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni" \
   io.hass.arch="aarch64|amd64" \
   io.hass.type="addon" \
-  io.hass.version="0.16.0"
+  io.hass.version="0.17.0"
 
 WORKDIR /app
 
@@ -40,12 +40,12 @@ COPY --from=backend-build /build/package.json ./package.json
 COPY --from=frontend-build /build/dist ./public
 
 ENV NODE_ENV=production \
-    PORT=8101 \
+    PORT=8102 \
     FRONTEND_DIR=/app/public
 
-EXPOSE 8101
+EXPOSE 8102
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
-  CMD wget -qO- http://localhost:8101/api/health || exit 1
+  CMD wget -qO- http://localhost:8102/api/health || exit 1
 
 CMD ["node", "dist/index.js"]
