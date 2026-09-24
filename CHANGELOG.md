@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.5] — 2026-09-24
+
+### Corretto
+
+- Il proxy API di Vite in Docker Compose raggiunge il servizio backend tramite il DNS di rete `backend:3002`, invece di tentare il localhost del container frontend.
+
+### Modificato
+
+- Il target del proxy è ora configurabile con `VITE_API_PROXY_TARGET`; l'avvio locale nativo conserva `localhost:3002` come predefinito.
+
 ## [0.19.4] — 2026-09-24
 
 ### Aggiunto

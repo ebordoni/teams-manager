@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.19.5] — 2026-09-24
+
+### Fixed
+
+- Vite API proxy in Docker Compose now reaches the backend service through the `backend:3002` network DNS instead of the frontend container localhost.
+
+### Changed
+
+- Proxy target is now configurable with `VITE_API_PROXY_TARGET`; native local development retains `localhost:3002` as default.
+
 ## [0.19.4] — 2026-09-24
 
 ### Added
