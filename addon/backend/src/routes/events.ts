@@ -36,8 +36,42 @@ const ResultSchema = z.object({
   teamScore: z.number().int().min(0).max(99),
   opponentScore: z.number().int().min(0).max(99),
   venue: z.enum(["home", "away", "neutral"]),
+  scorers: z.array(z.object({
+    playerId: z.number().int().positive(),
+    goals: z.number().int().min(1).max(99),
+  })).max(30).optional().default([]),
   notes: z.string().trim().max(1000).optional().nullable(),
+}).superRefine((result, ctx) => {
+  const scorerIds = new Set<number>();
+  let scorerGoals = 0;
+  result.scorers.forEach((scorer, index) => {
+    if (scorerIds.has(scorer.playerId)) {
+      ctx.addIssue({ code: "custom", path: ["scorers", index, "playerId"], message: "Un giocatore può comparire una sola volta" });
+    }
+    scorerIds.add(scorer.playerId);
+    scorerGoals += scorer.goals;
+  });
+  if (scorerGoals > result.teamScore) {
+    ctx.addIssue({ code: "custom", path: ["scorers"], message: "I gol dei marcatori non possono superare il totale squadra" });
+  }
 });
+
+type MatchResultRow = {
+  event_id: number; team_score: number; opponent_score: number; venue: "home" | "away" | "neutral";
+  scorers: string; notes: string | null; completed_at: string;
+};
+
+function rowToMatchResult(row: MatchResultRow) {
+  return {
+    eventId: row.event_id,
+    teamScore: row.team_score,
+    opponentScore: row.opponent_score,
+    venue: row.venue,
+    scorers: JSON.parse(row.scorers) as Array<{ playerId: number; goals: number }>,
+    notes: row.notes,
+    completedAt: row.completed_at,
+  };
+}
 
 function findResultEvent(id: string) {
   return getDb().prepare(
@@ -48,10 +82,8 @@ function findResultEvent(id: string) {
 
 router.get("/:id/result", (req: Request, res: Response) => {
   if (!findResultEvent(req.params.id)) return void res.status(404).json({ error: "Evento partita non trovato" });
-  const row = getDb().prepare("SELECT * FROM match_results WHERE event_id = ?").get(req.params.id) as {
-    event_id: number; team_score: number; opponent_score: number; venue: "home" | "away" | "neutral"; notes: string | null; completed_at: string;
-  } | undefined;
-  res.json(row ? { eventId: row.event_id, teamScore: row.team_score, opponentScore: row.opponent_score, venue: row.venue, notes: row.notes, completedAt: row.completed_at } : null);
+  const row = getDb().prepare("SELECT * FROM match_results WHERE event_id = ?").get(req.params.id) as MatchResultRow | undefined;
+  res.json(row ? rowToMatchResult(row) : null);
 });
 
 router.put("/:id/result", (req: Request, res: Response) => {
@@ -60,15 +92,13 @@ router.put("/:id/result", (req: Request, res: Response) => {
   if (!findResultEvent(req.params.id)) return void res.status(404).json({ error: "Evento partita non trovato" });
   const result = parse.data;
   getDb().prepare(
-    `INSERT INTO match_results (event_id, team_score, opponent_score, venue, notes)
-     VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO match_results (event_id, team_score, opponent_score, venue, scorers, notes)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(event_id) DO UPDATE SET team_score = excluded.team_score, opponent_score = excluded.opponent_score,
-       venue = excluded.venue, notes = excluded.notes, completed_at = CURRENT_TIMESTAMP`,
-  ).run(req.params.id, result.teamScore, result.opponentScore, result.venue, result.notes?.trim() || null);
-  const row = getDb().prepare("SELECT * FROM match_results WHERE event_id = ?").get(req.params.id) as {
-    event_id: number; team_score: number; opponent_score: number; venue: "home" | "away" | "neutral"; notes: string | null; completed_at: string;
-  };
-  res.json({ eventId: row.event_id, teamScore: row.team_score, opponentScore: row.opponent_score, venue: row.venue, notes: row.notes, completedAt: row.completed_at });
+       venue = excluded.venue, scorers = excluded.scorers, notes = excluded.notes, completed_at = CURRENT_TIMESTAMP`,
+  ).run(req.params.id, result.teamScore, result.opponentScore, result.venue, JSON.stringify(result.scorers), result.notes?.trim() || null);
+  const row = getDb().prepare("SELECT * FROM match_results WHERE event_id = ?").get(req.params.id) as MatchResultRow;
+  res.json(rowToMatchResult(row));
 });
 
 router.delete("/:id/result", (req: Request, res: Response) => {
@@ -178,12 +208,9 @@ router.get("/", (req: Request, res: Response) => {
   const events = rows.map(rowToEvent);
   const ids = events.map((event) => event.id);
   const resultRows = ids.length
-    ? (db.prepare(`SELECT * FROM match_results WHERE event_id IN (${ids.map(() => "?").join(",")})`).all(...ids) as Array<{ event_id: number; team_score: number; opponent_score: number; venue: "home" | "away" | "neutral"; notes: string | null; completed_at: string }>)
+    ? (db.prepare(`SELECT * FROM match_results WHERE event_id IN (${ids.map(() => "?").join(",")})`).all(...ids) as MatchResultRow[])
     : [];
-  const results = new Map(resultRows.map((result) => [result.event_id, {
-    eventId: result.event_id, teamScore: result.team_score, opponentScore: result.opponent_score,
-    venue: result.venue, notes: result.notes, completedAt: result.completed_at,
-  }]));
+  const results = new Map(resultRows.map((result) => [result.event_id, rowToMatchResult(result)]));
   res.json(events.map((event) => ({ ...event, result: results.get(event.id) ?? null })));
 });
 

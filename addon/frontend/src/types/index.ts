@@ -108,8 +108,14 @@ export interface MatchResult {
   teamScore: number;
   opponentScore: number;
   venue: "home" | "away" | "neutral";
+  scorers: MatchScorer[];
   notes: string | null;
   completedAt: string;
+}
+
+export interface MatchScorer {
+  playerId: number;
+  goals: number;
 }
 
 export interface AttendanceReport {

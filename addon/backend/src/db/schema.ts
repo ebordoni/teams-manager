@@ -4,7 +4,7 @@ import path from "path";
 import { config } from "../config";
 
 let db: DatabaseSync | undefined;
-const LATEST_SCHEMA_VERSION = 4;
+const LATEST_SCHEMA_VERSION = 5;
 
 const SCHEMA_V1 = `
   CREATE TABLE IF NOT EXISTS schema_version (
@@ -65,6 +65,7 @@ const SCHEMA_V1 = `
     team_score     INTEGER NOT NULL CHECK (team_score >= 0),
     opponent_score INTEGER NOT NULL CHECK (opponent_score >= 0),
     venue          TEXT NOT NULL DEFAULT 'home' CHECK (venue IN ('home', 'away', 'neutral')),
+    scorers        TEXT NOT NULL DEFAULT '[]',
     notes          TEXT,
     completed_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
@@ -202,6 +203,7 @@ const migrations: Record<number, () => void> = {
     ensureColumn("players", "jersey_number", "INTEGER CHECK (jersey_number BETWEEN 1 AND 99)");
     getDb().exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_players_jersey_number ON players(jersey_number) WHERE jersey_number IS NOT NULL");
   },
+  5: () => ensureColumn("match_results", "scorers", "TEXT NOT NULL DEFAULT '[]'"),
 };
 
 function applyMigrations(dbPath: string, databaseAlreadyExists: boolean): void {

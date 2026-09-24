@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.19.6] — 2026-09-24
+
+### Added
+
+- Team scorers in match results, with player goal assignment and total validation.
+
+### Changed
+
+- Event detail now has an explicit opponent, mobile-friendly score controls, and attendance collapsed by default.
+
 ## [0.19.5] — 2026-09-24
 
 ### Fixed

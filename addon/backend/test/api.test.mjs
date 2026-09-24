@@ -65,7 +65,7 @@ test("health endpoint reports the running service", async () => {
 
 test("database migrations reach the latest schema and pass integrity validation", () => {
   const versions = getDb().prepare("SELECT version FROM schema_version ORDER BY version").all();
-  assert.deepEqual(versions.map((row) => row.version), [1, 2, 3, 4]);
+  assert.deepEqual(versions.map((row) => row.version), [1, 2, 3, 4, 5]);
   const integrity = getDb().prepare("PRAGMA integrity_check").get();
   assert.equal(integrity.integrity_check, "ok");
 });
@@ -226,13 +226,19 @@ test("match results and finalized attendance are retained in player history", as
 
   const result = await request(`/api/events/${event.body.id}/result`, {
     method: "PUT",
-    body: JSON.stringify({ teamScore: 4, opponentScore: 3, venue: "away", notes: "Bella partita" }),
+    body: JSON.stringify({ teamScore: 4, opponentScore: 3, venue: "away", scorers: [{ playerId: player.body.id, goals: 3 }], notes: "Bella partita" }),
   });
   assert.equal(result.response.status, 200);
   assert.deepEqual(result.body, {
     eventId: event.body.id, teamScore: 4, opponentScore: 3,
-    venue: "away", notes: "Bella partita", completedAt: result.body.completedAt,
+    venue: "away", scorers: [{ playerId: player.body.id, goals: 3 }], notes: "Bella partita", completedAt: result.body.completedAt,
   });
+
+  const invalidScorers = await request(`/api/events/${event.body.id}/result`, {
+    method: "PUT",
+    body: JSON.stringify({ teamScore: 1, opponentScore: 0, venue: "away", scorers: [{ playerId: player.body.id, goals: 2 }] }),
+  });
+  assert.equal(invalidScorers.response.status, 400);
 
   const summary = await request("/api/reports/summary");
   assert.equal(summary.response.status, 200);

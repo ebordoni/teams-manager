@@ -22,6 +22,10 @@ durante la creazione e indica la data finale: vengono creati tutti gli eventi fi
 Le occorrenze sono indipendenti, quindi puoi modificare o annullare solo una data senza influire
 sulle altre.
 
+Nella scheda di un evento partita puoi indicare la **Squadra avversaria**, registrare il risultato
+con pulsanti rapidi e attribuire i gol ai marcatori della tua rosa. La sezione presenze è chiusa
+inizialmente e conserva comunque il riepilogo dei giocatori presenti.
+
 ### Tipi di evento
 
 Dalla pagina **Impostazioni** puoi creare, modificare ed eliminare i tipi di evento disponibili nel

@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.6] — 2026-09-24
+
+### Aggiunto
+
+- Marcatori della squadra nel risultato partita, con assegnazione dei gol ai giocatori e validazione del totale.
+
+### Modificato
+
+- Scheda evento con avversario esplicito, tabellone risultato ottimizzato per mobile e sezione presenze richiusa inizialmente.
+
 ## [0.19.5] — 2026-09-24
 
 ### Corretto

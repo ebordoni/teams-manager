@@ -5,8 +5,9 @@ import {
   Button,
   Card,
   Checkbox,
+  Collapse,
+  Divider,
   Group,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -14,7 +15,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconRobot, IconTrash } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronUp, IconMinus, IconPlus, IconRobot, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
@@ -27,6 +28,7 @@ import type {
   EventTypeDef,
   Formation,
   MatchResult,
+  MatchScorer,
   TeamEvent,
 } from "../types";
 
@@ -55,9 +57,11 @@ export default function EventDetail() {
   const [attendanceFinalizedAt, setAttendanceFinalizedAt] = useState<string | null>(null);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [result, setResult] = useState<MatchResult | null>(null);
-  const [resultDraft, setResultDraft] = useState({ teamScore: 0, opponentScore: 0, venue: "home" as MatchResult["venue"], notes: "" });
+  const [resultDraft, setResultDraft] = useState({ teamScore: 0, opponentScore: 0, venue: "home" as MatchResult["venue"], scorers: [] as MatchScorer[], notes: "" });
   const [savingResult, setSavingResult] = useState(false);
   const [resultError, setResultError] = useState<string | null>(null);
+  const [attendanceOpened, setAttendanceOpened] = useState(false);
+  const [teamName, setTeamName] = useState("La squadra");
   const [statusDraft, setStatusDraft] = useState<EventStatus>("scheduled");
   const [notesDraft, setNotesDraft] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
@@ -80,14 +84,16 @@ export default function EventDetail() {
       api.getAttendanceStatus(eventId),
       api.getEventTypes(),
       api.getFormations(),
+      api.getSettings(),
     ])
       .then(
-        async ([eventRes, attendanceRes, attendanceStatusRes, typesRes, formationsRes]) => {
+        async ([eventRes, attendanceRes, attendanceStatusRes, typesRes, formationsRes, settingsRes]) => {
           setEvent(eventRes.data);
           setAttendance(attendanceRes.data);
           setAttendanceFinalizedAt(attendanceStatusRes.data.finalizedAt);
           setEventTypes(typesRes.data);
           setFormations(formationsRes.data);
+          setTeamName(settingsRes.data.teamName);
           setStatusDraft(eventRes.data.status);
           setNotesDraft(eventRes.data.notes ?? "");
           setTypeDraft(eventRes.data.type);
@@ -106,7 +112,7 @@ export default function EventDetail() {
           if (typesRes.data.some((item) => item.key === eventRes.data.type && item.hasOpponent)) {
             const resultRes = await api.getMatchResult(eventId);
             setResult(resultRes.data);
-            if (resultRes.data) setResultDraft({ teamScore: resultRes.data.teamScore, opponentScore: resultRes.data.opponentScore, venue: resultRes.data.venue, notes: resultRes.data.notes ?? "" });
+            if (resultRes.data) setResultDraft({ teamScore: resultRes.data.teamScore, opponentScore: resultRes.data.opponentScore, venue: resultRes.data.venue, scorers: resultRes.data.scorers ?? [], notes: resultRes.data.notes ?? "" });
           }
         },
       )
@@ -167,7 +173,35 @@ export default function EventDetail() {
 
   async function handleDeleteResult() {
     if (!window.confirm("Eliminare il risultato salvato?")) return;
-    await api.deleteMatchResult(eventId); setResult(null); setResultDraft({ teamScore: 0, opponentScore: 0, venue: "home", notes: "" });
+    await api.deleteMatchResult(eventId); setResult(null); setResultDraft({ teamScore: 0, opponentScore: 0, venue: "home", scorers: [], notes: "" });
+  }
+
+  function scorerGoals(scorers: MatchScorer[]) {
+    return scorers.reduce((total, scorer) => total + scorer.goals, 0);
+  }
+
+  function changeTeamScore(delta: number) {
+    setResultDraft((draft) => ({
+      ...draft,
+      teamScore: Math.max(scorerGoals(draft.scorers), Math.min(99, draft.teamScore + delta)),
+    }));
+  }
+
+  function changeOpponentScore(delta: number) {
+    setResultDraft((draft) => ({ ...draft, opponentScore: Math.max(0, Math.min(99, draft.opponentScore + delta)) }));
+  }
+
+  function changeScorer(playerId: number, delta: number) {
+    setResultDraft((draft) => {
+      const existing = draft.scorers.find((scorer) => scorer.playerId === playerId);
+      const nextGoals = (existing?.goals ?? 0) + delta;
+      const scorers = nextGoals <= 0
+        ? draft.scorers.filter((scorer) => scorer.playerId !== playerId)
+        : existing
+          ? draft.scorers.map((scorer) => scorer.playerId === playerId ? { ...scorer, goals: nextGoals } : scorer)
+          : [...draft.scorers, { playerId, goals: nextGoals }];
+      return { ...draft, scorers, teamScore: Math.max(draft.teamScore, scorerGoals(scorers)) };
+    });
   }
 
   async function handleSaveStatus() {
@@ -233,6 +267,9 @@ export default function EventDetail() {
     (record) => record.status === "present",
   ).length;
   const supportsResult = Boolean(type?.hasOpponent);
+  const supportsOpponentDraft = Boolean(eventTypes.find((item) => item.key === typeDraft)?.hasOpponent);
+  const scorerPlayerOptions = attendance.filter((record) => record.status === "present").map((record) => ({ value: String(record.playerId), label: record.playerName }));
+  const assignedScorerGoals = scorerGoals(resultDraft.scorers);
 
   return (
     <Stack gap="lg">
@@ -241,10 +278,7 @@ export default function EventDetail() {
           <Group justify="space-between" wrap="nowrap">
             <Group gap="xs" wrap="nowrap">
               <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} />
-              <Title order={4}>
-                {type?.label ?? event.type}
-                {event.opponent ? ` vs ${event.opponent}` : ""}
-              </Title>
+              <div><Title order={4}>{type?.label ?? event.type}</Title>{supportsResult && <Text size="sm" fw={600} c="dimmed">{teamName} – {event.opponent ?? "Squadra avversaria da indicare"}</Text>}</div>
             </Group>
             <Group gap="xs" wrap="nowrap">
               <Badge color={STATUS_COLOR[event.status]}>
@@ -314,11 +348,12 @@ export default function EventDetail() {
               value={addressDraft}
               onChange={(e) => setAddressDraft(e.currentTarget.value)}
             />
-            <TextInput
-              label="Avversario"
+            {supportsOpponentDraft && <TextInput
+              label="Squadra avversaria"
+              placeholder="es. Bovolone"
               value={opponentDraft}
               onChange={(e) => setOpponentDraft(e.currentTarget.value)}
-            />
+            />}
             <Select
               label="Formazione"
               placeholder="Nessuna"
@@ -367,13 +402,19 @@ export default function EventDetail() {
       </Card>
 
       {supportsResult && (
-        <Card withBorder padding="md" radius="md"><Stack gap="sm">
-          <Group justify="space-between"><div><Title order={5}>Risultato partita</Title><Text size="sm" c="dimmed">Registra il risultato finale della partita.</Text></div>{result && <Badge color="green">Salvato</Badge>}</Group>
-          <SimpleGrid cols={{ base: 1, sm: 3 }}>
-            <NumberInput label="Gol squadra" min={0} max={99} value={resultDraft.teamScore} onChange={(value) => setResultDraft((draft) => ({ ...draft, teamScore: Number(value) || 0 }))} />
-            <NumberInput label="Gol avversario" min={0} max={99} value={resultDraft.opponentScore} onChange={(value) => setResultDraft((draft) => ({ ...draft, opponentScore: Number(value) || 0 }))} />
-            <Select label="Campo" data={[{ value: "home", label: "Casa" }, { value: "away", label: "Trasferta" }, { value: "neutral", label: "Campo neutro" }]} value={resultDraft.venue} onChange={(value) => setResultDraft((draft) => ({ ...draft, venue: (value ?? "home") as MatchResult["venue"] }))} allowDeselect={false} />
+        <Card withBorder padding="lg" radius="md"><Stack gap="md">
+          <Group justify="space-between"><div><Title order={5}>Risultato partita</Title><Text size="sm" c="dimmed">Tocca + o − per aggiornare rapidamente il punteggio.</Text></div>{result && <Badge color="green">Salvato</Badge>}</Group>
+          <SimpleGrid cols={{ base: 3 }} spacing="xs" verticalSpacing="xs">
+            <Stack align="center" gap={2}><Text size="sm" fw={600} ta="center" lineClamp={2}>{teamName}</Text><Group gap="xs" wrap="nowrap"><ActionIcon size={44} variant="light" aria-label="Diminuisci gol squadra" onClick={() => changeTeamScore(-1)} disabled={resultDraft.teamScore <= assignedScorerGoals}><IconMinus size={20} /></ActionIcon><Text fw={800} size="3rem" lh={1}>{resultDraft.teamScore}</Text><ActionIcon size={44} variant="filled" aria-label="Aumenta gol squadra" onClick={() => changeTeamScore(1)}><IconPlus size={20} /></ActionIcon></Group></Stack>
+            <Stack align="center" justify="center" gap={2}><Text size="xs" c="dimmed">RISULTATO</Text><Text fw={700} size="xl">–</Text><Select aria-label="Campo" size="xs" w={112} data={[{ value: "home", label: "Casa" }, { value: "away", label: "Trasferta" }, { value: "neutral", label: "Neutro" }]} value={resultDraft.venue} onChange={(value) => setResultDraft((draft) => ({ ...draft, venue: (value ?? "home") as MatchResult["venue"] }))} allowDeselect={false} /></Stack>
+            <Stack align="center" gap={2}><Text size="sm" fw={600} ta="center" lineClamp={2}>{opponentDraft || event.opponent || "Avversario"}</Text><Group gap="xs" wrap="nowrap"><ActionIcon size={44} variant="light" aria-label="Diminuisci gol avversario" onClick={() => changeOpponentScore(-1)} disabled={resultDraft.opponentScore === 0}><IconMinus size={20} /></ActionIcon><Text fw={800} size="3rem" lh={1}>{resultDraft.opponentScore}</Text><ActionIcon size={44} variant="filled" aria-label="Aumenta gol avversario" onClick={() => changeOpponentScore(1)}><IconPlus size={20} /></ActionIcon></Group></Stack>
           </SimpleGrid>
+          <Divider />
+          <Stack gap="xs"><Group justify="space-between"><div><Text fw={600}>Marcatori {teamName}</Text><Text size="xs" c="dimmed">Assegna i gol ai giocatori della rosa.</Text></div><Badge variant="light" color={assignedScorerGoals === resultDraft.teamScore ? "green" : "gray"}>{assignedScorerGoals}/{resultDraft.teamScore} assegnati</Badge></Group>
+            <Select placeholder="Aggiungi un marcatore" data={scorerPlayerOptions.filter((option) => !resultDraft.scorers.some((scorer) => scorer.playerId === Number(option.value)))} value={null} onChange={(value) => value && changeScorer(Number(value), 1)} searchable clearable />
+            {resultDraft.scorers.length === 0 ? <Text size="sm" c="dimmed">Nessun marcatore indicato.</Text> : <Stack gap="xs">{resultDraft.scorers.map((scorer) => { const player = attendance.find((record) => record.playerId === scorer.playerId); return <Group key={scorer.playerId} justify="space-between" wrap="nowrap"><Text size="sm">{player?.playerName ?? "Giocatore non disponibile"}</Text><Group gap="xs" wrap="nowrap"><ActionIcon variant="light" size="md" aria-label="Diminuisci gol marcatore" onClick={() => changeScorer(scorer.playerId, -1)}><IconMinus size={16} /></ActionIcon><Badge size="lg" variant="filled">{scorer.goals}</Badge><ActionIcon variant="filled" size="md" aria-label="Aumenta gol marcatore" onClick={() => changeScorer(scorer.playerId, 1)} disabled={resultDraft.teamScore >= 99}><IconPlus size={16} /></ActionIcon></Group></Group>; })}</Stack>}
+            {assignedScorerGoals < resultDraft.teamScore && <Text size="xs" c="dimmed">{resultDraft.teamScore - assignedScorerGoals} gol senza marcatore assegnato.</Text>}
+          </Stack>
           <TextInput label="Note sul risultato" value={resultDraft.notes} onChange={(event) => setResultDraft((draft) => ({ ...draft, notes: event.currentTarget.value }))} />
           {resultError && <Alert color="red" title="Errore">{resultError}</Alert>}
           <Group><Button onClick={handleSaveResult} loading={savingResult}>Salva risultato</Button>{result && <Button color="red" variant="subtle" onClick={handleDeleteResult}>Elimina risultato</Button>}</Group>
@@ -406,7 +447,7 @@ export default function EventDetail() {
         </Card>
       )}
 
-      <div>
+      <Card withBorder padding="md" radius="md">
         <Group justify="space-between" mb="xs">
           <Group gap="xs">
             <Title order={5}>Presenze</Title>
@@ -422,41 +463,48 @@ export default function EventDetail() {
               </Badge>
             )}
           </Group>
-          {attendanceFinalizedAt ? <Button onClick={handleReopenAttendance} loading={savingAttendance} size="sm">Riapri registro</Button> : <Group gap="xs"><Button
-            onClick={handleSaveAttendance}
-            loading={savingAttendance}
-            disabled={attendance.length === 0}
-            size="sm"
-          >
-            Salva presenze
-          </Button><Button color="green" onClick={handleFinalizeAttendance} loading={savingAttendance} disabled={attendance.length === 0}>Conferma registro</Button></Group>}
+          <Button variant="subtle" size="sm" onClick={() => setAttendanceOpened((opened) => !opened)} rightSection={attendanceOpened ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}>
+            {attendanceOpened ? "Nascondi" : "Apri"}
+          </Button>
         </Group>
-        {attendanceError && <Alert color="red" title="Errore">{attendanceError}</Alert>}
-        {attendanceFinalizedAt && <Text size="sm" c="dimmed" mb="xs">Presenze storicizzate il {formatDisplayDateTime(attendanceFinalizedAt)}.</Text>}
-        {attendance.length === 0 ? (
-          <Text c="dimmed">
-            Nessun giocatore in anagrafica: aggiungili dalla pagina Giocatori.
-          </Text>
-        ) : (
-          <Stack gap="xs">
-            {attendance.map((a) => (
-              <Card key={a.playerId} withBorder padding="sm" radius="md">
-                <Group justify="space-between">
-                  <Text>{a.playerName}</Text>
-                  <Checkbox
-                    label="Presente"
-                    checked={a.status === "present"}
-                    disabled={Boolean(attendanceFinalizedAt)}
-                    onChange={(event) =>
-                      setPlayerPresent(a.playerId, event.currentTarget.checked)
-                    }
-                  />
-                </Group>
-              </Card>
-            ))}
+        <Collapse expanded={attendanceOpened}>
+          <Stack gap="sm" mt="md">
+            {attendanceFinalizedAt ? <Button onClick={handleReopenAttendance} loading={savingAttendance} size="sm" style={{ alignSelf: "flex-start" }}>Riapri registro</Button> : <Group gap="xs"><Button
+              onClick={handleSaveAttendance}
+              loading={savingAttendance}
+              disabled={attendance.length === 0}
+              size="sm"
+            >
+              Salva presenze
+            </Button><Button color="green" onClick={handleFinalizeAttendance} loading={savingAttendance} disabled={attendance.length === 0}>Conferma registro</Button></Group>}
+            {attendanceError && <Alert color="red" title="Errore">{attendanceError}</Alert>}
+            {attendanceFinalizedAt && <Text size="sm" c="dimmed">Presenze storicizzate il {formatDisplayDateTime(attendanceFinalizedAt)}.</Text>}
+            {attendance.length === 0 ? (
+              <Text c="dimmed">
+                Nessun giocatore in anagrafica: aggiungili dalla pagina Giocatori.
+              </Text>
+            ) : (
+              <Stack gap="xs">
+                {attendance.map((a) => (
+                  <Card key={a.playerId} withBorder padding="sm" radius="md">
+                    <Group justify="space-between">
+                      <Text>{a.playerName}</Text>
+                      <Checkbox
+                        label="Presente"
+                        checked={a.status === "present"}
+                        disabled={Boolean(attendanceFinalizedAt)}
+                        onChange={(event) =>
+                          setPlayerPresent(a.playerId, event.currentTarget.checked)
+                        }
+                      />
+                    </Group>
+                  </Card>
+                ))}
+              </Stack>
+            )}
           </Stack>
-        )}
-      </div>
+        </Collapse>
+      </Card>
     </Stack>
   );
 }
