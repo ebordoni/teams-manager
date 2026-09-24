@@ -18,6 +18,7 @@ export interface Player {
   name: string;
   role: string | null;
   secondaryRoles: string[];
+  jerseyNumber: number | null;
   preferredFoot: PreferredFoot;
   fitness: number;
   speed: number;

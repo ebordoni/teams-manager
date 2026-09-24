@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.4] — 2026-09-24
+
+### Aggiunto
+
+- Avatar con iniziali e numero di maglia per ogni giocatore nell'elenco.
+- Campo numero di maglia da 1 a 99, persistito con migrazione SQLite e protetto da unicità.
+
+### Modificato
+
+- Le schede giocatore mostrano piede preferito e ruoli in un elenco dati semantico; le caratteristiche tecniche restano disponibili solo in modifica.
+
 ## [0.19.3] — 2026-09-24
 
 ### Aggiunto

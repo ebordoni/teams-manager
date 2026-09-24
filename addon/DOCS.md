@@ -30,7 +30,7 @@ avversario (mostra il campo "Avversario").
 
 ### Giocatori
 
-Anagrafica della squadra: nome, ruolo, ruoli secondari, piede preferito e valutazioni 0–100 di forma fisica, velocità, tecnica, tiro, difesa e attacco. Questi dati migliorano le proposte del piano partita AI.
+Anagrafica della squadra: nome, numero di maglia univoco (1–99), ruolo, ruoli secondari, piede preferito e valutazioni 0–100 di forma fisica, velocità, tecnica, tiro, difesa e attacco. L'elenco mostra un avatar con le iniziali e il numero di maglia; questi dati migliorano le proposte del piano partita AI.
 
 ### Rosa e presenze
 

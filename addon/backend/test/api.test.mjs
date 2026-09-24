@@ -65,7 +65,7 @@ test("health endpoint reports the running service", async () => {
 
 test("database migrations reach the latest schema and pass integrity validation", () => {
   const versions = getDb().prepare("SELECT version FROM schema_version ORDER BY version").all();
-  assert.deepEqual(versions.map((row) => row.version), [1, 2, 3]);
+  assert.deepEqual(versions.map((row) => row.version), [1, 2, 3, 4]);
   const integrity = getDb().prepare("PRAGMA integrity_check").get();
   assert.equal(integrity.integrity_check, "ok");
 });
@@ -102,12 +102,13 @@ test("player and event workflow is available through the API", async () => {
   const player = await request("/api/players", {
     method: "POST",
     body: JSON.stringify({
-      name: "Giocatore test", role: "Centrocampista", preferredFoot: "left",
+      name: "Giocatore test", role: "Centrocampista", jerseyNumber: 8, preferredFoot: "left",
       fitness: 72, speed: 81, technique: 76, shooting: 64, defending: 58, attacking: 70,
     }),
   });
   assert.equal(player.response.status, 201);
   assert.equal(player.body.preferredFoot, "left");
+  assert.equal(player.body.jerseyNumber, 8);
   assert.equal(player.body.speed, 81);
 
   const event = await request("/api/events", {

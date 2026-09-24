@@ -1,10 +1,13 @@
 import {
   ActionIcon,
+  Avatar,
   Badge,
   Button,
   Card,
   Collapse,
+  DataList,
   Group,
+  Indicator,
   Loader,
   MultiSelect,
   NumberInput,
@@ -15,7 +18,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import { useDisclosure } from "@mantine/hooks";
 import { IconChartBar, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
@@ -33,21 +36,22 @@ const SKILLS = [
   ["fitness", "Forma fisica"], ["speed", "Velocità"], ["technique", "Tecnica"],
   ["shooting", "Tiro"], ["defending", "Difesa"], ["attacking", "Attacco"],
 ] as const;
-const SKILL_SHORT_LABEL: Record<(typeof SKILLS)[number][0], string> = {
-  fitness: "Fis", speed: "Vel", technique: "Tec", shooting: "Tir", defending: "Dif", attacking: "Att",
-};
-
-type PlayerDraft = Pick<Player, "name" | "role" | "secondaryRoles" | "preferredFoot" | "fitness" | "speed" | "technique" | "shooting" | "defending" | "attacking" | "notes">;
-const EMPTY_PLAYER: PlayerDraft = { name: "", role: null, secondaryRoles: [], preferredFoot: "both", fitness: 50, speed: 50, technique: 50, shooting: 50, defending: 50, attacking: 50, notes: null };
+type PlayerDraft = Pick<Player, "name" | "role" | "secondaryRoles" | "jerseyNumber" | "preferredFoot" | "fitness" | "speed" | "technique" | "shooting" | "defending" | "attacking" | "notes">;
+const EMPTY_PLAYER: PlayerDraft = { name: "", role: null, secondaryRoles: [], jerseyNumber: null, preferredFoot: "both", fitness: 50, speed: 50, technique: 50, shooting: 50, defending: 50, attacking: 50, notes: null };
 
 function numericValue(value: string | number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function optionalNumber(value: string | number): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function PlayerFields({ value, onChange, includeNotes = false }: { value: PlayerDraft; onChange: (next: PlayerDraft) => void; includeNotes?: boolean }) {
   const roles = [value.role, ...value.secondaryRoles].filter(Boolean) as string[];
   return <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
     <TextInput label="Nome" required value={value.name} onChange={(event) => onChange({ ...value, name: event.currentTarget.value })} />
+    <NumberInput label="Numero di maglia" description="Da 1 a 99" value={value.jerseyNumber ?? ""} min={1} max={99} clampBehavior="strict" onChange={(jerseyNumber) => onChange({ ...value, jerseyNumber: optionalNumber(jerseyNumber) })} />
     <MultiSelect label="Ruoli" data={ROLES} value={roles} onChange={(nextRoles) => onChange({ ...value, role: nextRoles[0] ?? null, secondaryRoles: nextRoles.slice(1) })} searchable />
     <Select label="Piede preferito" data={FOOT_OPTIONS} value={value.preferredFoot} onChange={(preferredFoot) => onChange({ ...value, preferredFoot: (preferredFoot ?? "both") as PreferredFoot })} allowDeselect={false} />
     {SKILLS.map(([key, label]) => <NumberInput key={key} label={label} description="0–100" value={value[key]} min={0} max={100} clampBehavior="strict" onChange={(nextValue) => onChange({ ...value, [key]: numericValue(nextValue) })} />)}
@@ -63,7 +67,6 @@ export default function Players() {
   const [history, setHistory] = useState<{ player: Player; items: AttendanceHistoryItem[] } | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showForm, { toggle: toggleForm, close: closeForm }] = useDisclosure(false);
-  const showTechnicalProfile = useMediaQuery("(min-width: 75em)") ?? false;
 
   function loadPlayers() {
     setLoading(true);
@@ -121,8 +124,14 @@ export default function Players() {
       <Button type="submit" style={{ alignSelf: "flex-start" }}>Salva</Button>
     </Stack></form></Card></Collapse>
     {loading ? <Loader /> : players.length === 0 ? <Text c="dimmed">Nessun giocatore in anagrafica.</Text> : <Stack gap="xs">
-      {players.map((player) => <Card key={player.id} withBorder padding="sm" radius="md"><Group justify="space-between" wrap="nowrap">
-        <div style={{ minWidth: 0, flex: 1 }}><Text fw={600} truncate>{player.name}</Text><Group gap="xs" mt={3}><Badge variant="light">{FOOT_LABEL[player.preferredFoot]}</Badge>{(player.role || player.secondaryRoles.length > 0) && <Text size="sm" c="dimmed" truncate>{[player.role, ...player.secondaryRoles].filter(Boolean).join(", ")}</Text>}</Group>{showTechnicalProfile && <Group gap={4} mt={6} wrap="nowrap" aria-label={`Profilo tecnico di ${player.name}`}>{SKILLS.map(([key, label]) => <Badge key={key} size="sm" variant="light" color="gray" title={label}>{SKILL_SHORT_LABEL[key]} {player[key]}</Badge>)}</Group>}</div>
+      {players.map((player) => <Card key={player.id} withBorder padding="sm" radius="md"><Group justify="space-between" align="flex-start" wrap="nowrap">
+        <Indicator inline label={player.jerseyNumber} disabled={player.jerseyNumber === null} size={18} position="bottom-end" offset={5} color="blue" withBorder>
+          <Avatar name={player.name} color="initials" radius="xl" size="lg" alt={`Avatar di ${player.name}`} />
+        </Indicator>
+        <div style={{ minWidth: 0, flex: 1 }}><Text fw={600} truncate>{player.name}</Text><DataList size="sm" mt={4} style={{ maxWidth: 440 }}>
+          <DataList.Item><DataList.ItemLabel>Piede</DataList.ItemLabel><DataList.ItemValue>{FOOT_LABEL[player.preferredFoot]}</DataList.ItemValue></DataList.Item>
+          <DataList.Item><DataList.ItemLabel>Ruoli</DataList.ItemLabel><DataList.ItemValue>{[player.role, ...player.secondaryRoles].filter(Boolean).join(", ") || "Non assegnati"}</DataList.ItemValue></DataList.Item>
+        </DataList></div>
         <Group gap="xs" wrap="nowrap"><ActionIcon variant="subtle" loading={loadingHistory && history?.player.id !== player.id} onClick={() => void showHistory(player)} aria-label={`Storico presenze ${player.name}`}><IconChartBar size={18} /></ActionIcon><ActionIcon variant="subtle" onClick={() => startEditing(player)} aria-label={`Modifica ${player.name}`}><IconPencil size={18} /></ActionIcon><ActionIcon color="red" variant="subtle" onClick={() => handleDelete(player.id)} aria-label={`Elimina ${player.name}`}><IconTrash size={18} /></ActionIcon></Group>
       </Group></Card>)}
     </Stack>}

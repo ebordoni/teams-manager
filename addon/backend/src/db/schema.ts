@@ -4,7 +4,7 @@ import path from "path";
 import { config } from "../config";
 
 let db: DatabaseSync | undefined;
-const LATEST_SCHEMA_VERSION = 3;
+const LATEST_SCHEMA_VERSION = 4;
 
 const SCHEMA_V1 = `
   CREATE TABLE IF NOT EXISTS schema_version (
@@ -17,6 +17,7 @@ const SCHEMA_V1 = `
     name            TEXT    NOT NULL,
     role            TEXT,
     secondary_roles TEXT    NOT NULL DEFAULT '[]',
+    jersey_number  INTEGER UNIQUE CHECK (jersey_number BETWEEN 1 AND 99),
     preferred_foot  TEXT    NOT NULL DEFAULT 'both',
     fitness         INTEGER NOT NULL DEFAULT 50,
     speed           INTEGER NOT NULL DEFAULT 50,
@@ -197,6 +198,10 @@ const migrations: Record<number, () => void> = {
   // Un giocatore con presenze confermate viene archiviato, non eliminato:
   // lo storico resta così consultabile e i riferimenti non vengono cascati.
   3: () => ensureColumn("players", "archived_at", "DATETIME"),
+  4: () => {
+    ensureColumn("players", "jersey_number", "INTEGER CHECK (jersey_number BETWEEN 1 AND 99)");
+    getDb().exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_players_jersey_number ON players(jersey_number) WHERE jersey_number IS NOT NULL");
+  },
 };
 
 function applyMigrations(dbPath: string, databaseAlreadyExists: boolean): void {

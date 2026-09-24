@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.19.4] — 2026-09-24
+
+### Added
+
+- Initials avatar and jersey-number badge for every player in the list.
+- Jersey number field from 1 to 99, persisted through a SQLite migration and protected by uniqueness.
+
+### Changed
+
+- Player cards now show preferred foot and roles in a semantic data list; technical ratings remain available only while editing.
+
 ## [0.19.3] — 2026-09-24
 
 ### Added

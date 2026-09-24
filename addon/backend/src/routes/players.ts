@@ -10,6 +10,7 @@ const PlayerSchema = z.object({
   name: z.string().trim().min(1),
   role: z.string().trim().optional().nullable(),
   secondaryRoles: z.array(z.string()).optional().default([]),
+  jerseyNumber: z.number().int().min(1).max(99).optional().nullable(),
   preferredFoot: z.enum(["right", "left", "both"]).optional(),
   fitness: z.number().int().min(0).max(100).optional(),
   speed: z.number().int().min(0).max(100).optional(),
@@ -19,6 +20,13 @@ const PlayerSchema = z.object({
   attacking: z.number().int().min(0).max(100).optional(),
   notes: z.string().optional().nullable(),
 });
+
+function jerseyNumberInUse(jerseyNumber: number, exceptPlayerId?: string): boolean {
+  const row = getDb().prepare(
+    `SELECT 1 FROM players WHERE jersey_number = ?${exceptPlayerId ? " AND id != ?" : ""} LIMIT 1`,
+  ).get(jerseyNumber, ...(exceptPlayerId ? [exceptPlayerId] : []));
+  return Boolean(row);
+}
 
 // GET /api/players
 router.get("/", (_req: Request, res: Response) => {
@@ -62,15 +70,18 @@ router.post("/", (req: Request, res: Response) => {
     res.status(400).json({ error: parse.error.flatten() });
     return;
   }
-  const { name, role, secondaryRoles, preferredFoot, fitness, speed, technique, shooting, defending, attacking, notes } = parse.data;
+  const { name, role, secondaryRoles, jerseyNumber, preferredFoot, fitness, speed, technique, shooting, defending, attacking, notes } = parse.data;
+  if (jerseyNumber !== null && jerseyNumber !== undefined && jerseyNumberInUse(jerseyNumber)) {
+    return void res.status(400).json({ error: "Numero di maglia già assegnato" });
+  }
   const db = getDb();
   const result = db
     .prepare(
       `INSERT INTO players
-        (name, role, secondary_roles, preferred_foot, fitness, speed, technique, shooting, defending, attacking, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (name, role, secondary_roles, jersey_number, preferred_foot, fitness, speed, technique, shooting, defending, attacking, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(name, role ?? null, JSON.stringify(secondaryRoles), preferredFoot ?? "both", fitness ?? 50, speed ?? 50, technique ?? 50, shooting ?? 50, defending ?? 50, attacking ?? 50, notes ?? null);
+    .run(name, role ?? null, JSON.stringify(secondaryRoles), jerseyNumber ?? null, preferredFoot ?? "both", fitness ?? 50, speed ?? 50, technique ?? 50, shooting ?? 50, defending ?? 50, attacking ?? 50, notes ?? null);
 
   const row = db
     .prepare("SELECT * FROM players WHERE id = ?")
@@ -94,15 +105,19 @@ router.put("/:id", (req: Request, res: Response) => {
     return;
   }
 
-  const { name, role, secondaryRoles, preferredFoot, fitness, speed, technique, shooting, defending, attacking, notes } = parse.data;
+  const { name, role, secondaryRoles, jerseyNumber, preferredFoot, fitness, speed, technique, shooting, defending, attacking, notes } = parse.data;
+  if (jerseyNumber !== null && jerseyNumber !== undefined && jerseyNumberInUse(jerseyNumber, req.params.id)) {
+    return void res.status(400).json({ error: "Numero di maglia già assegnato" });
+  }
   db.prepare(
-    `UPDATE players SET name = ?, role = ?, secondary_roles = ?, preferred_foot = ?,
+    `UPDATE players SET name = ?, role = ?, secondary_roles = ?, jersey_number = ?, preferred_foot = ?,
       fitness = ?, speed = ?, technique = ?, shooting = ?, defending = ?, attacking = ?, notes = ?
      WHERE id = ?`,
   ).run(
     name ?? existing.name,
     role !== undefined ? role : existing.role,
     secondaryRoles ? JSON.stringify(secondaryRoles) : existing.secondary_roles,
+    jerseyNumber !== undefined ? jerseyNumber : existing.jersey_number,
     preferredFoot ?? existing.preferred_foot,
     fitness ?? existing.fitness,
     speed ?? existing.speed,
