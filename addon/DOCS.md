@@ -26,6 +26,9 @@ Nella scheda di un evento partita puoi indicare la **Squadra avversaria**, regis
 con pulsanti rapidi e attribuire i gol ai marcatori della tua rosa. La sezione presenze è chiusa
 inizialmente e conserva comunque il riepilogo dei giocatori presenti.
 
+Dalla scheda di ciascun giocatore, lo storico mostra anche i **gol totali** e le **partite a segno**
+calcolati dai risultati registrati.
+
 ### Tipi di evento
 
 Dalla pagina **Impostazioni** puoi creare, modificare ed eliminare i tipi di evento disponibili nel

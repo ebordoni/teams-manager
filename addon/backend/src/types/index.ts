@@ -100,6 +100,11 @@ export interface AttendanceHistoryItem {
   status: AttendanceStatus;
 }
 
+export interface PlayerStatistics {
+  goals: number;
+  matchesScored: number;
+}
+
 export interface MatchResult {
   eventId: number;
   teamScore: number;

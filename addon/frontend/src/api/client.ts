@@ -71,6 +71,8 @@ export const api = {
     apiClient.post(`/events/${eventId}/attendance/reopen`),
   getPlayerAttendanceHistory: (playerId: number) =>
     apiClient.get<import("../types").AttendanceHistoryItem[]>(`/players/${playerId}/attendance-history`),
+  getPlayerStatistics: (playerId: number) =>
+    apiClient.get<import("../types").PlayerStatistics>(`/players/${playerId}/statistics`),
   getAttendanceReport: (filters?: { from?: string; to?: string; type?: string }) =>
     apiClient.get<import("../types").AttendanceReport>("/reports/attendance", { params: filters }),
   getTeamSummary: () =>

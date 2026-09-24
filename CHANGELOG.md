@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.7] — 2026-09-24
+
+### Corretto
+
+- I marcatori vengono ora riletti correttamente dal database dopo il salvataggio e il refresh della scheda evento.
+
+### Aggiunto
+
+- Statistiche giocatore con gol totali e numero di partite in cui è andato a segno.
+
 ## [0.19.6] — 2026-09-24
 
 ### Aggiunto

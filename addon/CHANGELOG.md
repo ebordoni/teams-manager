@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.19.7] — 2026-09-24
+
+### Fixed
+
+- Scorers are now correctly loaded from the database after saving and refreshing the event detail.
+
+### Added
+
+- Player statistics with total goals and matches scored in.
+
 ## [0.19.6] — 2026-09-24
 
 ### Added

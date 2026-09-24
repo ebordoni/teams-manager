@@ -22,7 +22,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconChartBar, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { AttendanceHistoryItem, Player, PreferredFoot } from "../types";
+import type { AttendanceHistoryItem, Player, PlayerStatistics, PreferredFoot } from "../types";
 import { formatDisplayDate } from "../utils/date";
 
 const ROLES = [
@@ -180,6 +180,7 @@ export default function Players() {
   const [history, setHistory] = useState<{
     player: Player;
     items: AttendanceHistoryItem[];
+    statistics: PlayerStatistics;
   } | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showForm, { toggle: toggleForm, close: closeForm }] =
@@ -238,8 +239,15 @@ export default function Players() {
     }
     setLoadingHistory(true);
     try {
-      const response = await api.getPlayerAttendanceHistory(player.id);
-      setHistory({ player, items: response.data });
+      const [historyResponse, statisticsResponse] = await Promise.all([
+        api.getPlayerAttendanceHistory(player.id),
+        api.getPlayerStatistics(player.id),
+      ]);
+      setHistory({
+        player,
+        items: historyResponse.data,
+        statistics: statisticsResponse.data,
+      });
     } finally {
       setLoadingHistory(false);
     }
@@ -290,13 +298,17 @@ export default function Players() {
           <Stack gap="xs">
             <Group justify="space-between">
               <div>
-                <Title order={5}>
-                  Storico presenze · {history.player.name}
-                </Title>
+                <Title order={5}>Statistiche · {history.player.name}</Title>
               </div>
               <Button variant="subtle" onClick={() => setHistory(null)}>
                 Chiudi
               </Button>
+            </Group>
+            <Group gap="xs">
+              <Badge color="blue" size="lg">{history.statistics.goals} gol</Badge>
+              <Text size="sm" c="dimmed">
+                in {history.statistics.matchesScored} partite a segno
+              </Text>
             </Group>
             {history.items.length === 0 ? (
               <Text c="dimmed">Nessuna presenza storicizzata.</Text>

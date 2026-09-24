@@ -51,6 +51,29 @@ router.get("/:id/attendance-history", (req: Request, res: Response) => {
   res.json(rows);
 });
 
+// GET /api/players/:id/statistics — gol registrati nei risultati partita.
+router.get("/:id/statistics", (req: Request, res: Response) => {
+  const db = getDb();
+  const player = db.prepare("SELECT id FROM players WHERE id = ?").get(req.params.id);
+  if (!player) return void res.status(404).json({ error: "Player not found" });
+
+  const rows = db.prepare("SELECT scorers FROM match_results").all() as Array<{ scorers: string }>;
+  let goals = 0;
+  let matchesScored = 0;
+  for (const row of rows) {
+    try {
+      const scorer = (JSON.parse(row.scorers) as Array<{ playerId: number; goals: number }>).find((item) => item.playerId === Number(req.params.id));
+      if (scorer) {
+        goals += scorer.goals;
+        matchesScored += 1;
+      }
+    } catch {
+      // Una riga storica non valida non deve impedire la consultazione delle statistiche.
+    }
+  }
+  res.json({ goals, matchesScored });
+});
+
 router.get("/:id", (req: Request, res: Response) => {
   const db = getDb();
   const row = db

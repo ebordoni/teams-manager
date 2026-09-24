@@ -234,11 +234,19 @@ test("match results and finalized attendance are retained in player history", as
     venue: "away", scorers: [{ playerId: player.body.id, goals: 3 }], notes: "Bella partita", completedAt: result.body.completedAt,
   });
 
+  const reloadedResult = await request(`/api/events/${event.body.id}/result`);
+  assert.equal(reloadedResult.response.status, 200);
+  assert.deepEqual(reloadedResult.body.scorers, [{ playerId: player.body.id, goals: 3 }]);
+
   const invalidScorers = await request(`/api/events/${event.body.id}/result`, {
     method: "PUT",
     body: JSON.stringify({ teamScore: 1, opponentScore: 0, venue: "away", scorers: [{ playerId: player.body.id, goals: 2 }] }),
   });
   assert.equal(invalidScorers.response.status, 400);
+
+  const statistics = await request(`/api/players/${player.body.id}/statistics`);
+  assert.equal(statistics.response.status, 200);
+  assert.deepEqual(statistics.body, { goals: 3, matchesScored: 1 });
 
   const summary = await request("/api/reports/summary");
   assert.equal(summary.response.status, 200);
