@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.8] — 2026-09-24
+
+### Added
+
+- Manual match plans: create empty periods without calling AI and fill lineups independently.
+- Interactive 2-3-1 pitch editor with tap-to-assign player selection and real-time bench updates.
+- One-period-at-a-time stepper navigation with whole-plan playing-time summary.
+
+### Changed
+
+- “AI Match plan” is now “Match plan”; AI generation and manual editing are parallel workflows.
+- The virtual pitch is now shared with the Formations page.
+
 ## [0.19.7] — 2026-09-24
 
 ### Fixed

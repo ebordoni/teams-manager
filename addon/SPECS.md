@@ -1,7 +1,7 @@
 # Teams Manager — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.19.7)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
+> Stato attuale: **MVP operativo (v0.19.8)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -120,7 +120,7 @@ addon/
 | F16 | **Template Google Doc** — documento personalizzato con placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`, `{{FORMAZIONI}}`, `{{PRESENZE}}`, configurabile dalle Impostazioni. Se non impostato, si usa la generazione automatica. | DONE  |
 | F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                                                                                                   | TODO  |
 | F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                                                                                     | TODO  |
-| F17 | **Piani partita AI** — formazione per ciascun tempo, minimizzazione della differenza di minutaggio, rispetto dei ruoli, modifica manuale e conferma.                                                                                                        | DONE  |
+| F17 | **Piani partita** — creazione manuale sul campo virtuale o proposta AI per ciascun tempo, minimizzazione della differenza di minutaggio, rispetto dei ruoli, modifica e conferma.                                                                         | DONE  |
 
 ---
 

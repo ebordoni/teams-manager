@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { GoogleAuthRequiredError } from "../services/google/auth";
 import { exportMatchPlan } from "../services/match-plan-export.service";
-import { confirmMatchPlan, deleteMatchPlan, generateMatchPlan, getMatchPlan, listMatchPlans, updateMatchPlan } from "../services/match-plan.service";
+import { confirmMatchPlan, createManualMatchPlan, deleteMatchPlan, generateMatchPlan, getMatchPlan, listMatchPlans, updateMatchPlan } from "../services/match-plan.service";
 
 const router = Router({ mergeParams: true });
 const ParamsSchema = z.object({ id: z.coerce.number().int().positive(), planId: z.coerce.number().int().positive().optional() });
@@ -45,6 +45,13 @@ router.post("/generate", async (req, res) => {
   if (!params.success || !body.success) return void res.status(400).json({ error: body.success ? "Id evento non valido" : body.error.flatten() });
   try { res.status(201).json(await generateMatchPlan(params.data.id, body.data)); }
   catch (error) { res.status(400).json({ error: error instanceof Error ? error.message : "Generazione non riuscita" }); }
+});
+
+router.post("/manual", (req, res) => {
+  const params = ParamsSchema.safeParse(req.params); const body = GenerateSchema.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: body.success ? "Id evento non valido" : body.error.flatten() });
+  try { res.status(201).json(createManualMatchPlan(params.data.id, body.data)); }
+  catch (error) { res.status(400).json({ error: error instanceof Error ? error.message : "Creazione non riuscita" }); }
 });
 
 router.get("/:planId", (req, res) => {

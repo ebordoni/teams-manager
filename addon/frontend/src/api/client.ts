@@ -127,6 +127,8 @@ export const api = {
   getMatchPlans: (eventId: number) => apiClient.get<MatchPlan[]>(`/events/${eventId}/match-plans`),
   generateMatchPlan: (eventId: number, data: { name?: string; periodCount: number; minutesPerPeriod: number; playersOnField: number; system?: string; rolePolicy: RolePolicy }) =>
     apiClient.post<MatchPlan>(`/events/${eventId}/match-plans/generate`, data),
+  createManualMatchPlan: (eventId: number, data: { name?: string; periodCount: number; minutesPerPeriod: number; playersOnField: number; system?: string; rolePolicy: RolePolicy }) =>
+    apiClient.post<MatchPlan>(`/events/${eventId}/match-plans/manual`, data),
   updateMatchPlan: (eventId: number, planId: number, data: { name?: string; periods?: MatchPeriod[] }) =>
     apiClient.put<MatchPlan>(`/events/${eventId}/match-plans/${planId}`, data),
   confirmMatchPlan: (eventId: number, planId: number) =>

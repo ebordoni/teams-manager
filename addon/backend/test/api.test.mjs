@@ -375,6 +375,31 @@ test("match plans use the validated local fallback when AI is not configured", a
     generated.body.periods.every((period) => period.assignments.length === 7),
   );
 
+  const manual = await request(
+    `/api/events/${event.body.id}/match-plans/manual`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Piano manuale",
+        periodCount: 3,
+        minutesPerPeriod: 20,
+        playersOnField: 7,
+        rolePolicy: "preferred",
+      }),
+    },
+  );
+  assert.equal(manual.response.status, 201);
+  assert.equal(manual.body.source, "manual");
+  assert.equal(manual.body.periods.length, 3);
+  assert.ok(manual.body.periods.every((period) => period.assignments.length === 0));
+
+  const savedDraft = await request(
+    `/api/events/${event.body.id}/match-plans/${manual.body.id}`,
+    { method: "PUT", body: JSON.stringify({ periods: manual.body.periods }) },
+  );
+  assert.equal(savedDraft.response.status, 200);
+  assert.equal(savedDraft.body.periods[0].assignments.length, 0);
+
   const confirmed = await request(
     `/api/events/${event.body.id}/match-plans/${generated.body.id}/confirm`,
     { method: "POST" },

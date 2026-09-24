@@ -44,12 +44,12 @@ Anagrafica della squadra: nome, numero di maglia univoco (1–99), ruolo, ruoli 
 Ogni evento include automaticamente tutta la rosa. Nella scheda evento tutti i giocatori sono
 selezionati come presenti: deseleziona soltanto chi non ha partecipato.
 
-### Piani partita AI
+### Piani partita
 
-Apri la scheda della partita e seleziona **Piano partita AI**.
-Indica numero e durata dei tempi, giocatori in campo e rigidità dei ruoli. L'app prepara una
-formazione per ciascun tempo cercando la distribuzione di minuti più uniforme possibile senza
-cambi durante il tempo. La proposta può essere modificata, confermata o eliminata.
+Apri la scheda della partita e seleziona **Piano partita**. Puoi creare tempi vuoti e compilare
+le formazioni manualmente, oppure indicare numero e durata dei tempi, giocatori in campo e
+rigidità dei ruoli per generare una proposta AI. Per il 7vs7, tocca direttamente una posizione
+del campo per scegliere il giocatore; i tempi si navigano uno alla volta.
 
 I nomi non vengono inviati al provider: l'AI riceve pseudonimi, ruoli, piede preferito e valori tecnici. Se il provider non è
 configurato o non risponde, viene usato automaticamente il motore locale.

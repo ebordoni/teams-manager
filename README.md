@@ -4,7 +4,7 @@
 
 **Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le presenze della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
 
-[![Version](https://img.shields.io/badge/version-0.19.7-blue)](addon/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.19.8-blue)](addon/CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Home%20Assistant-41BDF5)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20aarch64-lightgrey)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
@@ -13,7 +13,7 @@
 
 ---
 
-> ✅ **Stato: MVP operativo (v0.19.7).** Calendario, giocatori, presenze, formazioni, piani partita AI ed esportazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
+> ✅ **Stato: MVP operativo (v0.19.8).** Calendario, giocatori, presenze, formazioni, piani partita AI ed esportazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
 
 ## 🎯 Obiettivo
 
@@ -23,7 +23,7 @@ Teams Manager è il gestionale della squadra pensato per essere installato come 
 - **Anagrafica giocatori** — ruoli, piede preferito, profilo tecnico 0–100 e note.
 - **Rosa automatica** — tutti i giocatori sono inclusi in ogni evento; le presenze partono da “presente”.
 - **Comunicazioni** — generazione di un Google Document condivisibile via WhatsApp con i genitori.
-- **Piani partita AI** — rotazioni per ciascun tempo con minutaggio bilanciato, ruoli e fallback locale.
+- **Piani partita** — crea le formazioni manualmente sul campo virtuale oppure genera rotazioni AI, con minutaggio bilanciato, ruoli e fallback locale.
 
 Il database (SQLite) resta locale all'addon; Google Docs è solo il formato di pubblicazione della comunicazione.
 

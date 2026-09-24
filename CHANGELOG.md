@@ -7,6 +7,19 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.8] — 2026-09-24
+
+### Aggiunto
+
+- Piano partita manuale: crea tempi vuoti senza interrogare l'AI e compila le formazioni in autonomia.
+- Editor visuale 2-3-1 con selezione del giocatore al tocco della posizione e panchina aggiornata in tempo reale.
+- Navigazione di un tempo alla volta tramite stepper e riepilogo del minutaggio sull'intero piano.
+
+### Modificato
+
+- La pagina “Piano partita AI” è ora “Piano partita”; generazione AI e compilazione manuale sono due flussi affiancati.
+- Il campo virtuale è un componente condiviso anche con la sezione Formazioni.
+
 ## [0.19.7] — 2026-09-24
 
 ### Corretto

@@ -424,7 +424,7 @@ export default function EventDetail() {
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between">
           <div><Title order={5}>Rotazioni della partita</Title><Text size="sm" c="dimmed">Genera una formazione per ogni tempo bilanciando automaticamente il minutaggio.</Text></div>
-          <Button component={Link} to={`/events/${eventId}/match-plan`} leftSection={<IconRobot size={18} />}>Apri piano partita AI</Button>
+          <Button component={Link} to={`/events/${eventId}/match-plan`} leftSection={<IconRobot size={18} />}>Apri piano partita</Button>
         </Group>
       </Card>
 
