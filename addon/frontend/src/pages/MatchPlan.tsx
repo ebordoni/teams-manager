@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import PageLoader from "../components/PageLoader";
 import type { GeneratedMatchPlanExport, MatchPeriod, MatchPlan as MatchPlanType, Player, RolePolicy, TeamEvent } from "../types";
+import { formatDatesInText, formatDisplayDate } from "../utils/date";
 
 const SLOT_LABELS: Record<string, string> = {
   portiere: "Portiere", difensoreSinistro: "Difensore sinistro", difensoreDestro: "Difensore destro",
@@ -75,7 +76,7 @@ export default function MatchPlan() {
 
   if (loading) return <PageLoader />;
   return <Stack gap="lg">
-    <Group justify="space-between"><div><Title order={3}>Piano partita AI</Title><Text c="dimmed">{event?.date}{event?.opponent ? ` · ${teamName} vs ${event.opponent}` : ""}</Text></div><Button component={Link} to={`/events/${eventId}`} variant="subtle">Torna all’evento</Button></Group>
+    <Group justify="space-between"><div><Title order={3}>Piano partita AI</Title><Text c="dimmed">{formatDisplayDate(event?.date)}{event?.opponent ? ` · ${teamName} vs ${event.opponent}` : ""}</Text></div><Button component={Link} to={`/events/${eventId}`} variant="subtle">Torna all’evento</Button></Group>
     {error && <Alert color="red" title="Errore">{error}</Alert>}
     <Card withBorder padding="lg"><Stack><Group><IconRobot /><Title order={4}>Genera una proposta</Title></Group>
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }}>
@@ -89,7 +90,7 @@ export default function MatchPlan() {
       <Button onClick={generate} loading={generating} disabled={players.length < form.playersOnField} style={{ alignSelf: "flex-start" }}>Genera rotazioni</Button>
     </Stack></Card>
 
-    {plans.length > 0 && <Group align="flex-start" wrap="wrap"><Stack gap="xs" w={{ base: "100%", md: 250 }}>{plans.map((plan) => <Card key={plan.id} withBorder onClick={() => selectPlan(plan)} style={{ cursor: "pointer", borderColor: selected?.id === plan.id ? "var(--mantine-primary-color-filled)" : undefined }}><Group justify="space-between" wrap="nowrap"><div><Text fw={600}>{plan.name}</Text><Group gap={4}><Badge size="xs" color={plan.source === "ai" ? "green" : plan.source === "manual" ? "blue" : "yellow"}>{plan.source}</Badge><Badge size="xs" variant="light">{plan.status}</Badge></Group></div><ActionIcon color="red" variant="subtle" onClick={(event) => { event.stopPropagation(); void remove(plan); }}><IconTrash size={16} /></ActionIcon></Group></Card>)}</Stack>
+    {plans.length > 0 && <Group align="flex-start" wrap="wrap"><Stack gap="xs" w={{ base: "100%", md: 250 }}>{plans.map((plan) => <Card key={plan.id} withBorder onClick={() => selectPlan(plan)} style={{ cursor: "pointer", borderColor: selected?.id === plan.id ? "var(--mantine-primary-color-filled)" : undefined }}><Group justify="space-between" wrap="nowrap"><div><Text fw={600}>{formatDatesInText(plan.name)}</Text><Group gap={4}><Badge size="xs" color={plan.source === "ai" ? "green" : plan.source === "manual" ? "blue" : "yellow"}>{plan.source}</Badge><Badge size="xs" variant="light">{plan.status}</Badge></Group></div><ActionIcon color="red" variant="subtle" onClick={(event) => { event.stopPropagation(); void remove(plan); }}><IconTrash size={16} /></ActionIcon></Group></Card>)}</Stack>
       {selected && <Stack style={{ flex: 1, minWidth: 0 }}>
         {selected.warnings.map((warning) => <Alert key={warning} color="yellow">{warning}</Alert>)}
         <SimpleGrid cols={{ base: 1, lg: 2 }}>{draftPeriods.map((period, periodIndex) => <Card key={period.periodNumber} withBorder><Title order={5} mb="sm">Tempo {period.periodNumber} · {selected.minutesPerPeriod} minuti</Title><Stack gap="xs">{period.assignments.map((assignment, assignmentIndex) => <Select key={assignment.slot} label={SLOT_LABELS[assignment.slot] ?? assignment.role} data={playerOptions} value={String(assignment.playerId)} onChange={(value) => value && changePlayer(periodIndex, assignmentIndex, Number(value))} searchable allowDeselect={false} />)}<Text size="sm" c="dimmed">Panchina: {period.benchPlayerIds.map((id) => players.find((player) => player.id === id)?.name).filter(Boolean).join(", ") || "nessuno"}</Text></Stack></Card>)}</SimpleGrid>

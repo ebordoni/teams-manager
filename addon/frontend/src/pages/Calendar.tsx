@@ -28,6 +28,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
+import { formatDisplayDate } from "../utils/date";
 import type {
   EventTypeDef,
   GeneratedCommunication,
@@ -209,7 +210,7 @@ export default function Calendar() {
     const type = typeOf(event.type);
     if (
       !window.confirm(
-        `Eliminare l'evento "${type?.label ?? event.type}" del ${event.date}? Verranno eliminate anche le presenze collegate.`,
+        `Eliminare l'evento "${type?.label ?? event.type}" del ${formatDisplayDate(event.date)}? Verranno eliminate anche le presenze collegate.`,
       )
     ) {
       return;
@@ -284,7 +285,7 @@ export default function Calendar() {
                       date: value ? new Date(value) : null,
                     })
                   }
-                  valueFormat="DD/MM/YYYY"
+                  valueFormat="DD-MM-YYYY"
                 />
                 <TimeInput
                   label="Ora"

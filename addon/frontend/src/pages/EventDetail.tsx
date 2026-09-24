@@ -20,6 +20,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
+import { formatDisplayDate, formatDisplayDateTime } from "../utils/date";
 import type {
   Attendance,
   EventStatus,
@@ -207,7 +208,7 @@ export default function EventDetail() {
     if (!event) return;
     if (
       !window.confirm(
-        `Eliminare questo evento del ${event.date}? Verranno eliminate anche le presenze collegate.`,
+        `Eliminare questo evento del ${formatDisplayDate(event.date)}? Verranno eliminate anche le presenze collegate.`,
       )
     ) {
       return;
@@ -260,7 +261,7 @@ export default function EventDetail() {
             </Group>
           </Group>
           <Text size="sm" c="dimmed">
-            {event.date} {event.startTime ?? ""}
+            {formatDisplayDate(event.date)} {event.startTime ?? ""}
             {event.location ? ` · ${event.location}` : ""}
           </Text>
 
@@ -431,7 +432,7 @@ export default function EventDetail() {
           </Button><Button color="green" onClick={handleFinalizeAttendance} loading={savingAttendance} disabled={attendance.length === 0}>Conferma registro</Button></Group>}
         </Group>
         {attendanceError && <Alert color="red" title="Errore">{attendanceError}</Alert>}
-        {attendanceFinalizedAt && <Text size="sm" c="dimmed" mb="xs">Presenze storicizzate il {new Date(attendanceFinalizedAt).toLocaleString("it-IT")}.</Text>}
+        {attendanceFinalizedAt && <Text size="sm" c="dimmed" mb="xs">Presenze storicizzate il {formatDisplayDateTime(attendanceFinalizedAt)}.</Text>}
         {attendance.length === 0 ? (
           <Text c="dimmed">
             Nessun giocatore in anagrafica: aggiungili dalla pagina Giocatori.

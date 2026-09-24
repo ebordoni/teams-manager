@@ -12,6 +12,7 @@ import { IconExternalLink, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { Communication } from "../types";
+import { formatDisplayDateTime } from "../utils/date";
 
 export default function Communications() {
   const [items, setItems] = useState<Communication[]>([]);
@@ -75,7 +76,7 @@ export default function Communications() {
                 <div>
                   <Text fw={600}>{item.title}</Text>
                   <Text size="sm" c="dimmed">
-                    {new Date(item.createdAt).toLocaleString("it-IT")}
+                    {formatDisplayDateTime(item.createdAt)}
                   </Text>
                 </div>
                 <Group gap="xs" wrap="nowrap">

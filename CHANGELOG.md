@@ -7,6 +7,18 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.2] — 2026-09-24
+
+### Modificato
+
+- Tutte le date di sola visualizzazione usano ora il formato italiano `GG-MM-AAAA`, mantenendo il formato ISO nei dati, nelle API e nel database.
+- Calendari Mantine localizzati in italiano, con lunedì come primo giorno della settimana.
+- Titoli dei piani partita generati con data ISO resi leggibili nell'interfaccia, senza alterare il dato salvato.
+
+### Documentazione
+
+- Aggiunta alla bacheca tecnica la parte residua dell'hardening: import JSON validato, gestione backup e verifica upgrade reale.
+
 ## [0.19.1] — 2026-09-24
 
 ### Aggiunto

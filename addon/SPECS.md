@@ -1,7 +1,7 @@
 # Teams Manager — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.19.1)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
+> Stato attuale: **MVP operativo (v0.19.2)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -352,3 +352,9 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 - archivio allenamenti (temi, esercizi)
 - gestione tornei e classifiche
 - ulteriori test di integrazione per i flussi Google (richiedono credenziali esterne)
+
+### Bacheca — hardening dati
+
+- import JSON validato, con anteprima e conferma esplicita prima della scrittura
+- politica di conservazione e gestione dei backup locali
+- controlli di coerenza estesi e prova di upgrade su una copia reale dell'istanza Home Assistant

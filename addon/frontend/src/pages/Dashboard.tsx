@@ -23,6 +23,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
+import { formatDisplayDate } from "../utils/date";
 import type {
   Attendance,
   Communication,
@@ -126,7 +127,7 @@ export default function Dashboard() {
                 Prossimo evento
               </Text>
               <Text size="lg" fw={700}>
-                {nextEvent ? nextEvent.date : "—"}
+                {formatDisplayDate(nextEvent?.date)}
               </Text>
             </div>
             <ThemeIcon variant="light" color="green" size="lg">
@@ -203,7 +204,7 @@ export default function Dashboard() {
         </Group>
       </Card>
 
-      {summary && summary.recentResults.length > 0 && <Card withBorder padding="lg"><Group justify="space-between" mb="sm"><Title order={4}>Ultimi risultati</Title><Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Apri calendario</Button></Group><Stack gap="xs">{summary.recentResults.map((match) => <Group key={match.eventId} justify="space-between"><Text>{match.date}{match.opponent ? ` · vs ${match.opponent}` : ""}</Text><Badge color={match.teamScore > match.opponentScore ? "green" : match.teamScore < match.opponentScore ? "red" : "gray"}>{match.teamScore}–{match.opponentScore}</Badge></Group>)}</Stack></Card>}
+      {summary && summary.recentResults.length > 0 && <Card withBorder padding="lg"><Group justify="space-between" mb="sm"><Title order={4}>Ultimi risultati</Title><Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Apri calendario</Button></Group><Stack gap="xs">{summary.recentResults.map((match) => <Group key={match.eventId} justify="space-between"><Text>{formatDisplayDate(match.date)}{match.opponent ? ` · vs ${match.opponent}` : ""}</Text><Badge color={match.teamScore > match.opponentScore ? "green" : match.teamScore < match.opponentScore ? "red" : "gray"}>{match.teamScore}–{match.opponentScore}</Badge></Group>)}</Stack></Card>}
 
       {nextEvent && (
         <Alert
@@ -284,7 +285,7 @@ export default function Dashboard() {
                             : "gray"
                       }
                     >
-                      {event.date} {event.startTime ?? ""}
+                      {formatDisplayDate(event.date)} {event.startTime ?? ""}
                     </Badge>
                   </Group>
                 </Card>

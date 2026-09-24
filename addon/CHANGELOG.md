@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.2] — 2026-09-24
+
+### Changed
+
+- UI-only dates now use the Italian `DD-MM-YYYY` format, while API and database values remain ISO.
+- Mantine calendars are localized in Italian and start on Monday.
+- Match-plan labels containing an ISO date are formatted for display without changing stored data.
+
+### Documentation
+
+- Added the remaining data-hardening items to the technical backlog: validated JSON import, backup management, and real upgrade verification.
+
 ## [0.19.1] — 2026-09-24
 
 ### Added

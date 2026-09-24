@@ -20,6 +20,7 @@ import { IconChartBar, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { AttendanceHistoryItem, Player, PreferredFoot } from "../types";
+import { formatDisplayDate } from "../utils/date";
 
 const ROLES = ["Portiere", "Difensore", "Centrocampista", "Esterno", "Attaccante"];
 const FOOT_OPTIONS = [
@@ -114,7 +115,7 @@ export default function Players() {
       <PlayerFields value={editing} onChange={(next) => setEditing({ ...editing, ...next })} includeNotes />
       <Button type="submit" style={{ alignSelf: "flex-start" }}>Salva modifiche</Button>
     </Stack></form></Card>}
-    {history && <Card withBorder padding="md" radius="md"><Stack gap="xs"><Group justify="space-between"><div><Title order={5}>Storico presenze · {history.player.name}</Title><Text size="sm" c="dimmed">Solo registri confermati.</Text></div><Button variant="subtle" onClick={() => setHistory(null)}>Chiudi</Button></Group>{history.items.length === 0 ? <Text c="dimmed">Nessuna presenza storicizzata.</Text> : <><Text fw={600}>{history.items.filter((item) => item.status === "present").length}/{history.items.length} presenze ({Math.round((history.items.filter((item) => item.status === "present").length / history.items.length) * 100)}%)</Text>{history.items.map((item) => <Group key={item.eventId} justify="space-between"><Text size="sm">{item.date} · {item.type}{item.opponent ? ` · ${item.opponent}` : ""}</Text><Badge color={item.status === "present" ? "green" : "red"}>{item.status === "present" ? "Presente" : "Assente"}</Badge></Group>)}</>}</Stack></Card>}
+    {history && <Card withBorder padding="md" radius="md"><Stack gap="xs"><Group justify="space-between"><div><Title order={5}>Storico presenze · {history.player.name}</Title><Text size="sm" c="dimmed">Solo registri confermati.</Text></div><Button variant="subtle" onClick={() => setHistory(null)}>Chiudi</Button></Group>{history.items.length === 0 ? <Text c="dimmed">Nessuna presenza storicizzata.</Text> : <><Text fw={600}>{history.items.filter((item) => item.status === "present").length}/{history.items.length} presenze ({Math.round((history.items.filter((item) => item.status === "present").length / history.items.length) * 100)}%)</Text>{history.items.map((item) => <Group key={item.eventId} justify="space-between"><Text size="sm">{formatDisplayDate(item.date)} · {item.type}{item.opponent ? ` · ${item.opponent}` : ""}</Text><Badge color={item.status === "present" ? "green" : "red"}>{item.status === "present" ? "Presente" : "Assente"}</Badge></Group>)}</>}</Stack></Card>}
     <Collapse expanded={showForm}><Card withBorder padding="md" radius="md"><form onSubmit={handleSubmit}><Stack gap="md">
       <Title order={5}>Nuovo giocatore</Title><PlayerFields value={draft} onChange={setDraft} includeNotes />
       <Button type="submit" style={{ alignSelf: "flex-start" }}>Salva</Button>
