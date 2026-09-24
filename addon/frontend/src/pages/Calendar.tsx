@@ -28,13 +28,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
-import { formatDisplayDate } from "../utils/date";
 import type {
   EventTypeDef,
   GeneratedCommunication,
   GoogleStatus,
   TeamEvent,
 } from "../types";
+import { formatDisplayDate } from "../utils/date";
 
 const STATUS_COLOR: Record<TeamEvent["status"], string> = {
   scheduled: "green",
@@ -136,7 +136,10 @@ export default function Calendar() {
     e.preventDefault();
     if (!form.date) return;
     if (form.repeatWeekly && !form.recurrenceEndDate) {
-      notifications.show({ color: "red", message: "Seleziona la data finale della ricorrenza" });
+      notifications.show({
+        color: "red",
+        message: "Seleziona la data finale della ricorrenza",
+      });
       return;
     }
     const event = {
@@ -151,9 +154,15 @@ export default function Calendar() {
       if (form.repeatWeekly && form.recurrenceEndDate) {
         const response = await api.createRecurringEvent({
           ...event,
-          recurrence: { frequency: "weekly", until: dayjs(form.recurrenceEndDate).format("YYYY-MM-DD") },
+          recurrence: {
+            frequency: "weekly",
+            until: dayjs(form.recurrenceEndDate).format("YYYY-MM-DD"),
+          },
         });
-        notifications.show({ color: "green", message: `Creati ${response.data.created.length} appuntamenti settimanali` });
+        notifications.show({
+          color: "green",
+          message: `Creati ${response.data.created.length} appuntamenti settimanali`,
+        });
       } else {
         await api.createEvent(event);
         notifications.show({ color: "green", message: "Evento creato" });
@@ -162,8 +171,12 @@ export default function Calendar() {
       closeForm();
       loadEvents();
     } catch (err) {
-      const error = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
-      notifications.show({ color: "red", message: error ?? "Impossibile creare l'evento" });
+      const error = (err as { response?: { data?: { error?: string } } })
+        .response?.data?.error;
+      notifications.show({
+        color: "red",
+        message: error ?? "Impossibile creare l'evento",
+      });
     } finally {
       setSaving(false);
     }
@@ -343,7 +356,12 @@ export default function Calendar() {
                 label="Ripeti ogni settimana"
                 description="Verrà creato un evento distinto per ogni settimana, modificabile singolarmente."
                 checked={form.repeatWeekly}
-                onChange={(event) => setForm({ ...form, repeatWeekly: event.currentTarget.checked })}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    repeatWeekly: event.currentTarget.checked,
+                  })
+                }
               />
               {form.repeatWeekly && (
                 <DateInput
@@ -351,12 +369,21 @@ export default function Calendar() {
                   required
                   value={form.recurrenceEndDate}
                   minDate={form.date ?? undefined}
-                  onChange={(value) => setForm({ ...form, recurrenceEndDate: value ? new Date(value) : null })}
+                  onChange={(value) =>
+                    setForm({
+                      ...form,
+                      recurrenceEndDate: value ? new Date(value) : null,
+                    })
+                  }
                   valueFormat="DD-MM-YYYY"
                   w={{ base: "100%", sm: 260 }}
                 />
               )}
-              <Button type="submit" loading={saving} style={{ alignSelf: "flex-start" }}>
+              <Button
+                type="submit"
+                loading={saving}
+                style={{ alignSelf: "flex-start" }}
+              >
                 {form.repeatWeekly ? "Crea appuntamenti" : "Salva"}
               </Button>
             </Stack>
@@ -476,40 +503,40 @@ export default function Calendar() {
                     {visible.map((event) => {
                       const type = typeOf(event.type);
                       return (
-                      <Group
-                        key={event.id}
-                        gap={3}
-                        justify="flex-start"
-                        wrap="nowrap"
-                        w="100%"
-                        px={4}
-                        py={3}
-                        style={{
-                          background: "var(--mantine-color-default-hover)",
-                          borderLeft: `3px solid var(--mantine-color-${event.status === "scheduled" ? "blue" : STATUS_COLOR[event.status]}-6)`,
-                          borderRadius: "var(--mantine-radius-sm)",
-                        }}
-                        c={STATUS_ACCENT[event.status]}
-                      >
-                        <EventTypeIcon
-                          name={type?.icon ?? "IconBallFootball"}
-                          size={compactDays ? 17 : 16}
-                        />
-                        <Text
-                          fz={compactDays ? 10 : 11}
-                          fw={700}
-                          lh={1.1}
-                          truncate
-                          td={
-                            event.status === "cancelled"
-                              ? "line-through"
-                              : undefined
-                          }
+                        <Group
+                          key={event.id}
+                          gap={3}
+                          justify="flex-start"
+                          wrap="nowrap"
+                          w="100%"
+                          px={4}
+                          py={3}
+                          style={{
+                            background: "var(--mantine-color-default-hover)",
+                            borderLeft: `3px solid var(--mantine-color-${event.status === "scheduled" ? "blue" : STATUS_COLOR[event.status]}-6)`,
+                            borderRadius: "var(--mantine-radius-sm)",
+                          }}
+                          c={STATUS_ACCENT[event.status]}
                         >
-                          {event.startTime ? `${event.startTime} ` : ""}
-                          {event.result ? `${event.result.teamScore}–${event.result.opponentScore} ` : ""}{type?.label ?? event.type}
-                        </Text>
-                      </Group>
+                          <EventTypeIcon
+                            name={type?.icon ?? "IconBallFootball"}
+                            size={compactDays ? 17 : 16}
+                          />
+                          <Text
+                            fz={compactDays ? 10 : 11}
+                            fw={700}
+                            lh={1.1}
+                            truncate
+                            td={
+                              event.status === "cancelled"
+                                ? "line-through"
+                                : undefined
+                            }
+                          >
+                            {event.startTime ? `${event.startTime} ` : ""}
+                            {type?.label ?? event.type}
+                          </Text>
+                        </Group>
                       );
                     })}
                     {dayEvents.length > visible.length && (
@@ -577,8 +604,27 @@ export default function Calendar() {
                                   {event.startTime}
                                 </Badge>
                               )}
-                              {event.result && <Badge color={event.result.teamScore > event.result.opponentScore ? "green" : event.result.teamScore < event.result.opponentScore ? "red" : "gray"}>{event.result.teamScore}–{event.result.opponentScore}</Badge>}
-                              {event.attendanceFinalizedAt && <Badge variant="light" color="violet">Presenze chiuse</Badge>}
+                              {event.result && (
+                                <Badge
+                                  color={
+                                    event.result.teamScore >
+                                    event.result.opponentScore
+                                      ? "green"
+                                      : event.result.teamScore <
+                                          event.result.opponentScore
+                                        ? "red"
+                                        : "gray"
+                                  }
+                                >
+                                  {event.result.teamScore}–
+                                  {event.result.opponentScore}
+                                </Badge>
+                              )}
+                              {event.attendanceFinalizedAt && (
+                                <Badge variant="light" color="violet">
+                                  Presenze chiuse
+                                </Badge>
+                              )}
                             </Group>
                           </Group>
                         </Link>
