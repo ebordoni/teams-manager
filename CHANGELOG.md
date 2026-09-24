@@ -7,6 +7,19 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.1] — 2026-09-24
+
+### Aggiunto
+
+- Migrazioni SQLite versionate, transazionali e verificabili fino alla versione schema 3.
+- Backup automatico con timestamp del database esistente prima di applicare una migrazione.
+- Controllo `integrity_check` SQLite all'avvio dopo le migrazioni.
+- Export JSON dei dati gestionali dalle Impostazioni, senza token Google, chiavi AI o stato OAuth.
+
+### Modificato
+
+- La cancellazione di un giocatore con presenze confermate lo archivia per preservare lo storico; i giocatori archiviati non compaiono nella rosa attiva.
+
 ## [0.19.0] — 2026-09-23
 
 ### Aggiunto

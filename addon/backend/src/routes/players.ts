@@ -24,7 +24,7 @@ const PlayerSchema = z.object({
 router.get("/", (_req: Request, res: Response) => {
   const db = getDb();
   const rows = db
-    .prepare("SELECT * FROM players ORDER BY name ASC")
+    .prepare("SELECT * FROM players WHERE archived_at IS NULL ORDER BY name ASC")
     .all() as unknown as PlayerRow[];
   res.json(rows.map(rowToPlayer));
 });
@@ -123,13 +123,21 @@ router.put("/:id", (req: Request, res: Response) => {
 // DELETE /api/players/:id
 router.delete("/:id", (req: Request, res: Response) => {
   const db = getDb();
-  const result = db
-    .prepare("DELETE FROM players WHERE id = ?")
-    .run(req.params.id);
-  if (result.changes === 0) {
+  const player = db.prepare("SELECT id FROM players WHERE id = ?").get(req.params.id);
+  if (!player) {
     res.status(404).json({ error: "Player not found" });
     return;
   }
+  const historicalAttendance = db.prepare(
+    `SELECT 1 FROM attendance a JOIN events e ON e.id = a.event_id
+     WHERE a.player_id = ? AND e.attendance_finalized_at IS NOT NULL LIMIT 1`,
+  ).get(req.params.id);
+  if (historicalAttendance) {
+    db.prepare("UPDATE players SET archived_at = COALESCE(archived_at, CURRENT_TIMESTAMP) WHERE id = ?").run(req.params.id);
+    res.json({ archived: true });
+    return;
+  }
+  db.prepare("DELETE FROM players WHERE id = ?").run(req.params.id);
   res.status(204).send();
 });
 

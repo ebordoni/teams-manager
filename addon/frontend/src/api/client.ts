@@ -38,6 +38,7 @@ export const api = {
   updatePlayer: (id: number, data: Partial<Player>) =>
     apiClient.put<Player>(`/players/${id}`, data),
   deletePlayer: (id: number) => apiClient.delete(`/players/${id}`),
+  exportData: () => apiClient.get("/data/export", { responseType: "blob" }),
 
   // ── Events ─────────────────────────────────────────────────────────────
   getEvents: (filters?: EventFilters) =>

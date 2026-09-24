@@ -8,6 +8,7 @@ import aiRouter from "./routes/ai";
 import attendanceRouter from "./routes/attendance";
 import calendarExportRouter from "./routes/calendar-export";
 import communicationsRouter from "./routes/communications";
+import dataExportRouter from "./routes/data-export";
 import eventTypesRouter from "./routes/event-types";
 import eventsRouter from "./routes/events";
 import formationsRouter from "./routes/formations";
@@ -57,6 +58,7 @@ export function createApp() {
   app.use("/api/google", googleRouter);
   app.use("/api/google/calendar", calendarExportRouter);
   app.use("/api/communications", communicationsRouter);
+  app.use("/api/data", dataExportRouter);
   app.use("/api/settings", settingsRouter);
   app.use("/api/ai", aiRouter);
   app.use("/api/reports", reportsRouter);

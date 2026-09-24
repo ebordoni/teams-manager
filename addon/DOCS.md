@@ -116,3 +116,18 @@ In tutti questi casi basta aprire **Impostazioni → Collega Google** e completa
 consenso: il vecchio token viene rimosso automaticamente.
 
 I dati (SQLite) sono salvati in `/data` e inclusi nei backup di Home Assistant.
+
+## Integrità, migrazioni e backup dati
+
+All'avvio l'add-on verifica e applica le migrazioni SQLite necessarie. Prima di
+una migrazione su un database già esistente crea una copia con nome
+`teams-manager.db.backup-<timestamp>` nella stessa cartella `/data`; conserva
+questo file finché non hai verificato il corretto aggiornamento.
+
+La pagina **Impostazioni → Backup dati** permette inoltre di scaricare un JSON
+con rosa, eventi, presenze, risultati, formazioni e piani partita. L'export non
+contiene token Google, chiavi AI o stato OAuth.
+
+Quando un giocatore ha presenze confermate, l'eliminazione dalla rosa lo
+archivia invece di rimuoverlo fisicamente: lo storico rimane integro, mentre il
+giocatore non appare più nelle schermate della rosa attiva.

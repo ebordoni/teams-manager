@@ -28,7 +28,7 @@ router.get("/attendance", (req: Request, res: Response) => {
     `SELECT e.id, e.date, e.type, e.opponent FROM events e
      WHERE ${filter.where} ORDER BY e.date DESC, e.id DESC`,
   ).all(...filter.params) as Array<{ id: number; date: string; type: string; opponent: string | null }>;
-  const players = db.prepare("SELECT id, name FROM players ORDER BY name COLLATE NOCASE").all() as Array<{ id: number; name: string }>;
+  const players = db.prepare("SELECT id, name FROM players WHERE archived_at IS NULL ORDER BY name COLLATE NOCASE").all() as Array<{ id: number; name: string }>;
   const records = db.prepare(
     `SELECT a.event_id AS eventId, a.player_id AS playerId, a.status AS status
      FROM attendance a JOIN events e ON e.id = a.event_id

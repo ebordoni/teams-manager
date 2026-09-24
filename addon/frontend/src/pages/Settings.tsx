@@ -65,6 +65,7 @@ export default function Settings() {
   const [teamName, setTeamName] = useState("");
   const [savingTeamName, setSavingTeamName] = useState(false);
   const [teamNameSaved, setTeamNameSaved] = useState(false);
+  const [exportingData, setExportingData] = useState(false);
 
   function loadAll() {
     setLoading(true);
@@ -232,6 +233,21 @@ export default function Settings() {
     }
   }
 
+  async function handleExportData() {
+    setExportingData(true);
+    try {
+      const response = await api.exportData();
+      const url = URL.createObjectURL(response.data as Blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `teams-manager-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingData(false);
+    }
+  }
+
   if (loading) return <PageLoader />;
 
   return (
@@ -261,6 +277,14 @@ export default function Settings() {
             </Button>
           </Group>
           {teamNameSaved && <Text size="sm" c="green">Nome squadra salvato.</Text>}
+        </Stack>
+      </Card>
+
+      <Card withBorder padding="md" radius="md">
+        <Stack gap="sm">
+          <Title order={5}>Backup dati</Title>
+          <Text size="sm" c="dimmed">Scarica un export JSON di rosa, eventi, presenze, risultati, formazioni e piani partita. Token Google e chiavi AI non vengono inclusi.</Text>
+          <Button variant="light" onClick={handleExportData} loading={exportingData} style={{ alignSelf: "flex-start" }}>Esporta dati JSON</Button>
         </Stack>
       </Card>
 

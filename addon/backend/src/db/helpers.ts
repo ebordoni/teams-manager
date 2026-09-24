@@ -23,6 +23,7 @@ export function rowToPlayer(row: PlayerRow): Player {
     defending: row.defending,
     attacking: row.attacking,
     notes: row.notes,
+    archivedAt: row.archived_at,
     createdAt: row.created_at,
   };
 }

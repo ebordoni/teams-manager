@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.1] — 2026-09-24
+
+### Added
+
+- Versioned, transactional and verifiable SQLite migrations through schema version 3.
+- Timestamped automatic backup of existing databases before a migration is applied.
+- SQLite `integrity_check` at startup after migrations.
+- JSON export from Settings for team data, excluding Google tokens, AI keys and OAuth state.
+
+### Changed
+
+- Deleting a player with finalized attendance archives the player to retain history; archived players are hidden from the active roster.
+
 ## [0.19.0] — 2026-09-23
 
 ### Added

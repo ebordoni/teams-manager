@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { after, before, test } from "node:test";
 
 const dataDir = await mkdtemp(path.join(os.tmpdir(), "teams-manager-test-"));
@@ -13,7 +14,18 @@ process.env.ANTHROPIC_API_KEY = "";
 process.env.GROQ_API_KEY = "";
 process.env.XAI_API_KEY = "";
 
-const { closeDb, initDb } = await import("../dist/db/schema.js");
+// Simula un database creato prima delle migrazioni versionate.
+const legacyDb = new DatabaseSync(path.join(dataDir, "teams-manager.db"));
+legacyDb.exec(`
+  CREATE TABLE schema_version (version INTEGER PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+  INSERT INTO schema_version (version) VALUES (1);
+  CREATE TABLE players (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, role TEXT, secondary_roles TEXT NOT NULL DEFAULT '[]', notes TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+  CREATE TABLE events (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, date TEXT NOT NULL, start_time TEXT, end_time TEXT, location TEXT, address TEXT, opponent TEXT, meeting_time TEXT, notes TEXT, status TEXT NOT NULL DEFAULT 'scheduled', created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+  CREATE TABLE attendance (id INTEGER PRIMARY KEY AUTOINCREMENT, event_id INTEGER NOT NULL, player_id INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'present', UNIQUE(event_id, player_id));
+`);
+legacyDb.close();
+
+const { closeDb, getDb, initDb } = await import("../dist/db/schema.js");
 const { app } = await import("../dist/index.js");
 
 let server;
@@ -49,6 +61,28 @@ test("health endpoint reports the running service", async () => {
   assert.equal(response.status, 200);
   assert.equal(body.status, "ok");
   assert.equal(typeof body.version, "string");
+});
+
+test("database migrations reach the latest schema and pass integrity validation", () => {
+  const versions = getDb().prepare("SELECT version FROM schema_version ORDER BY version").all();
+  assert.deepEqual(versions.map((row) => row.version), [1, 2, 3]);
+  const integrity = getDb().prepare("PRAGMA integrity_check").get();
+  assert.equal(integrity.integrity_check, "ok");
+});
+
+test("legacy databases are backed up before migration", async () => {
+  const files = await readdir(dataDir);
+  assert.ok(files.some((file) => file.startsWith("teams-manager.db.backup-")));
+});
+
+test("data export contains team records but excludes OAuth credentials", async () => {
+  const { response, body } = await request("/api/data/export");
+  assert.equal(response.status, 200);
+  assert.equal(body.format, "teams-manager-export");
+  assert.equal(body.version, 1);
+  assert.equal("google_tokens" in body, false);
+  assert.equal("app_settings" in body, false);
+  assert.ok(Array.isArray(body.players));
 });
 
 test("team name is configurable and retained in settings", async () => {
@@ -190,6 +224,14 @@ test("match results and finalized attendance are retained in player history", as
   const history = await request(`/api/players/${player.body.id}/attendance-history`);
   assert.equal(history.response.status, 200);
   assert.ok(history.body.some((item) => item.eventId === event.body.id && item.status === "present"));
+
+  const archived = await request(`/api/players/${player.body.id}`, { method: "DELETE" });
+  assert.equal(archived.response.status, 200);
+  assert.equal(archived.body.archived, true);
+  const activePlayers = await request("/api/players");
+  assert.equal(activePlayers.body.some((item) => item.id === player.body.id), false);
+  const archivedHistory = await request(`/api/players/${player.body.id}/attendance-history`);
+  assert.ok(archivedHistory.body.some((item) => item.eventId === event.body.id));
 
   const report = await request("/api/reports/attendance", { headers: { "content-type": "application/json" } });
   assert.equal(report.response.status, 200);

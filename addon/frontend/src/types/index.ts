@@ -26,6 +26,7 @@ export interface Player {
   defending: number;
   attacking: number;
   notes: string | null;
+  archivedAt: string | null;
   createdAt: string;
 }
 

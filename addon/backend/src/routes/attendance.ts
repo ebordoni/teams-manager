@@ -46,6 +46,7 @@ router.get("/", (req: Request, res: Response) => {
               a.status IS NOT NULL AS recorded
        FROM players p
        LEFT JOIN attendance a ON a.player_id = p.id AND a.event_id = ?
+       WHERE p.archived_at IS NULL
        ORDER BY p.name ASC`,
     )
     .all(eventId) as unknown as Array<
@@ -108,7 +109,7 @@ router.post("/finalize", (req: Request, res: Response) => {
   }
 
   const submitted = new Map(parse.data.records.map((record) => [record.playerId, record.status]));
-  const players = db.prepare("SELECT id FROM players ORDER BY id").all() as Array<{ id: number }>;
+  const players = db.prepare("SELECT id FROM players WHERE archived_at IS NULL ORDER BY id").all() as Array<{ id: number }>;
   const existing = new Map(
     (db.prepare("SELECT player_id, status FROM attendance WHERE event_id = ?").all(req.params.id) as Array<{ player_id: number; status: Attendance["status"] }>).
       map((record) => [record.player_id, record.status]),
