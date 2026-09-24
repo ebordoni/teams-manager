@@ -8,7 +8,7 @@ const router = Router();
 
 const EventSchema = z.object({
   type: z.string().trim().min(1),
-  date: z.string().trim().min(1), // YYYY-MM-DD
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
   startTime: z.string().trim().optional().nullable(),
   endTime: z.string().trim().optional().nullable(),
   location: z.string().trim().optional().nullable(),
@@ -18,6 +18,13 @@ const EventSchema = z.object({
   notes: z.string().optional().nullable(),
   status: z.enum(["scheduled", "modified", "cancelled"]).optional(),
   formationId: z.number().int().positive().optional().nullable(),
+});
+
+const RecurringEventSchema = EventSchema.extend({
+  recurrence: z.object({
+    frequency: z.literal("weekly"),
+    until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  }),
 });
 
 const FiltersSchema = z.object({
@@ -81,6 +88,41 @@ function isKnownFormation(formationId: number): boolean {
     .prepare("SELECT 1 FROM formations WHERE id = ?")
     .get(formationId);
   return Boolean(row);
+}
+
+function isValidIsoDate(value: string): boolean {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+function addDays(isoDate: string, days: number): string {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function insertEvent(e: z.infer<typeof EventSchema>): number {
+  const result = getDb()
+    .prepare(
+      `INSERT INTO events
+        (type, date, start_time, end_time, location, address, opponent, meeting_time, notes, status, formation_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      e.type, e.date, e.startTime ?? null, e.endTime ?? null, e.location ?? null,
+      e.address ?? null, e.opponent ?? null, e.meetingTime ?? null, e.notes ?? null,
+      e.status ?? "scheduled", e.formationId ?? null,
+    );
+  return Number(result.lastInsertRowid);
+}
+
+function validateEventInput(e: z.infer<typeof EventSchema>): string | null {
+  if (!isValidIsoDate(e.date)) return "Data evento non valida";
+  if (!isKnownEventType(e.type)) return `Tipo evento sconosciuto: "${e.type}"`;
+  if (e.formationId !== null && e.formationId !== undefined && !isKnownFormation(e.formationId)) return "Formazione non trovata";
+  if (statusNotesMissing(e.status, e.notes)) return STATUS_NOTES_ERROR;
+  return null;
 }
 
 /**
@@ -166,47 +208,47 @@ router.post("/", (req: Request, res: Response) => {
     return;
   }
   const e = parse.data;
-  if (!isKnownEventType(e.type)) {
-    res.status(400).json({ error: `Tipo evento sconosciuto: "${e.type}"` });
+  const inputError = validateEventInput(e);
+  if (inputError) {
+    res.status(400).json({ error: inputError });
     return;
   }
-  if (
-    e.formationId !== null &&
-    e.formationId !== undefined &&
-    !isKnownFormation(e.formationId)
-  ) {
-    res.status(400).json({ error: "Formazione non trovata" });
-    return;
-  }
-  if (statusNotesMissing(e.status, e.notes)) {
-    res.status(400).json({ error: STATUS_NOTES_ERROR });
-    return;
-  }
-  const db = getDb();
-  const result = db
-    .prepare(
-      `INSERT INTO events
-        (type, date, start_time, end_time, location, address, opponent, meeting_time, notes, status, formation_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      e.type,
-      e.date,
-      e.startTime ?? null,
-      e.endTime ?? null,
-      e.location ?? null,
-      e.address ?? null,
-      e.opponent ?? null,
-      e.meetingTime ?? null,
-      e.notes ?? null,
-      e.status ?? "scheduled",
-      e.formationId ?? null,
-    );
+  const id = insertEvent(e);
 
-  const row = db
+  const row = getDb()
     .prepare("SELECT * FROM events WHERE id = ?")
-    .get(result.lastInsertRowid) as unknown as EventRow;
+    .get(id) as unknown as EventRow;
   res.status(201).json(rowToEvent(row));
+});
+
+// POST /api/events/recurring — creates independent weekly events through the selected end date.
+router.post("/recurring", (req: Request, res: Response) => {
+  const parse = RecurringEventSchema.safeParse(req.body);
+  if (!parse.success) return void res.status(400).json({ error: parse.error.flatten() });
+
+  const { recurrence, ...event } = parse.data;
+  const inputError = validateEventInput(event);
+  if (inputError) return void res.status(400).json({ error: inputError });
+  if (!isValidIsoDate(recurrence.until)) return void res.status(400).json({ error: "Data finale non valida" });
+  if (recurrence.until < event.date) return void res.status(400).json({ error: "La data finale deve essere successiva alla data iniziale" });
+
+  const dates: string[] = [];
+  for (let date = event.date; date <= recurrence.until; date = addDays(date, 7)) dates.push(date);
+  if (dates.length > 104) return void res.status(400).json({ error: "La ricorrenza può creare al massimo 104 eventi (due anni)" });
+
+  const db = getDb();
+  const ids: number[] = [];
+  try {
+    db.exec("BEGIN");
+    for (const date of dates) ids.push(insertEvent({ ...event, date }));
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+  const placeholders = ids.map(() => "?").join(",");
+  const rows = db.prepare(`SELECT * FROM events WHERE id IN (${placeholders}) ORDER BY date ASC, start_time ASC`).all(...ids) as unknown as EventRow[];
+  res.status(201).json({ created: rows.map(rowToEvent) });
 });
 
 // PUT /api/events/:id

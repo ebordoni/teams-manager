@@ -17,6 +17,11 @@ Dalle **Impostazioni** puoi definire il nome della squadra. Viene usato nelle in
 Allenamenti, partite, tornei e altri tipi di evento personalizzabili, con data, orario, luogo,
 avversario e note. Ogni evento può essere programmato, modificato o annullato.
 
+Per gli appuntamenti settimanali, ad esempio gli allenamenti, attiva **Ripeti ogni settimana**
+durante la creazione e indica la data finale: vengono creati tutti gli eventi fino a tale data.
+Le occorrenze sono indipendenti, quindi puoi modificare o annullare solo una data senza influire
+sulle altre.
+
 ### Tipi di evento
 
 Dalla pagina **Impostazioni** puoi creare, modificare ed eliminare i tipi di evento disponibili nel

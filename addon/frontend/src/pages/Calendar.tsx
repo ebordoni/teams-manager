@@ -67,6 +67,8 @@ interface FormState {
   startTime: string;
   location: string;
   opponent: string;
+  repeatWeekly: boolean;
+  recurrenceEndDate: Date | null;
 }
 
 const EMPTY_FORM: FormState = {
@@ -75,6 +77,8 @@ const EMPTY_FORM: FormState = {
   startTime: "",
   location: "",
   opponent: "",
+  repeatWeekly: false,
+  recurrenceEndDate: null,
 };
 
 export default function Calendar() {
@@ -83,6 +87,7 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [showForm, { open: openForm, close: closeForm }] = useDisclosure(false);
+  const [saving, setSaving] = useState(false);
   const [displayedDate, setDisplayedDate] = useState(() =>
     dayjs().format("YYYY-MM-DD"),
   );
@@ -130,16 +135,38 @@ export default function Calendar() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.date) return;
-    await api.createEvent({
+    if (form.repeatWeekly && !form.recurrenceEndDate) {
+      notifications.show({ color: "red", message: "Seleziona la data finale della ricorrenza" });
+      return;
+    }
+    const event = {
       type: form.type,
       date: dayjs(form.date).format("YYYY-MM-DD"),
       startTime: form.startTime || null,
       location: form.location || null,
       opponent: selectedType?.hasOpponent ? form.opponent || null : null,
-    });
-    setForm({ ...EMPTY_FORM, type: form.type });
-    closeForm();
-    loadEvents();
+    };
+    setSaving(true);
+    try {
+      if (form.repeatWeekly && form.recurrenceEndDate) {
+        const response = await api.createRecurringEvent({
+          ...event,
+          recurrence: { frequency: "weekly", until: dayjs(form.recurrenceEndDate).format("YYYY-MM-DD") },
+        });
+        notifications.show({ color: "green", message: `Creati ${response.data.created.length} appuntamenti settimanali` });
+      } else {
+        await api.createEvent(event);
+        notifications.show({ color: "green", message: "Evento creato" });
+      }
+      setForm({ ...EMPTY_FORM, type: form.type });
+      closeForm();
+      loadEvents();
+    } catch (err) {
+      const error = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      notifications.show({ color: "red", message: error ?? "Impossibile creare l'evento" });
+    } finally {
+      setSaving(false);
+    }
   }
 
   function toggleSelected(id: number) {
@@ -312,8 +339,25 @@ export default function Calendar() {
                   />
                 )}
               </SimpleGrid>
-              <Button type="submit" style={{ alignSelf: "flex-start" }}>
-                Salva
+              <Checkbox
+                label="Ripeti ogni settimana"
+                description="Verrà creato un evento distinto per ogni settimana, modificabile singolarmente."
+                checked={form.repeatWeekly}
+                onChange={(event) => setForm({ ...form, repeatWeekly: event.currentTarget.checked })}
+              />
+              {form.repeatWeekly && (
+                <DateInput
+                  label="Ripeti fino al"
+                  required
+                  value={form.recurrenceEndDate}
+                  minDate={form.date ?? undefined}
+                  onChange={(value) => setForm({ ...form, recurrenceEndDate: value ? new Date(value) : null })}
+                  valueFormat="DD-MM-YYYY"
+                  w={{ base: "100%", sm: 260 }}
+                />
+              )}
+              <Button type="submit" loading={saving} style={{ alignSelf: "flex-start" }}>
+                {form.repeatWeekly ? "Crea appuntamenti" : "Salva"}
               </Button>
             </Stack>
           </form>

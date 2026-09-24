@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.3] — 2026-09-24
+
+### Aggiunto
+
+- Creazione ricorrente settimanale dal calendario: un solo inserimento genera tutti gli appuntamenti fino alla data scelta.
+- Validazioni su date, intervallo e limite massimo di 104 occorrenze, con creazione atomica lato server.
+
+### Modificato
+
+- Le occorrenze vengono salvate come eventi indipendenti, per consentire modifica, annullamento, presenze ed export individuali.
+
 ## [0.19.2] — 2026-09-24
 
 ### Modificato

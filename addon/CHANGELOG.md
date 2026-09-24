@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.19.3] — 2026-09-24
+
+### Added
+
+- Weekly recurring creation from the calendar: one entry generates all appointments through the selected end date.
+- Server-side validation for dates, interval, and a maximum of 104 occurrences, with atomic creation.
+
+### Changed
+
+- Occurrences are stored as independent events so they can be edited, cancelled, tracked for attendance, and exported individually.
+
 ## [0.19.2] — 2026-09-24
 
 ### Changed

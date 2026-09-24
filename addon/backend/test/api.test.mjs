@@ -132,6 +132,35 @@ test("player and event workflow is available through the API", async () => {
   );
 });
 
+test("weekly recurrence creates independent events through the selected date", async () => {
+  const { response, body } = await request("/api/events/recurring", {
+    method: "POST",
+    body: JSON.stringify({
+      type: "training",
+      date: "2026-10-07",
+      startTime: "17:30",
+      location: "Campo comunale",
+      recurrence: { frequency: "weekly", until: "2026-10-28" },
+    }),
+  });
+  assert.equal(response.status, 201);
+  assert.deepEqual(body.created.map((event) => event.date), [
+    "2026-10-07", "2026-10-14", "2026-10-21", "2026-10-28",
+  ]);
+  assert.ok(body.created.every((event) => event.startTime === "17:30"));
+
+  const invalid = await request("/api/events/recurring", {
+    method: "POST",
+    body: JSON.stringify({
+      type: "training",
+      date: "2026-10-07",
+      recurrence: { frequency: "weekly", until: "2026-10-01" },
+    }),
+  });
+  assert.equal(invalid.response.status, 400);
+  assert.match(invalid.body.error, /data finale/i);
+});
+
 test("unknown event types are rejected", async () => {
   const { response, body } = await request("/api/events", {
     method: "POST",

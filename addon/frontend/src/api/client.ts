@@ -46,6 +46,8 @@ export const api = {
   getEvent: (id: number) => apiClient.get<TeamEvent>(`/events/${id}`),
   createEvent: (data: Partial<TeamEvent>) =>
     apiClient.post<TeamEvent>("/events", data),
+  createRecurringEvent: (data: Partial<TeamEvent> & { recurrence: { frequency: "weekly"; until: string } }) =>
+    apiClient.post<{ created: TeamEvent[] }>("/events/recurring", data),
   updateEvent: (id: number, data: Partial<TeamEvent>) =>
     apiClient.put<TeamEvent>(`/events/${id}`, data),
   deleteEvent: (id: number) => apiClient.delete(`/events/${id}`),
