@@ -7,6 +7,7 @@ import {
   Checkbox,
   Group,
   Loader,
+  SegmentedControl,
   Stack,
   Text,
   Title,
@@ -14,7 +15,7 @@ import {
 import { Calendar as MantineCalendar } from "@mantine/dates";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconTrash } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconTrash } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -54,6 +55,13 @@ function formatDayLabel(date: string): string {
   }).format(new Date(`${date}T12:00:00`));
 }
 
+function formatMonthLabel(date: string): string {
+  return new Intl.DateTimeFormat("it-IT", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00`));
+}
+
 export default function Calendar() {
   const [events, setEvents] = useState<TeamEvent[]>([]);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
@@ -63,6 +71,9 @@ export default function Calendar() {
     dayjs().format("YYYY-MM-DD"),
   );
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [calendarView, setCalendarView] = useState<"month" | "list">(
+    "month",
+  );
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -194,6 +205,13 @@ export default function Calendar() {
     }
   }
 
+  function changeDisplayedMonth(amount: number) {
+    setDisplayedDate(
+      dayjs(displayedDate).add(amount, "month").format("YYYY-MM-DD"),
+    );
+    setSelectedDay(null);
+  }
+
   const eventsByDate = useMemo(() => {
     const grouped = new Map<string, TeamEvent[]>();
     for (const event of events) {
@@ -204,12 +222,95 @@ export default function Calendar() {
   const selectedDayEvents = selectedDay
     ? (eventsByDate.get(selectedDay) ?? [])
     : [];
+  const today = dayjs().format("YYYY-MM-DD");
+
+  function renderEventCard(event: TeamEvent) {
+    const type = typeOf(event.type);
+    return (
+      <Card key={event.id} withBorder padding="sm" radius="md">
+        <Group wrap="nowrap" gap="sm">
+          <Checkbox
+            checked={selectedIds.has(event.id)}
+            onChange={() => toggleSelected(event.id)}
+            aria-label={`Seleziona ${type?.label ?? event.type}`}
+          />
+          <Link
+            to={`/events/${event.id}`}
+            style={{ flex: 1, textDecoration: "none", color: "inherit" }}
+          >
+            <Group justify="space-between" wrap="nowrap">
+              <Text truncate>
+                <EventTypeIcon
+                  name={type?.icon ?? "IconCalendarEvent"}
+                  size={16}
+                />{" "}
+                <Text span fw={600}>
+                  {type?.label ?? event.type}
+                </Text>{" "}
+                {event.opponent ? `vs ${event.opponent}` : ""}
+              </Text>
+              <Group gap="xs" wrap="nowrap">
+                {event.status !== "scheduled" && (
+                  <Badge size="sm" color={STATUS_COLOR[event.status]}>
+                    {event.status}
+                  </Badge>
+                )}
+                {event.startTime && (
+                  <Badge variant="light" color="gray">
+                    {event.startTime}
+                  </Badge>
+                )}
+                {event.result && (
+                  <Badge
+                    color={
+                      event.result.teamScore > event.result.opponentScore
+                        ? "green"
+                        : event.result.teamScore < event.result.opponentScore
+                          ? "red"
+                          : "gray"
+                    }
+                  >
+                    {event.result.teamScore}–{event.result.opponentScore}
+                  </Badge>
+                )}
+                {event.attendanceFinalizedAt && (
+                  <Badge variant="light" color="violet">
+                    Presenze chiuse
+                  </Badge>
+                )}
+              </Group>
+            </Group>
+          </Link>
+          <ActionIcon
+            color="red"
+            variant="subtle"
+            onClick={() => handleDelete(event)}
+            aria-label="Elimina"
+          >
+            <IconTrash size={18} />
+          </ActionIcon>
+        </Group>
+      </Card>
+    );
+  }
 
   return (
     <Stack gap="md">
-      <Group justify="space-between">
+      <Group justify="space-between" wrap="wrap">
         <Title order={4}>Calendario</Title>
-        <Button onClick={handleOpenForm}>+ Nuovo evento</Button>
+        <Group gap="xs" wrap="wrap">
+          <SegmentedControl
+            aria-label="Vista del calendario"
+            size="sm"
+            value={calendarView}
+            onChange={(value) => setCalendarView(value as "month" | "list")}
+            data={[
+              { label: "Mese", value: "month" },
+              { label: "Elenco", value: "list" },
+            ]}
+          />
+          <Button onClick={handleOpenForm}>+ Nuovo evento</Button>
+        </Group>
       </Group>
 
       <EventCreationModal
@@ -287,99 +388,118 @@ export default function Calendar() {
         <Loader />
       ) : (
         <>
-          <Card withBorder padding="md" radius="md">
-            <MantineCalendar
-              fullWidth
-              highlightToday
-              date={displayedDate}
-              onDateChange={(date) => {
-                setDisplayedDate(date);
-                setSelectedDay(null);
-              }}
-              styles={{
-                day: {
-                  height: compactDays ? 58 : 70,
-                  alignItems: "flex-start",
-                  padding: "5px 2px 3px",
-                  borderRadius: "var(--mantine-radius-md)",
-                },
-              }}
-              getDayProps={(date) => {
-                const dayEvents = eventsByDate.get(date) ?? [];
-                return {
-                  selected: date === selectedDay,
-                  onClick: () => handleDayClick(date, dayEvents.length),
-                  "aria-label": `${formatDayLabel(date)}: ${dayEvents.length} evento/i`,
-                  // I giorni impegnati si riconoscono a colpo d'occhio anche
-                  // quando non sono selezionati.
-                  style:
-                    dayEvents.length > 0 && date !== selectedDay
-                      ? {
-                          border:
-                            "1px solid var(--mantine-color-default-border)",
-                        }
-                      : undefined,
-                };
-              }}
-              renderDay={(date) => {
-                const dayEvents = eventsByDate.get(date) ?? [];
-                const visible = dayEvents.slice(0, MAX_DAY_PREVIEW);
-                return (
-                  <Stack gap={3} align="center" w="100%">
-                    <Text fz={15} fw={600} lh={1}>
-                      {dayjs(date).date()}
-                    </Text>
-                    {visible.map((event) => {
-                      const type = typeOf(event.type);
-                      return (
-                        <Group
-                          key={event.id}
-                          gap={3}
-                          justify="flex-start"
-                          wrap="nowrap"
-                          w="100%"
-                          px={4}
-                          py={3}
-                          style={{
-                            background: "var(--mantine-color-default-hover)",
-                            borderLeft: `3px solid var(--mantine-color-${event.status === "scheduled" ? "blue" : STATUS_COLOR[event.status]}-6)`,
-                            borderRadius: "var(--mantine-radius-sm)",
-                          }}
-                          c={STATUS_ACCENT[event.status]}
-                        >
-                          <EventTypeIcon
-                            name={type?.icon ?? "IconBallFootball"}
-                            size={compactDays ? 17 : 16}
-                          />
-                          <Text
-                            fz={compactDays ? 10 : 11}
-                            fw={700}
-                            lh={1.1}
-                            truncate
-                            td={
-                              event.status === "cancelled"
-                                ? "line-through"
-                                : undefined
+          {calendarView === "month" ? (
+            <>
+              <Card withBorder padding="md" radius="md">
+                <MantineCalendar
+                  fullWidth
+                  date={displayedDate}
+                  onDateChange={(date) => {
+                    setDisplayedDate(date);
+                    setSelectedDay(null);
+                  }}
+                  styles={{
+                    day: {
+                      height: compactDays ? 58 : 70,
+                      alignItems: "flex-start",
+                      padding: "5px 2px 3px",
+                      borderRadius: "var(--mantine-radius-md)",
+                    },
+                  }}
+                  getDayProps={(date) => {
+                    const dayEvents = eventsByDate.get(date) ?? [];
+                    return {
+                      selected: date === selectedDay,
+                      onClick: () => handleDayClick(date, dayEvents.length),
+                      "aria-label": `${formatDayLabel(date)}: ${dayEvents.length} evento/i`,
+                      // I giorni impegnati si riconoscono a colpo d'occhio anche
+                      // quando non sono selezionati.
+                      style:
+                        dayEvents.length > 0 && date !== selectedDay
+                          ? {
+                              border:
+                                "1px solid var(--mantine-color-default-border)",
                             }
-                          >
-                            {event.startTime ? `${event.startTime} ` : ""}
-                            {type?.label ?? event.type}
+                          : undefined,
+                    };
+                  }}
+                  renderDay={(date) => {
+                    const dayEvents = eventsByDate.get(date) ?? [];
+                    const visible = dayEvents.slice(0, MAX_DAY_PREVIEW);
+                    const isToday = date === today;
+                    return (
+                      <Stack gap={3} align="center" w="100%">
+                        <Text
+                          fz={15}
+                          fw={600}
+                          lh={1}
+                          c={isToday ? "white" : undefined}
+                          style={
+                            isToday
+                              ? {
+                                  alignItems: "center",
+                                  background: "var(--mantine-color-red-6)",
+                                  borderRadius: "50%",
+                                  display: "inline-flex",
+                                  height: 28,
+                                  justifyContent: "center",
+                                  width: 28,
+                                }
+                              : undefined
+                          }
+                        >
+                          {dayjs(date).date()}
+                        </Text>
+                        {visible.map((event) => {
+                          const type = typeOf(event.type);
+                          return (
+                            <Group
+                              key={event.id}
+                              gap={3}
+                              justify="flex-start"
+                              wrap="nowrap"
+                              w="100%"
+                              px={4}
+                              py={3}
+                              style={{
+                                background: "var(--mantine-color-default-hover)",
+                                borderLeft: `3px solid var(--mantine-color-${event.status === "scheduled" ? "blue" : STATUS_COLOR[event.status]}-6)`,
+                                borderRadius: "var(--mantine-radius-sm)",
+                              }}
+                              c={STATUS_ACCENT[event.status]}
+                            >
+                              <EventTypeIcon
+                                name={type?.icon ?? "IconBallFootball"}
+                                size={compactDays ? 17 : 16}
+                              />
+                              <Text
+                                fz={compactDays ? 10 : 11}
+                                fw={700}
+                                lh={1.1}
+                                truncate
+                                td={
+                                  event.status === "cancelled"
+                                    ? "line-through"
+                                    : undefined
+                                }
+                              >
+                                {type?.label ?? event.type}
+                              </Text>
+                            </Group>
+                          );
+                        })}
+                        {dayEvents.length > visible.length && (
+                          <Text fz={10} fw={700} lh={1} opacity={0.7}>
+                            +{dayEvents.length - visible.length}
                           </Text>
-                        </Group>
-                      );
-                    })}
-                    {dayEvents.length > visible.length && (
-                      <Text fz={10} fw={700} lh={1} opacity={0.7}>
-                        +{dayEvents.length - visible.length}
-                      </Text>
-                    )}
-                  </Stack>
-                );
-              }}
-            />
-          </Card>
+                        )}
+                      </Stack>
+                    );
+                  }}
+                />
+              </Card>
 
-          {selectedDay ? (
+              {selectedDay ? (
             <Stack gap="xs">
               <Group justify="space-between">
                 <Title order={5}>{formatDayLabel(selectedDay)}</Title>
@@ -390,89 +510,54 @@ export default function Calendar() {
               {selectedDayEvents.length === 0 ? (
                 <Text c="dimmed">Nessun evento in questa giornata.</Text>
               ) : (
-                selectedDayEvents.map((event) => {
-                  const type = typeOf(event.type);
-                  return (
-                    <Card key={event.id} withBorder padding="sm" radius="md">
-                      <Group wrap="nowrap" gap="sm">
-                        <Checkbox
-                          checked={selectedIds.has(event.id)}
-                          onChange={() => toggleSelected(event.id)}
-                          aria-label={`Seleziona ${type?.label ?? event.type}`}
-                        />
-                        <Link
-                          to={`/events/${event.id}`}
-                          style={{
-                            flex: 1,
-                            textDecoration: "none",
-                            color: "inherit",
-                          }}
-                        >
-                          <Group justify="space-between">
-                            <Text truncate>
-                              <EventTypeIcon
-                                name={type?.icon ?? "IconCalendarEvent"}
-                                size={16}
-                              />{" "}
-                              <Text span fw={600}>
-                                {type?.label ?? event.type}
-                              </Text>{" "}
-                              {event.opponent ? `vs ${event.opponent}` : ""}
-                            </Text>
-                            <Group gap="xs" wrap="nowrap">
-                              {event.status !== "scheduled" && (
-                                <Badge
-                                  size="sm"
-                                  color={STATUS_COLOR[event.status]}
-                                >
-                                  {event.status}
-                                </Badge>
-                              )}
-                              {event.startTime && (
-                                <Badge variant="light" color="gray">
-                                  {event.startTime}
-                                </Badge>
-                              )}
-                              {event.result && (
-                                <Badge
-                                  color={
-                                    event.result.teamScore >
-                                    event.result.opponentScore
-                                      ? "green"
-                                      : event.result.teamScore <
-                                          event.result.opponentScore
-                                        ? "red"
-                                        : "gray"
-                                  }
-                                >
-                                  {event.result.teamScore}–
-                                  {event.result.opponentScore}
-                                </Badge>
-                              )}
-                              {event.attendanceFinalizedAt && (
-                                <Badge variant="light" color="violet">
-                                  Presenze chiuse
-                                </Badge>
-                              )}
-                            </Group>
-                          </Group>
-                        </Link>
-                        <ActionIcon
-                          color="red"
-                          variant="subtle"
-                          onClick={() => handleDelete(event)}
-                          aria-label="Elimina"
-                        >
-                          <IconTrash size={18} />
-                        </ActionIcon>
-                      </Group>
-                    </Card>
-                  );
-                })
+                selectedDayEvents.map(renderEventCard)
               )}
             </Stack>
           ) : (
             <Text c="dimmed">Seleziona un giorno per vedere gli eventi.</Text>
+          )}
+            </>
+          ) : (
+            <Card withBorder padding="md" radius="md">
+              <Stack gap="md">
+                <Group justify="space-between">
+                  <ActionIcon
+                    aria-label="Mese precedente"
+                    variant="subtle"
+                    onClick={() => changeDisplayedMonth(-1)}
+                  >
+                    <IconChevronLeft size={18} />
+                  </ActionIcon>
+                  <Title order={5} tt="capitalize">
+                    {formatMonthLabel(displayedDate)}
+                  </Title>
+                  <ActionIcon
+                    aria-label="Mese successivo"
+                    variant="subtle"
+                    onClick={() => changeDisplayedMonth(1)}
+                  >
+                    <IconChevronRight size={18} />
+                  </ActionIcon>
+                </Group>
+                {eventsByDate.size === 0 ? (
+                  <Text c="dimmed">Nessun evento in questo mese.</Text>
+                ) : (
+                  Array.from(eventsByDate.entries()).map(([date, dayEvents]) => (
+                    <Stack key={date} gap="xs">
+                      <Group gap="xs">
+                        <Text fw={700} c={date === today ? "red" : undefined}>
+                          {formatDayLabel(date)}
+                        </Text>
+                        <Badge variant="light" color={date === today ? "red" : "gray"}>
+                          {dayEvents.length}
+                        </Badge>
+                      </Group>
+                      {dayEvents.map(renderEventCard)}
+                    </Stack>
+                  ))
+                )}
+              </Stack>
+            </Card>
           )}
         </>
       )}

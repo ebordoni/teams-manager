@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.0] — 2026-09-25
+
+### Aggiunto
+
+- Il Calendario offre ora la vista elenco, navigabile mese per mese, oltre alla vista mensile.
+- La giornata odierna è evidenziata con un indicatore circolare ad alto contrasto.
+
+### Modificato
+
+- Le anteprime nelle celle del calendario mostrano soltanto il tipo di evento, per restare leggibili anche su smartphone.
+
 ## [0.20.4] — 2026-09-25
 
 ### Aggiunto

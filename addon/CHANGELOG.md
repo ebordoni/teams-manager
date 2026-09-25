@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.0] — 2026-09-25
+
+### Added
+
+- Calendar now includes a month-by-month navigable list view alongside the monthly view.
+- Today is highlighted with a high-contrast circular indicator.
+
+### Changed
+
+- Calendar cell previews show only the event type, keeping them readable on smartphones.
+
 ## [0.20.4] — 2026-09-25
 
 ### Added
