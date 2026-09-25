@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.4] — 2026-09-25
+
+### Added
+
+- No new features.
+
+### Fixed
+
+- Event-creation form state is isolated from the monthly calendar, making text input responsive and removing slow input-handler warnings.
+
 ## [0.20.3] — 2026-09-25
 
 ### Added

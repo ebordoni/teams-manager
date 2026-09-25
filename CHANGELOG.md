@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.20.4] — 2026-09-25
+
+### Aggiunto
+
+- Nessuna nuova funzionalità.
+
+### Corretto
+
+- Il form di creazione evento ha stato locale isolato dal calendario mensile: digitazione fluida nei campi testo e rimozione dei warning di handler lenti.
+
 ## [0.20.3] — 2026-09-25
 
 ### Aggiunto

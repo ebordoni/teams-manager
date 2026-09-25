@@ -7,20 +7,11 @@ import {
   Checkbox,
   Group,
   Loader,
-  Modal,
-  Select,
-  SimpleGrid,
   Stack,
-  Tabs,
   Text,
-  TextInput,
-  Textarea,
   Title,
 } from "@mantine/core";
-import {
-  DateInput,
-  Calendar as MantineCalendar,
-} from "@mantine/dates";
+import { Calendar as MantineCalendar } from "@mantine/dates";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { IconTrash } from "@tabler/icons-react";
@@ -28,6 +19,7 @@ import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import EventCreationModal from "../components/EventCreationModal";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import type {
   EventTypeDef,
@@ -62,48 +54,11 @@ function formatDayLabel(date: string): string {
   }).format(new Date(`${date}T12:00:00`));
 }
 
-interface FormState {
-  type: string;
-  date: Date | null;
-  startTime: string;
-  endTime: string;
-  meetingTime: string;
-  location: string;
-  opponent: string;
-  venue: "home" | "away" | "neutral";
-  notes: string;
-  repeatWeekly: boolean;
-  recurrenceEndDate: Date | null;
-}
-
-const EMPTY_FORM: FormState = {
-  type: "",
-  date: null,
-  startTime: "",
-  endTime: "",
-  meetingTime: "",
-  location: "",
-  opponent: "",
-  venue: "home",
-  notes: "",
-  repeatWeekly: false,
-  recurrenceEndDate: null,
-};
-
-const TIME_OPTIONS = Array.from({ length: 24 * 12 }, (_, index) => {
-  const hours = String(Math.floor(index / 12)).padStart(2, "0");
-  const minutes = String((index % 12) * 5).padStart(2, "0");
-  const value = `${hours}:${minutes}`;
-  return { value, label: value };
-});
-
 export default function Calendar() {
   const [events, setEvents] = useState<TeamEvent[]>([]);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [showForm, { open: openForm, close: closeForm }] = useDisclosure(false);
-  const [saving, setSaving] = useState(false);
   const [displayedDate, setDisplayedDate] = useState(() =>
     dayjs().format("YYYY-MM-DD"),
   );
@@ -136,7 +91,6 @@ export default function Calendar() {
         setEvents(eventsRes.data);
         setEventTypes(typesRes.data);
         setGoogleStatus(googleRes.data);
-        setForm((f) => ({ ...f, type: f.type || typesRes.data[0]?.key || "" }));
       })
       .finally(() => setLoading(false));
   }
@@ -145,62 +99,7 @@ export default function Calendar() {
     loadEvents();
   }, [displayedDate]);
 
-  const selectedType = eventTypes.find((t) => t.key === form.type);
   const typeOf = (key: string) => eventTypes.find((t) => t.key === key);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.date) return;
-    if (form.repeatWeekly && !form.recurrenceEndDate) {
-      notifications.show({
-        color: "red",
-        message: "Seleziona la data finale della ricorrenza",
-      });
-      return;
-    }
-    const event = {
-      type: form.type,
-      date: dayjs(form.date).format("YYYY-MM-DD"),
-      startTime: form.startTime || null,
-      endTime: form.endTime || null,
-      meetingTime: form.meetingTime || null,
-      location: form.location || null,
-      opponent: selectedType?.hasOpponent ? form.opponent || null : null,
-      venue: form.venue,
-      notes: form.notes || null,
-    };
-    setSaving(true);
-    try {
-      if (form.repeatWeekly && form.recurrenceEndDate) {
-        const response = await api.createRecurringEvent({
-          ...event,
-          recurrence: {
-            frequency: "weekly",
-            until: dayjs(form.recurrenceEndDate).format("YYYY-MM-DD"),
-          },
-        });
-        notifications.show({
-          color: "green",
-          message: `Creati ${response.data.created.length} appuntamenti settimanali`,
-        });
-      } else {
-        await api.createEvent(event);
-        notifications.show({ color: "green", message: "Evento creato" });
-      }
-      setForm({ ...EMPTY_FORM, type: form.type });
-      closeForm();
-      loadEvents();
-    } catch (err) {
-      const error = (err as { response?: { data?: { error?: string } } })
-        .response?.data?.error;
-      notifications.show({
-        color: "red",
-        message: error ?? "Impossibile creare l'evento",
-      });
-    } finally {
-      setSaving(false);
-    }
-  }
 
   function toggleSelected(id: number) {
     setSelectedIds((prev) => {
@@ -285,17 +184,12 @@ export default function Calendar() {
   }
 
   function handleOpenForm() {
-    setForm((current) => ({
-      ...current,
-      date: current.date ?? (selectedDay ? dayjs(selectedDay).toDate() : null),
-    }));
     openForm();
   }
 
   function handleDayClick(date: string, eventCount: number) {
     setSelectedDay(date);
     if (eventCount === 0) {
-      setForm((current) => ({ ...current, date: dayjs(date).toDate() }));
       openForm();
     }
   }
@@ -318,112 +212,13 @@ export default function Calendar() {
         <Button onClick={handleOpenForm}>+ Nuovo evento</Button>
       </Group>
 
-      <Modal
+      <EventCreationModal
         opened={showForm}
+        eventTypes={eventTypes}
+        initialDate={selectedDay}
         onClose={closeForm}
-        title="Crea evento"
-        size="lg"
-        centered
-      >
-        <form onSubmit={handleSubmit}>
-          <Stack gap="lg">
-            <Tabs value={form.type} onChange={(value) => setForm((current) => ({ ...current, type: value ?? current.type }))} variant="pills">
-              <Tabs.List style={{ flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden" }}>
-                {eventTypes.map((type) => (
-                  <Tabs.Tab key={type.key} value={type.key} leftSection={<EventTypeIcon name={type.icon} size={16} />} style={{ flex: "0 0 auto" }}>
-                    {type.label}
-                  </Tabs.Tab>
-                ))}
-              </Tabs.List>
-            </Tabs>
-
-            <Textarea
-              label="Descrizione"
-              placeholder="Aggiungi informazioni sull'evento"
-              minRows={3}
-              autosize
-              value={form.notes}
-              onChange={(event) => {
-                const notes = event.currentTarget.value;
-                setForm((current) => ({ ...current, notes }));
-              }}
-            />
-
-            {selectedType?.hasOpponent && (
-              <TextInput
-                label="Avversario"
-                placeholder="Nome della squadra avversaria"
-                value={form.opponent}
-                onChange={(event) => {
-                  const opponent = event.currentTarget.value;
-                  setForm((current) => ({ ...current, opponent }));
-                }}
-              />
-            )}
-
-            <Stack gap="sm">
-              <Text fw={600}>Data e orari</Text>
-              <div>
-                <Text size="sm" fw={500} mb={6}>Durata dell'evento</Text>
-                <Button.Group>
-                  <Button type="button" variant={!form.repeatWeekly ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, repeatWeekly: false, recurrenceEndDate: null }))}>Unico</Button>
-                  <Button type="button" variant={form.repeatWeekly ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, repeatWeekly: true }))}>Ricorrente</Button>
-                </Button.Group>
-              </div>
-              <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
-                <DateInput
-                  label="Data"
-                  required
-                  value={form.date}
-                  onChange={(value) => setForm((current) => ({ ...current, date: value ? new Date(value) : null }))}
-                  valueFormat="DD-MM-YYYY"
-                />
-                <Select label="Ora di inizio" placeholder="Non indicata" data={TIME_OPTIONS} value={form.startTime || null} onChange={(value) => setForm((current) => ({ ...current, startTime: value ?? "" }))} searchable clearable />
-                <Select label="Ora di fine" placeholder="Non indicata" data={TIME_OPTIONS} value={form.endTime || null} onChange={(value) => setForm((current) => ({ ...current, endTime: value ?? "" }))} searchable clearable />
-                <Select label="Ora di ritrovo" placeholder="Non indicata" data={TIME_OPTIONS} value={form.meetingTime || null} onChange={(value) => setForm((current) => ({ ...current, meetingTime: value ?? "" }))} searchable clearable />
-              </SimpleGrid>
-              {form.repeatWeekly && (
-                <DateInput
-                  label="Ripeti fino al"
-                  description="Ogni appuntamento potrà poi essere modificato singolarmente."
-                  required
-                  value={form.recurrenceEndDate}
-                  minDate={form.date ?? undefined}
-                  onChange={(value) => setForm((current) => ({ ...current, recurrenceEndDate: value ? new Date(value) : null }))}
-                  valueFormat="DD-MM-YYYY"
-                  maw={300}
-                />
-              )}
-            </Stack>
-
-            <Stack gap="sm">
-              <Text fw={600}>Luogo</Text>
-              <div>
-                <Text size="sm" fw={500} mb={6}>Sede della partita</Text>
-                <Button.Group>
-                  <Button type="button" variant={form.venue === "home" ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, venue: "home" }))}>In casa</Button>
-                  <Button type="button" variant={form.venue === "away" ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, venue: "away" }))}>Trasferta</Button>
-                  <Button type="button" variant={form.venue === "neutral" ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, venue: "neutral" }))}>Neutro</Button>
-                </Button.Group>
-              </div>
-              <TextInput
-                label="Luogo dell'evento"
-                placeholder="Es. Centro sportivo comunale"
-                value={form.location}
-                onChange={(event) => {
-                  const location = event.currentTarget.value;
-                  setForm((current) => ({ ...current, location }));
-                }}
-              />
-            </Stack>
-
-            <Group justify="flex-end" wrap="wrap-reverse">
-              <Button type="button" variant="default" onClick={closeForm}>Annulla</Button>
-              <Button type="submit" loading={saving}>{form.repeatWeekly ? "Crea appuntamenti" : "Crea evento"}</Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
+        onCreated={() => loadEvents()}
+      />
 
       {selectedIds.size > 0 && (
         <Card withBorder padding="md" radius="md">

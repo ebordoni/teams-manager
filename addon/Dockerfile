@@ -26,7 +26,7 @@ LABEL \
   io.hass.description="Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni" \
   io.hass.arch="aarch64|amd64" \
   io.hass.type="addon" \
-  io.hass.version="0.20.3"
+  io.hass.version="0.20.4"
 
 WORKDIR /app
 
