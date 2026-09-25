@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.2] — 2026-09-25
+
+### Added
+
+- No new features.
+
+### Fixed
+
+- The event-creation modal title no longer nests HTML headings, removing the React console warning.
+
 ## [0.20.1] — 2026-09-25
 
 ### Added

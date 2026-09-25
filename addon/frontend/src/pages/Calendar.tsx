@@ -321,7 +321,7 @@ export default function Calendar() {
       <Modal
         opened={showForm}
         onClose={closeForm}
-        title={<Title order={4}>Crea evento</Title>}
+        title="Crea evento"
         size="lg"
         centered
       >

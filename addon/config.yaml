@@ -1,6 +1,6 @@
 name: "Teams Manager"
 description: "Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni per i genitori"
-version: "0.20.1"
+version: "0.20.2"
 slug: "teams_manager"
 init: false
 arch:

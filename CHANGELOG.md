@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.20.2] — 2026-09-25
+
+### Aggiunto
+
+- Nessuna nuova funzionalità.
+
+### Corretto
+
+- Il titolo della modale di creazione evento non annida più intestazioni HTML, eliminando il warning React in console.
+
 ## [0.20.1] — 2026-09-25
 
 ### Aggiunto
