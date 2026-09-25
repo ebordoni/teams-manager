@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.19.9] — 2026-09-25
+
+### Added
+
+- New mobile-first match-result and scorer experience in the event detail.
+
+### Changed
+
+- Score controls now use independent cards which stack on narrow screens to prevent overlaps.
+- Venue selection, scorer assignment, goal summary, and save actions were reorganized with clearer, touch-friendly controls.
+
 ## [0.19.8] — 2026-09-24
 
 ### Added

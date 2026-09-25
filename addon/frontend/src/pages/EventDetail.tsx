@@ -8,6 +8,7 @@ import {
   Collapse,
   Divider,
   Group,
+  Paper,
   Select,
   SimpleGrid,
   Stack,
@@ -402,23 +403,84 @@ export default function EventDetail() {
       </Card>
 
       {supportsResult && (
-        <Card withBorder padding="lg" radius="md"><Stack gap="md">
-          <Group justify="space-between"><div><Title order={5}>Risultato partita</Title><Text size="sm" c="dimmed">Tocca + o − per aggiornare rapidamente il punteggio.</Text></div>{result && <Badge color="green">Salvato</Badge>}</Group>
-          <SimpleGrid cols={{ base: 3 }} spacing="xs" verticalSpacing="xs">
-            <Stack align="center" gap={2}><Text size="sm" fw={600} ta="center" lineClamp={2}>{teamName}</Text><Group gap="xs" wrap="nowrap"><ActionIcon size={44} variant="light" aria-label="Diminuisci gol squadra" onClick={() => changeTeamScore(-1)} disabled={resultDraft.teamScore <= assignedScorerGoals}><IconMinus size={20} /></ActionIcon><Text fw={800} size="3rem" lh={1}>{resultDraft.teamScore}</Text><ActionIcon size={44} variant="filled" aria-label="Aumenta gol squadra" onClick={() => changeTeamScore(1)}><IconPlus size={20} /></ActionIcon></Group></Stack>
-            <Stack align="center" justify="center" gap={2}><Text size="xs" c="dimmed">RISULTATO</Text><Text fw={700} size="xl">–</Text><Select aria-label="Campo" size="xs" w={112} data={[{ value: "home", label: "Casa" }, { value: "away", label: "Trasferta" }, { value: "neutral", label: "Neutro" }]} value={resultDraft.venue} onChange={(value) => setResultDraft((draft) => ({ ...draft, venue: (value ?? "home") as MatchResult["venue"] }))} allowDeselect={false} /></Stack>
-            <Stack align="center" gap={2}><Text size="sm" fw={600} ta="center" lineClamp={2}>{opponentDraft || event.opponent || "Avversario"}</Text><Group gap="xs" wrap="nowrap"><ActionIcon size={44} variant="light" aria-label="Diminuisci gol avversario" onClick={() => changeOpponentScore(-1)} disabled={resultDraft.opponentScore === 0}><IconMinus size={20} /></ActionIcon><Text fw={800} size="3rem" lh={1}>{resultDraft.opponentScore}</Text><ActionIcon size={44} variant="filled" aria-label="Aumenta gol avversario" onClick={() => changeOpponentScore(1)}><IconPlus size={20} /></ActionIcon></Group></Stack>
-          </SimpleGrid>
+        <Card withBorder padding="lg" radius="md">
+          <Stack gap="lg">
+            <Group justify="space-between" align="flex-start" wrap="wrap" gap="xs">
+              <div>
+                <Title order={5}>Risultato partita</Title>
+                <Text size="sm" c="dimmed">Aggiorna il punteggio e assegna i gol.</Text>
+              </div>
+              {result && <Badge color="green">Salvato</Badge>}
+            </Group>
+
+            <Select
+              label="Campo"
+              description="Indica dove si è giocata la partita"
+              data={[
+                { value: "home", label: "Casa" },
+                { value: "away", label: "Trasferta" },
+                { value: "neutral", label: "Campo neutro" },
+              ]}
+              value={resultDraft.venue}
+              onChange={(value) => setResultDraft((draft) => ({
+                ...draft,
+                venue: (value ?? "home") as MatchResult["venue"],
+              }))}
+              allowDeselect={false}
+              maw={260}
+            />
+
+            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
+              <Paper withBorder p="md" radius="md">
+                <Stack gap="sm">
+                  <Text size="sm" fw={700} ta="center" lineClamp={2}>{teamName}</Text>
+                  <Group justify="center" gap="md" wrap="nowrap">
+                    <ActionIcon size={44} variant="light" aria-label="Diminuisci gol squadra" onClick={() => changeTeamScore(-1)} disabled={resultDraft.teamScore <= assignedScorerGoals}>
+                      <IconMinus size={20} />
+                    </ActionIcon>
+                    <Text fw={800} size="3rem" lh={1} aria-label={`${teamName}: ${resultDraft.teamScore}`}>{resultDraft.teamScore}</Text>
+                    <ActionIcon size={44} variant="filled" aria-label="Aumenta gol squadra" onClick={() => changeTeamScore(1)}>
+                      <IconPlus size={20} />
+                    </ActionIcon>
+                  </Group>
+                </Stack>
+              </Paper>
+              <Paper withBorder p="md" radius="md">
+                <Stack gap="sm">
+                  <Text size="sm" fw={700} ta="center" lineClamp={2}>{opponentDraft || event.opponent || "Avversario"}</Text>
+                  <Group justify="center" gap="md" wrap="nowrap">
+                    <ActionIcon size={44} variant="light" aria-label="Diminuisci gol avversario" onClick={() => changeOpponentScore(-1)} disabled={resultDraft.opponentScore === 0}>
+                      <IconMinus size={20} />
+                    </ActionIcon>
+                    <Text fw={800} size="3rem" lh={1} aria-label={`Avversario: ${resultDraft.opponentScore}`}>{resultDraft.opponentScore}</Text>
+                    <ActionIcon size={44} variant="filled" aria-label="Aumenta gol avversario" onClick={() => changeOpponentScore(1)}>
+                      <IconPlus size={20} />
+                    </ActionIcon>
+                  </Group>
+                </Stack>
+              </Paper>
+            </SimpleGrid>
           <Divider />
-          <Stack gap="xs"><Group justify="space-between"><div><Text fw={600}>Marcatori {teamName}</Text><Text size="xs" c="dimmed">Assegna i gol ai giocatori della rosa.</Text></div><Badge variant="light" color={assignedScorerGoals === resultDraft.teamScore ? "green" : "gray"}>{assignedScorerGoals}/{resultDraft.teamScore} assegnati</Badge></Group>
-            <Select placeholder="Aggiungi un marcatore" data={scorerPlayerOptions.filter((option) => !resultDraft.scorers.some((scorer) => scorer.playerId === Number(option.value)))} value={null} onChange={(value) => value && changeScorer(Number(value), 1)} searchable clearable />
-            {resultDraft.scorers.length === 0 ? <Text size="sm" c="dimmed">Nessun marcatore indicato.</Text> : <Stack gap="xs">{resultDraft.scorers.map((scorer) => { const player = attendance.find((record) => record.playerId === scorer.playerId); return <Group key={scorer.playerId} justify="space-between" wrap="nowrap"><Text size="sm">{player?.playerName ?? "Giocatore non disponibile"}</Text><Group gap="xs" wrap="nowrap"><ActionIcon variant="light" size="md" aria-label="Diminuisci gol marcatore" onClick={() => changeScorer(scorer.playerId, -1)}><IconMinus size={16} /></ActionIcon><Badge size="lg" variant="filled">{scorer.goals}</Badge><ActionIcon variant="filled" size="md" aria-label="Aumenta gol marcatore" onClick={() => changeScorer(scorer.playerId, 1)} disabled={resultDraft.teamScore >= 99}><IconPlus size={16} /></ActionIcon></Group></Group>; })}</Stack>}
-            {assignedScorerGoals < resultDraft.teamScore && <Text size="xs" c="dimmed">{resultDraft.teamScore - assignedScorerGoals} gol senza marcatore assegnato.</Text>}
+          <Stack gap="sm">
+            <Group justify="space-between" align="flex-start" wrap="wrap" gap="xs">
+              <div>
+                <Text fw={600}>Marcatori {teamName}</Text>
+                <Text size="xs" c="dimmed">Assegna i gol ai giocatori presenti.</Text>
+              </div>
+              <Badge variant="light" color={assignedScorerGoals === resultDraft.teamScore ? "green" : "gray"}>{assignedScorerGoals}/{resultDraft.teamScore} assegnati</Badge>
+            </Group>
+            <Select label="Aggiungi un marcatore" placeholder="Scegli un giocatore" data={scorerPlayerOptions.filter((option) => !resultDraft.scorers.some((scorer) => scorer.playerId === Number(option.value)))} value={null} onChange={(value) => value && changeScorer(Number(value), 1)} searchable clearable />
+            {resultDraft.scorers.length === 0 ? <Text size="sm" c="dimmed">Nessun marcatore indicato.</Text> : <Stack gap="xs">{resultDraft.scorers.map((scorer) => { const player = attendance.find((record) => record.playerId === scorer.playerId); return <Paper key={scorer.playerId} withBorder p="xs" radius="sm"><Group justify="space-between" align="center" wrap="nowrap" gap="xs"><Text size="sm" fw={500} style={{ minWidth: 0 }} lineClamp={2}>{player?.playerName ?? "Giocatore non disponibile"}</Text><Group gap="xs" wrap="nowrap"><ActionIcon variant="light" size={40} aria-label={`Diminuisci gol di ${player?.playerName ?? "questo giocatore"}`} onClick={() => changeScorer(scorer.playerId, -1)}><IconMinus size={18} /></ActionIcon><Badge size="lg" variant="filled" miw={36} ta="center">{scorer.goals}</Badge><ActionIcon variant="filled" size={40} aria-label={`Aumenta gol di ${player?.playerName ?? "questo giocatore"}`} onClick={() => changeScorer(scorer.playerId, 1)} disabled={resultDraft.teamScore >= 99}><IconPlus size={18} /></ActionIcon></Group></Group></Paper>; })}</Stack>}
+            {assignedScorerGoals < resultDraft.teamScore && <Alert color="blue" variant="light" py="xs">{resultDraft.teamScore - assignedScorerGoals} gol senza marcatore assegnato.</Alert>}
           </Stack>
-          <TextInput label="Note sul risultato" value={resultDraft.notes} onChange={(event) => setResultDraft((draft) => ({ ...draft, notes: event.currentTarget.value }))} />
+          <TextInput label="Note sul risultato" placeholder="Ad esempio: partita sospesa, supplementari…" value={resultDraft.notes} onChange={(event) => setResultDraft((draft) => ({ ...draft, notes: event.currentTarget.value }))} />
           {resultError && <Alert color="red" title="Errore">{resultError}</Alert>}
-          <Group><Button onClick={handleSaveResult} loading={savingResult}>Salva risultato</Button>{result && <Button color="red" variant="subtle" onClick={handleDeleteResult}>Elimina risultato</Button>}</Group>
-        </Stack></Card>
+          <Stack gap="xs">
+            <Button onClick={handleSaveResult} loading={savingResult} fullWidth>Salva risultato</Button>
+            {result && <Button color="red" variant="subtle" onClick={handleDeleteResult} fullWidth>Elimina risultato</Button>}
+          </Stack>
+        </Stack>
+        </Card>
       )}
 
       <Card withBorder padding="md" radius="md">

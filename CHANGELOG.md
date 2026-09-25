@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.9] — 2026-09-25
+
+### Aggiunto
+
+- Nuova esperienza mobile-first per risultato e marcatori nella scheda evento.
+
+### Modificato
+
+- I punteggi sono ora gestiti in card indipendenti, che si dispongono verticalmente sugli schermi stretti evitando sovrapposizioni.
+- Selettore del campo, assegnazione marcatori, riepilogo dei gol e azioni di salvataggio sono stati riorganizzati con controlli più ampi e leggibili su smartphone.
+
 ## [0.19.8] — 2026-09-24
 
 ### Aggiunto
