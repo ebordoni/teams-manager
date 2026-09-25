@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.3] — 2026-09-25
+
+### Added
+
+- No new features.
+
+### Fixed
+
+- Description, opponent, and location inputs now read their value before the state update, preventing a crash while typing in the new event form.
+
 ## [0.20.2] — 2026-09-25
 
 ### Added

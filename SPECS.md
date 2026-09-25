@@ -1,7 +1,7 @@
 # Teams Manager — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.20.2)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
+> Stato attuale: **MVP operativo (v0.20.3)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---

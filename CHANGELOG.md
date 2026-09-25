@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.20.3] — 2026-09-25
+
+### Aggiunto
+
+- Nessuna nuova funzionalità.
+
+### Corretto
+
+- Gli input di descrizione, avversario e luogo nel nuovo form leggono ora il valore prima dell'aggiornamento di stato, impedendo il crash durante la digitazione.
+
 ## [0.20.2] — 2026-09-25
 
 ### Aggiunto

@@ -343,7 +343,10 @@ export default function Calendar() {
               minRows={3}
               autosize
               value={form.notes}
-              onChange={(event) => setForm((current) => ({ ...current, notes: event.currentTarget.value }))}
+              onChange={(event) => {
+                const notes = event.currentTarget.value;
+                setForm((current) => ({ ...current, notes }));
+              }}
             />
 
             {selectedType?.hasOpponent && (
@@ -351,7 +354,10 @@ export default function Calendar() {
                 label="Avversario"
                 placeholder="Nome della squadra avversaria"
                 value={form.opponent}
-                onChange={(event) => setForm((current) => ({ ...current, opponent: event.currentTarget.value }))}
+                onChange={(event) => {
+                  const opponent = event.currentTarget.value;
+                  setForm((current) => ({ ...current, opponent }));
+                }}
               />
             )}
 
@@ -404,7 +410,10 @@ export default function Calendar() {
                 label="Luogo dell'evento"
                 placeholder="Es. Centro sportivo comunale"
                 value={form.location}
-                onChange={(event) => setForm((current) => ({ ...current, location: event.currentTarget.value }))}
+                onChange={(event) => {
+                  const location = event.currentTarget.value;
+                  setForm((current) => ({ ...current, location }));
+                }}
               />
             </Stack>
 
