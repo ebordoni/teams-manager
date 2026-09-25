@@ -9,6 +9,7 @@ import {
   Loader,
   SegmentedControl,
   Stack,
+  Table,
   Text,
   Title,
 } from "@mantine/core";
@@ -72,7 +73,7 @@ export default function Calendar() {
   );
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<"month" | "list">(
-    "month",
+    "list",
   );
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [generating, setGenerating] = useState(false);
@@ -117,6 +118,20 @@ export default function Calendar() {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllVisibleEvents() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const allVisibleEventsSelected =
+        events.length > 0 && events.every((event) => next.has(event.id));
+
+      for (const event of events) {
+        if (allVisibleEventsSelected) next.delete(event.id);
+        else next.add(event.id);
+      }
       return next;
     });
   }
@@ -223,6 +238,11 @@ export default function Calendar() {
     ? (eventsByDate.get(selectedDay) ?? [])
     : [];
   const today = dayjs().format("YYYY-MM-DD");
+  const allVisibleEventsSelected =
+    events.length > 0 && events.every((event) => selectedIds.has(event.id));
+  const someVisibleEventsSelected = events.some((event) =>
+    selectedIds.has(event.id),
+  );
 
   function renderEventCard(event: TeamEvent) {
     const type = typeOf(event.type);
@@ -273,11 +293,6 @@ export default function Calendar() {
                     {event.result.teamScore}–{event.result.opponentScore}
                   </Badge>
                 )}
-                {event.attendanceFinalizedAt && (
-                  <Badge variant="light" color="violet">
-                    Presenze chiuse
-                  </Badge>
-                )}
               </Group>
             </Group>
           </Link>
@@ -291,6 +306,46 @@ export default function Calendar() {
           </ActionIcon>
         </Group>
       </Card>
+    );
+  }
+
+  function renderEventListRow(event: TeamEvent) {
+    const type = typeOf(event.type);
+    const eventLabel = type?.label ?? event.type;
+    return (
+      <Table.Tr key={event.id}>
+        <Table.Td w={40}>
+          <Checkbox
+            checked={selectedIds.has(event.id)}
+            onChange={() => toggleSelected(event.id)}
+            aria-label={`Seleziona ${eventLabel}`}
+          />
+        </Table.Td>
+        <Table.Td>
+          <Text
+            component={Link}
+            to={`/events/${event.id}`}
+            style={{ color: "inherit", textDecoration: "none" }}
+          >
+            {formatDisplayDate(event.date)}
+            {event.startTime ? ` alle ${event.startTime}` : ""}
+          </Text>
+        </Table.Td>
+        <Table.Td>
+          <Link
+            to={`/events/${event.id}`}
+            style={{ color: "inherit", textDecoration: "none" }}
+          >
+            <Group gap={6} wrap="nowrap">
+              <EventTypeIcon
+                name={type?.icon ?? "IconCalendarEvent"}
+                size={18}
+              />
+              <Text truncate>{eventLabel}</Text>
+            </Group>
+          </Link>
+        </Table.Td>
+      </Table.Tr>
     );
   }
 
@@ -542,19 +597,32 @@ export default function Calendar() {
                 {eventsByDate.size === 0 ? (
                   <Text c="dimmed">Nessun evento in questo mese.</Text>
                 ) : (
-                  Array.from(eventsByDate.entries()).map(([date, dayEvents]) => (
-                    <Stack key={date} gap="xs">
-                      <Group gap="xs">
-                        <Text fw={700} c={date === today ? "red" : undefined}>
-                          {formatDayLabel(date)}
-                        </Text>
-                        <Badge variant="light" color={date === today ? "red" : "gray"}>
-                          {dayEvents.length}
-                        </Badge>
-                      </Group>
-                      {dayEvents.map(renderEventCard)}
-                    </Stack>
-                  ))
+                  <Table.ScrollContainer minWidth={340}>
+                    <Table
+                      highlightOnHover
+                      horizontalSpacing="sm"
+                      verticalSpacing="sm"
+                    >
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th w={40}>
+                            <Checkbox
+                              checked={allVisibleEventsSelected}
+                              indeterminate={
+                                someVisibleEventsSelected &&
+                                !allVisibleEventsSelected
+                              }
+                              onChange={toggleAllVisibleEvents}
+                              aria-label="Seleziona tutti gli eventi del mese"
+                            />
+                          </Table.Th>
+                          <Table.Th>Data</Table.Th>
+                          <Table.Th>Tipo</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>{events.map(renderEventListRow)}</Table.Tbody>
+                    </Table>
+                  </Table.ScrollContainer>
                 )}
               </Stack>
             </Card>

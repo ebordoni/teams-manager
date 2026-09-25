@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.1] — 2026-09-25
+
+### Aggiunto
+
+- La vista elenco del Calendario ha una testata con selezione di tutti gli eventi del mese.
+
+### Modificato
+
+- La vista elenco è ora l'impostazione predefinita del Calendario.
+- Rimossa l'etichetta ridondante “Presenze chiuse” dalle righe evento.
+
 ## [0.21.0] — 2026-09-25
 
 ### Aggiunto

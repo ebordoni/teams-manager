@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.1] — 2026-09-25
+
+### Added
+
+- Calendar list view now has a header control to select every event in the displayed month.
+
+### Changed
+
+- Calendar opens in list view by default.
+- Removed the redundant “Presenze chiuse” label from event rows.
+
 ## [0.21.0] — 2026-09-25
 
 ### Added
