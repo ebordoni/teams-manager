@@ -4,7 +4,7 @@ import path from "path";
 import { config } from "../config";
 
 let db: DatabaseSync | undefined;
-const LATEST_SCHEMA_VERSION = 5;
+const LATEST_SCHEMA_VERSION = 6;
 
 const SCHEMA_V1 = `
   CREATE TABLE IF NOT EXISTS schema_version (
@@ -39,6 +39,7 @@ const SCHEMA_V1 = `
     location      TEXT,
     address       TEXT,
     opponent      TEXT,
+    venue         TEXT    NOT NULL DEFAULT 'home' CHECK (venue IN ('home', 'away', 'neutral')),
     meeting_time  TEXT,
     notes         TEXT,
     status        TEXT    NOT NULL DEFAULT 'scheduled', -- scheduled | modified | cancelled
@@ -204,6 +205,9 @@ const migrations: Record<number, () => void> = {
     getDb().exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_players_jersey_number ON players(jersey_number) WHERE jersey_number IS NOT NULL");
   },
   5: () => ensureColumn("match_results", "scorers", "TEXT NOT NULL DEFAULT '[]'"),
+  // La sede della partita è una proprietà dell'evento, non soltanto del
+  // risultato finale: serve già in fase di convocazione e di export.
+  6: () => ensureColumn("events", "venue", "TEXT NOT NULL DEFAULT 'home' CHECK (venue IN ('home', 'away', 'neutral'))"),
 };
 
 function applyMigrations(dbPath: string, databaseAlreadyExists: boolean): void {

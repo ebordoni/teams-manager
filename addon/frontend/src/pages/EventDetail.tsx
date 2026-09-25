@@ -113,7 +113,9 @@ export default function EventDetail() {
           if (typesRes.data.some((item) => item.key === eventRes.data.type && item.hasOpponent)) {
             const resultRes = await api.getMatchResult(eventId);
             setResult(resultRes.data);
-            if (resultRes.data) setResultDraft({ teamScore: resultRes.data.teamScore, opponentScore: resultRes.data.opponentScore, venue: resultRes.data.venue, scorers: resultRes.data.scorers ?? [], notes: resultRes.data.notes ?? "" });
+            setResultDraft(resultRes.data
+              ? { teamScore: resultRes.data.teamScore, opponentScore: resultRes.data.opponentScore, venue: resultRes.data.venue, scorers: resultRes.data.scorers ?? [], notes: resultRes.data.notes ?? "" }
+              : { teamScore: 0, opponentScore: 0, venue: eventRes.data.venue, scorers: [], notes: "" });
           }
         },
       )

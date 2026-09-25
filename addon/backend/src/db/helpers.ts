@@ -39,6 +39,7 @@ export function rowToEvent(row: EventRow): Event {
     location: row.location,
     address: row.address,
     opponent: row.opponent,
+    venue: row.venue,
     meetingTime: row.meeting_time,
     notes: row.notes,
     status: row.status,

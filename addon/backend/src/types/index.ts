@@ -49,6 +49,7 @@ export interface Event {
   location: string | null;
   address: string | null;
   opponent: string | null;
+  venue: "home" | "away" | "neutral";
   meetingTime: string | null;
   notes: string | null;
   status: EventStatus;
@@ -67,6 +68,7 @@ export interface EventRow {
   location: string | null;
   address: string | null;
   opponent: string | null;
+  venue: "home" | "away" | "neutral";
   meeting_time: string | null;
   notes: string | null;
   status: EventStatus;

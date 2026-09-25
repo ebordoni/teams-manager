@@ -5,20 +5,21 @@ import {
   Button,
   Card,
   Checkbox,
-  Collapse,
   Group,
   Loader,
+  Modal,
   Select,
   SimpleGrid,
   Stack,
+  Tabs,
   Text,
   TextInput,
+  Textarea,
   Title,
 } from "@mantine/core";
 import {
   DateInput,
   Calendar as MantineCalendar,
-  TimeInput,
 } from "@mantine/dates";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
@@ -65,8 +66,12 @@ interface FormState {
   type: string;
   date: Date | null;
   startTime: string;
+  endTime: string;
+  meetingTime: string;
   location: string;
   opponent: string;
+  venue: "home" | "away" | "neutral";
+  notes: string;
   repeatWeekly: boolean;
   recurrenceEndDate: Date | null;
 }
@@ -75,11 +80,22 @@ const EMPTY_FORM: FormState = {
   type: "",
   date: null,
   startTime: "",
+  endTime: "",
+  meetingTime: "",
   location: "",
   opponent: "",
+  venue: "home",
+  notes: "",
   repeatWeekly: false,
   recurrenceEndDate: null,
 };
+
+const TIME_OPTIONS = Array.from({ length: 24 * 12 }, (_, index) => {
+  const hours = String(Math.floor(index / 12)).padStart(2, "0");
+  const minutes = String((index % 12) * 5).padStart(2, "0");
+  const value = `${hours}:${minutes}`;
+  return { value, label: value };
+});
 
 export default function Calendar() {
   const [events, setEvents] = useState<TeamEvent[]>([]);
@@ -146,8 +162,12 @@ export default function Calendar() {
       type: form.type,
       date: dayjs(form.date).format("YYYY-MM-DD"),
       startTime: form.startTime || null,
+      endTime: form.endTime || null,
+      meetingTime: form.meetingTime || null,
       location: form.location || null,
       opponent: selectedType?.hasOpponent ? form.opponent || null : null,
+      venue: form.venue,
+      notes: form.notes || null,
     };
     setSaving(true);
     try {
@@ -295,101 +315,106 @@ export default function Calendar() {
     <Stack gap="md">
       <Group justify="space-between">
         <Title order={4}>Calendario</Title>
-        <Button onClick={showForm ? closeForm : handleOpenForm}>
-          {showForm ? "Annulla" : "+ Nuovo evento"}
-        </Button>
+        <Button onClick={handleOpenForm}>+ Nuovo evento</Button>
       </Group>
 
-      <Collapse expanded={showForm}>
-        <Card withBorder padding="md" radius="md">
-          <form onSubmit={handleSubmit}>
+      <Modal
+        opened={showForm}
+        onClose={closeForm}
+        title={<Title order={4}>Crea evento</Title>}
+        size="lg"
+        centered
+      >
+        <form onSubmit={handleSubmit}>
+          <Stack gap="lg">
+            <Tabs value={form.type} onChange={(value) => setForm((current) => ({ ...current, type: value ?? current.type }))} variant="pills">
+              <Tabs.List style={{ flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden" }}>
+                {eventTypes.map((type) => (
+                  <Tabs.Tab key={type.key} value={type.key} leftSection={<EventTypeIcon name={type.icon} size={16} />} style={{ flex: "0 0 auto" }}>
+                    {type.label}
+                  </Tabs.Tab>
+                ))}
+              </Tabs.List>
+            </Tabs>
+
+            <Textarea
+              label="Descrizione"
+              placeholder="Aggiungi informazioni sull'evento"
+              minRows={3}
+              autosize
+              value={form.notes}
+              onChange={(event) => setForm((current) => ({ ...current, notes: event.currentTarget.value }))}
+            />
+
+            {selectedType?.hasOpponent && (
+              <TextInput
+                label="Avversario"
+                placeholder="Nome della squadra avversaria"
+                value={form.opponent}
+                onChange={(event) => setForm((current) => ({ ...current, opponent: event.currentTarget.value }))}
+              />
+            )}
+
             <Stack gap="sm">
-              <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                <Select
-                  label="Tipo"
-                  data={eventTypes.map((t) => ({
-                    value: t.key,
-                    label: t.label,
-                  }))}
-                  value={form.type}
-                  onChange={(value) => setForm({ ...form, type: value ?? "" })}
-                  allowDeselect={false}
-                />
+              <Text fw={600}>Data e orari</Text>
+              <div>
+                <Text size="sm" fw={500} mb={6}>Durata dell'evento</Text>
+                <Button.Group>
+                  <Button type="button" variant={!form.repeatWeekly ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, repeatWeekly: false, recurrenceEndDate: null }))}>Unico</Button>
+                  <Button type="button" variant={form.repeatWeekly ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, repeatWeekly: true }))}>Ricorrente</Button>
+                </Button.Group>
+              </div>
+              <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
                 <DateInput
                   label="Data"
                   required
                   value={form.date}
-                  onChange={(value) =>
-                    setForm({
-                      ...form,
-                      date: value ? new Date(value) : null,
-                    })
-                  }
+                  onChange={(value) => setForm((current) => ({ ...current, date: value ? new Date(value) : null }))}
                   valueFormat="DD-MM-YYYY"
                 />
-                <TimeInput
-                  label="Ora"
-                  value={form.startTime}
-                  onChange={(e) =>
-                    setForm({ ...form, startTime: e.currentTarget.value })
-                  }
-                />
-                <TextInput
-                  label="Luogo"
-                  value={form.location}
-                  onChange={(e) =>
-                    setForm({ ...form, location: e.currentTarget.value })
-                  }
-                />
-                {selectedType?.hasOpponent && (
-                  <TextInput
-                    label="Avversario"
-                    value={form.opponent}
-                    onChange={(e) =>
-                      setForm({ ...form, opponent: e.currentTarget.value })
-                    }
-                    style={{ gridColumn: "1 / -1" }}
-                  />
-                )}
+                <Select label="Ora di inizio" placeholder="Non indicata" data={TIME_OPTIONS} value={form.startTime || null} onChange={(value) => setForm((current) => ({ ...current, startTime: value ?? "" }))} searchable clearable />
+                <Select label="Ora di fine" placeholder="Non indicata" data={TIME_OPTIONS} value={form.endTime || null} onChange={(value) => setForm((current) => ({ ...current, endTime: value ?? "" }))} searchable clearable />
+                <Select label="Ora di ritrovo" placeholder="Non indicata" data={TIME_OPTIONS} value={form.meetingTime || null} onChange={(value) => setForm((current) => ({ ...current, meetingTime: value ?? "" }))} searchable clearable />
               </SimpleGrid>
-              <Checkbox
-                label="Ripeti ogni settimana"
-                description="Verrà creato un evento distinto per ogni settimana, modificabile singolarmente."
-                checked={form.repeatWeekly}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    repeatWeekly: event.currentTarget.checked,
-                  })
-                }
-              />
               {form.repeatWeekly && (
                 <DateInput
                   label="Ripeti fino al"
+                  description="Ogni appuntamento potrà poi essere modificato singolarmente."
                   required
                   value={form.recurrenceEndDate}
                   minDate={form.date ?? undefined}
-                  onChange={(value) =>
-                    setForm({
-                      ...form,
-                      recurrenceEndDate: value ? new Date(value) : null,
-                    })
-                  }
+                  onChange={(value) => setForm((current) => ({ ...current, recurrenceEndDate: value ? new Date(value) : null }))}
                   valueFormat="DD-MM-YYYY"
-                  w={{ base: "100%", sm: 260 }}
+                  maw={300}
                 />
               )}
-              <Button
-                type="submit"
-                loading={saving}
-                style={{ alignSelf: "flex-start" }}
-              >
-                {form.repeatWeekly ? "Crea appuntamenti" : "Salva"}
-              </Button>
             </Stack>
-          </form>
-        </Card>
-      </Collapse>
+
+            <Stack gap="sm">
+              <Text fw={600}>Luogo</Text>
+              <div>
+                <Text size="sm" fw={500} mb={6}>Sede della partita</Text>
+                <Button.Group>
+                  <Button type="button" variant={form.venue === "home" ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, venue: "home" }))}>In casa</Button>
+                  <Button type="button" variant={form.venue === "away" ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, venue: "away" }))}>Trasferta</Button>
+                  <Button type="button" variant={form.venue === "neutral" ? "filled" : "default"} onClick={() => setForm((current) => ({ ...current, venue: "neutral" }))}>Neutro</Button>
+                </Button.Group>
+              </div>
+              <TextInput
+                label="Luogo dell'evento"
+                placeholder="Es. Centro sportivo comunale"
+                value={form.location}
+                onChange={(event) => setForm((current) => ({ ...current, location: event.currentTarget.value }))}
+              />
+            </Stack>
+
+            <Group justify="flex-end" wrap="wrap-reverse">
+              <Button type="button" variant="default" onClick={closeForm}>Annulla</Button>
+              <Button type="submit" loading={saving}>{form.repeatWeekly ? "Crea appuntamenti" : "Crea evento"}</Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
 
       {selectedIds.size > 0 && (
         <Card withBorder padding="md" radius="md">

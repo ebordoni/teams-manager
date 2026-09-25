@@ -7,6 +7,19 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.20.0] — 2026-09-25
+
+### Aggiunto
+
+- Nuovo flusso di creazione evento in modale, ottimizzato per desktop e smartphone.
+- Selettore orario a intervalli di cinque minuti per inizio, fine e ritrovo.
+- Sede dell'evento persistente (`in casa`, `trasferta` o `neutro`) ed esportata su Google Calendar.
+
+### Modificato
+
+- I tipi evento sono selezionabili da tab orizzontali e scorrevoli; per gli eventi partita è disponibile il campo avversario libero.
+- La ricorrenza settimanale usa ora un controllo dedicato, con data finale e form completo in un'unica esperienza.
+
 ## [0.19.9] — 2026-09-25
 
 ### Aggiunto

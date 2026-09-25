@@ -40,6 +40,7 @@ export interface TeamEvent {
   location: string | null;
   address: string | null;
   opponent: string | null;
+  venue: "home" | "away" | "neutral";
   meetingTime: string | null;
   notes: string | null;
   status: EventStatus;

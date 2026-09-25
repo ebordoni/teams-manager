@@ -2,6 +2,12 @@ import type { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import type { Event, EventTypeDef } from "../../types";
 
+const venueLabel: Record<Event["venue"], string> = {
+  home: "In casa",
+  away: "In trasferta",
+  neutral: "Campo neutro",
+};
+
 function isNotFoundError(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
   const candidate = error as {
@@ -21,6 +27,7 @@ function eventResource(event: Event, type: EventTypeDef | undefined) {
     event.status !== "scheduled"
       ? `Stato: ${event.status === "cancelled" ? "annullato" : "modificato"}`
       : null,
+    `Sede: ${venueLabel[event.venue]}`,
     event.meetingTime ? `Ritrovo: ${event.meetingTime}` : null,
     event.notes,
     "Gestito da Teams Manager",

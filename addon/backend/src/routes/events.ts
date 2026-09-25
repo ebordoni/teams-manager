@@ -14,6 +14,7 @@ const EventSchema = z.object({
   location: z.string().trim().optional().nullable(),
   address: z.string().trim().optional().nullable(),
   opponent: z.string().trim().optional().nullable(),
+  venue: z.enum(["home", "away", "neutral"]).optional(),
   meetingTime: z.string().trim().optional().nullable(),
   notes: z.string().optional().nullable(),
   status: z.enum(["scheduled", "modified", "cancelled"]).optional(),
@@ -136,12 +137,12 @@ function insertEvent(e: z.infer<typeof EventSchema>): number {
   const result = getDb()
     .prepare(
       `INSERT INTO events
-        (type, date, start_time, end_time, location, address, opponent, meeting_time, notes, status, formation_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (type, date, start_time, end_time, location, address, opponent, venue, meeting_time, notes, status, formation_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       e.type, e.date, e.startTime ?? null, e.endTime ?? null, e.location ?? null,
-      e.address ?? null, e.opponent ?? null, e.meetingTime ?? null, e.notes ?? null,
+      e.address ?? null, e.opponent ?? null, e.venue ?? "home", e.meetingTime ?? null, e.notes ?? null,
       e.status ?? "scheduled", e.formationId ?? null,
     );
   return Number(result.lastInsertRowid);
@@ -317,7 +318,7 @@ router.put("/:id", (req: Request, res: Response) => {
   db.prepare(
     `UPDATE events SET
       type = ?, date = ?, start_time = ?, end_time = ?, location = ?,
-      address = ?, opponent = ?, meeting_time = ?, notes = ?, status = ?, formation_id = ?
+      address = ?, opponent = ?, venue = ?, meeting_time = ?, notes = ?, status = ?, formation_id = ?
      WHERE id = ?`,
   ).run(
     e.type ?? existing.type,
@@ -327,6 +328,7 @@ router.put("/:id", (req: Request, res: Response) => {
     e.location !== undefined ? e.location : existing.location,
     e.address !== undefined ? e.address : existing.address,
     e.opponent !== undefined ? e.opponent : existing.opponent,
+    e.venue ?? existing.venue,
     e.meetingTime !== undefined ? e.meetingTime : existing.meeting_time,
     e.notes !== undefined ? e.notes : existing.notes,
     e.status ?? existing.status,

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.20.0] — 2026-09-25
+
+### Added
+
+- New modal event-creation flow, optimized for desktop and mobile.
+- Five-minute time selector for start, end, and meeting time.
+- Persistent event venue (`home`, `away`, or `neutral`) included in Google Calendar exports.
+
+### Changed
+
+- Event types are selected with horizontally scrollable tabs; match events include a free-text opponent field.
+- Weekly recurrence now uses a dedicated control with an end date in one complete form.
+
 ## [0.19.9] — 2026-09-25
 
 ### Added
