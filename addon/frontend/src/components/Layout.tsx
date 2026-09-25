@@ -51,7 +51,7 @@ export default function Layout() {
               size="sm"
             />
             <Title order={3} fz={{ base: "h4", sm: "h3" }}>
-              <IconPlayFootball /> My Football Manager
+              <IconPlayFootball /> Teams Manager
             </Title>
           </Group>
         </Group>
