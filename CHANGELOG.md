@@ -7,6 +7,12 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.3] — 2026-09-25
+
+### Aggiunto
+
+- La vista elenco del Calendario evidenzia in grassetto l'evento odierno e attenua in grigio gli eventi passati.
+
 ## [0.21.2] — 2026-09-25
 
 ### Aggiunto

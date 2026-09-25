@@ -313,8 +313,17 @@ export default function Calendar() {
     const type = typeOf(event.type);
     const eventLabel = type?.label ?? event.type;
     const result = event.result;
+    const isToday = event.date === today;
+    const isPast = event.date < today;
     return (
-      <Table.Tr key={event.id}>
+      <Table.Tr
+        key={event.id}
+        style={{
+          color: isPast ? "var(--mantine-color-dimmed)" : undefined,
+          fontWeight: isToday ? 700 : undefined,
+          opacity: isPast ? 0.7 : undefined,
+        }}
+      >
         <Table.Td w={40}>
           <Checkbox
             checked={selectedIds.has(event.id)}
