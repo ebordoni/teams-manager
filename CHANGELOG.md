@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.2] — 2026-09-25
+
+### Aggiunto
+
+- La vista elenco del Calendario mostra avversario e risultato degli eventi quando disponibili.
+
+### Modificato
+
+- Su mobile il tipo evento è mostrato con la sola icona e la colonna risultato è nascosta.
+
 ## [0.21.1] — 2026-09-25
 
 ### Aggiunto

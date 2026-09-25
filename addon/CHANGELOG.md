@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.2] — 2026-09-25
+
+### Added
+
+- Calendar list view displays each event's opponent and result when available.
+
+### Changed
+
+- On mobile, event types are icon-only and the result column is hidden.
+
 ## [0.21.1] — 2026-09-25
 
 ### Added

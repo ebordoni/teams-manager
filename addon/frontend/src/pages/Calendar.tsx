@@ -312,6 +312,7 @@ export default function Calendar() {
   function renderEventListRow(event: TeamEvent) {
     const type = typeOf(event.type);
     const eventLabel = type?.label ?? event.type;
+    const result = event.result;
     return (
       <Table.Tr key={event.id}>
         <Table.Td w={40}>
@@ -341,10 +342,43 @@ export default function Calendar() {
                 name={type?.icon ?? "IconCalendarEvent"}
                 size={18}
               />
-              <Text truncate>{eventLabel}</Text>
+              {!compactDays && <Text truncate>{eventLabel}</Text>}
             </Group>
           </Link>
         </Table.Td>
+        <Table.Td>
+          {event.opponent ? (
+            <Text
+              component={Link}
+              to={`/events/${event.id}`}
+              truncate
+              style={{ color: "inherit", textDecoration: "none" }}
+            >
+              {event.opponent}
+            </Text>
+          ) : (
+            <Text c="dimmed">—</Text>
+          )}
+        </Table.Td>
+        {!compactDays && (
+          <Table.Td>
+            {result ? (
+              <Badge
+                color={
+                  result.teamScore > result.opponentScore
+                    ? "green"
+                    : result.teamScore < result.opponentScore
+                      ? "red"
+                      : "gray"
+                }
+              >
+                {result.teamScore}–{result.opponentScore}
+              </Badge>
+            ) : (
+              <Text c="dimmed">—</Text>
+            )}
+          </Table.Td>
+        )}
       </Table.Tr>
     );
   }
@@ -597,7 +631,7 @@ export default function Calendar() {
                 {eventsByDate.size === 0 ? (
                   <Text c="dimmed">Nessun evento in questo mese.</Text>
                 ) : (
-                  <Table.ScrollContainer minWidth={340}>
+                  <Table.ScrollContainer minWidth={compactDays ? 340 : 540}>
                     <Table
                       highlightOnHover
                       horizontalSpacing="sm"
@@ -618,6 +652,8 @@ export default function Calendar() {
                           </Table.Th>
                           <Table.Th>Data</Table.Th>
                           <Table.Th>Tipo</Table.Th>
+                          <Table.Th>Avversario</Table.Th>
+                          {!compactDays && <Table.Th>Risultato</Table.Th>}
                         </Table.Tr>
                       </Table.Thead>
                       <Table.Tbody>{events.map(renderEventListRow)}</Table.Tbody>
