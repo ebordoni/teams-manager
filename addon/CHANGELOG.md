@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.1] — 2026-09-25
+
+### Added
+
+- No new features.
+
+### Fixed
+
+- The error boundary now renders inside the Mantine provider, preventing a blank page caused by theme-less fallback components while editing the event form.
+
 ## [0.20.0] — 2026-09-25
 
 ### Added

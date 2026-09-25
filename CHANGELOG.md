@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.20.1] — 2026-09-25
+
+### Aggiunto
+
+- Nessuna nuova funzionalità.
+
+### Corretto
+
+- L'error boundary è ora interno al provider Mantine: in caso di errore non tenta più di renderizzare componenti senza tema, evitando la pagina bianca durante la compilazione del form evento.
+
 ## [0.20.0] — 2026-09-25
 
 ### Aggiunto

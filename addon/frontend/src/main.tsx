@@ -16,12 +16,12 @@ const theme = {
 };
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <AppErrorBoundary>
-    <MantineProvider theme={theme} defaultColorScheme="auto">
-      <DatesProvider settings={{ locale: "it", firstDayOfWeek: 1 }}>
+  <MantineProvider theme={theme} defaultColorScheme="auto">
+    <DatesProvider settings={{ locale: "it", firstDayOfWeek: 1 }}>
+      <AppErrorBoundary>
         <Notifications position="top-right" />
         <App />
-      </DatesProvider>
-    </MantineProvider>
-  </AppErrorBoundary>,
+      </AppErrorBoundary>
+    </DatesProvider>
+  </MantineProvider>,
 );
