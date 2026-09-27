@@ -17,6 +17,7 @@ import matchPlansRouter from "./routes/match-plans";
 import playersRouter from "./routes/players";
 import reportsRouter from "./routes/reports";
 import settingsRouter from "./routes/settings";
+import { startLiveCommunicationScheduler } from "./services/live-communication-scheduler.service";
 
 function resolveVersion(): string {
   try {
@@ -105,6 +106,7 @@ export const app = createApp();
 
 export function startServer() {
   initDb();
+  startLiveCommunicationScheduler();
   return app.listen(config.port, () => {
     console.log(
       `[server] Teams Manager running on port ${config.port} (${process.env.NODE_ENV ?? "development"})`,

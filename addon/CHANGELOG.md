@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.4] — 2026-09-27
+
+### Added
+
+- A single Google appointments document, refreshable manually, after event changes, and daily at 03:05.
+- The document retains events from today onward and the two most recent past appointments, dimmed in gray.
+
+### Removed
+
+- Google Doc template configuration and template-based generation.
+
 ## [0.21.3] — 2026-09-25
 
 ### Added

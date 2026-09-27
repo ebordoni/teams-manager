@@ -19,7 +19,10 @@ export function setSetting(key: string, value: string | null): void {
 
 export const SETTINGS_KEYS = {
   teamName: "team_name",
-  googleTemplateDocId: "google_template_doc_id",
+  googleLiveDocId: "google_live_doc_id",
+  googleLiveDocUrl: "google_live_doc_url",
+  googleLiveDocTitle: "google_live_doc_title",
+  googleLiveDocUpdatedAt: "google_live_doc_updated_at",
   googleCalendarId: "google_calendar_id",
   // Valore temporaneo per proteggere il redirect OAuth da callback forgiati.
   // Non viene mai esposto dall'endpoint delle impostazioni.

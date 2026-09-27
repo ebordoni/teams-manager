@@ -3,6 +3,7 @@ import { z } from "zod";
 import { rowToEvent } from "../db/helpers";
 import { getDb } from "../db/schema";
 import type { EventRow } from "../types";
+import { queueLiveCommunicationRefresh } from "../services/live-communication-scheduler.service";
 
 const router = Router();
 
@@ -246,6 +247,7 @@ router.post("/", (req: Request, res: Response) => {
   const row = getDb()
     .prepare("SELECT * FROM events WHERE id = ?")
     .get(id) as unknown as EventRow;
+  queueLiveCommunicationRefresh();
   res.status(201).json(rowToEvent(row));
 });
 
@@ -276,6 +278,7 @@ router.post("/recurring", (req: Request, res: Response) => {
   }
   const placeholders = ids.map(() => "?").join(",");
   const rows = db.prepare(`SELECT * FROM events WHERE id IN (${placeholders}) ORDER BY date ASC, start_time ASC`).all(...ids) as unknown as EventRow[];
+  queueLiveCommunicationRefresh();
   res.status(201).json({ created: rows.map(rowToEvent) });
 });
 
@@ -339,6 +342,7 @@ router.put("/:id", (req: Request, res: Response) => {
   const row = db
     .prepare("SELECT * FROM events WHERE id = ?")
     .get(req.params.id) as unknown as EventRow;
+  queueLiveCommunicationRefresh();
   res.json(rowToEvent(row));
 });
 
@@ -352,6 +356,7 @@ router.delete("/:id", (req: Request, res: Response) => {
     res.status(404).json({ error: "Event not found" });
     return;
   }
+  queueLiveCommunicationRefresh();
   res.status(204).send();
 });
 

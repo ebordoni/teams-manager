@@ -97,6 +97,10 @@ export const api = {
     apiClient.get<Communication[]>("/communications"),
   deleteCommunication: (id: number) =>
     apiClient.delete(`/communications/${id}`),
+  getLiveCommunication: () =>
+    apiClient.get<import("../types").LiveCommunication | null>("/communications/live"),
+  refreshLiveCommunication: () =>
+    apiClient.post<import("../types").LiveCommunication>("/communications/live/refresh"),
   exportToGoogleCalendar: (eventIds: number[]) =>
     apiClient.post<{ exported: number }>("/google/calendar/export", { eventIds }),
   verifyGoogleCalendar: (calendarId: string) =>

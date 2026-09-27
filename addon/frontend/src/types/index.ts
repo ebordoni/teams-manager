@@ -58,7 +58,6 @@ export interface GoogleStatus {
 
 export interface AppSettings {
   teamName: string;
-  googleTemplateDocId: string | null;
   googleCalendarId: string;
 }
 
@@ -78,6 +77,13 @@ export interface GeneratedCommunication {
   googleDocId: string;
   googleDocUrl: string;
   whatsappMessage: string;
+}
+
+export interface LiveCommunication {
+  title: string;
+  googleDocId: string;
+  googleDocUrl: string;
+  updatedAt: string;
 }
 
 export interface GeneratedMatchPlanExport {

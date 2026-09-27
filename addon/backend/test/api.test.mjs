@@ -309,6 +309,19 @@ test("generating a communication without a linked Google account asks to connect
   assert.match(body.error, /Google non è collegato/);
 });
 
+test("the live communication endpoint exposes no document before its first creation", async () => {
+  const initial = await request("/api/communications/live");
+  assert.equal(initial.response.status, 200);
+  assert.equal(initial.body, null);
+
+  const refresh = await request("/api/communications/live/refresh", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+  assert.equal(refresh.response.status, 403);
+  assert.match(refresh.body.error, /Google non è collegato/);
+});
+
 test("Google Calendar verification explains when Calendar authorization is missing", async () => {
   const { response, body } = await request("/api/google/calendar/test", {
     method: "POST",

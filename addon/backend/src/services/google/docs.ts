@@ -27,27 +27,30 @@ export async function createStyledDocument(
 }
 
 /**
- * Sostituisce nel documento indicato tutti i placeholder `{{CHIAVE}}` con i
- * valori forniti (usato dopo aver copiato un documento-template da Drive).
+ * Sostituisce il solo contenuto del body, mantenendo lo stesso Google Doc e
+ * quindi lo stesso link condiviso. Gli eventuali header/footer del documento
+ * non vengono toccati.
  */
-export async function replacePlaceholders(
+export async function replaceStyledDocument(
   auth: OAuth2Client,
   documentId: string,
-  replacements: Record<string, string>,
+  builder: DocumentBuilder,
 ): Promise<void> {
   const docs = google.docs({ version: "v1", auth });
+  const document = await docs.documents.get({ documentId });
+  const content = document.data.body?.content ?? [];
+  const endIndex = content.at(-1)?.endIndex ?? 1;
+  const requests = [
+    ...(endIndex > 1
+      ? [{ deleteContentRange: { range: { startIndex: 1, endIndex: endIndex - 1 } } }]
+      : []),
+    ...builder.build(),
+  ];
 
-  const requests = Object.entries(replacements).map(([key, value]) => ({
-    replaceAllText: {
-      containsText: { text: `{{${key}}}`, matchCase: true },
-      replaceText: value,
-    },
-  }));
-
-  if (requests.length === 0) return;
-
-  await docs.documents.batchUpdate({
-    documentId,
-    requestBody: { requests },
-  });
+  if (requests.length > 0) {
+    await docs.documents.batchUpdate({
+      documentId,
+      requestBody: { requests },
+    });
+  }
 }

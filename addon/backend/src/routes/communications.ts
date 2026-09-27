@@ -6,7 +6,9 @@ import {
   deleteCommunication,
   DriveDeletionError,
   generateCommunication,
+  getLiveCommunication,
   listCommunications,
+  refreshLiveCommunication,
 } from "../services/communication.service";
 import { GoogleAuthRequiredError } from "../services/google/auth";
 
@@ -43,7 +45,26 @@ router.get("/", (_req: Request, res: Response) => {
   res.json(listCommunications().map(rowToCommunication));
 });
 
-// POST /api/communications — genera un Google Doc per gli eventi indicati (F07/F09)
+// GET /api/communications/live — il documento unico, se già creato.
+router.get("/live", (_req: Request, res: Response) => {
+  res.json(getLiveCommunication());
+});
+
+// POST /api/communications/live/refresh — aggiornamento manuale del documento unico.
+router.post("/live/refresh", async (_req: Request, res: Response) => {
+  try {
+    const result = await refreshLiveCommunication();
+    res.json(result);
+  } catch (err) {
+    sendServiceError(
+      res,
+      err,
+      "Impossibile aggiornare il documento Google. Riprova più tardi.",
+    );
+  }
+});
+
+// POST /api/communications — compatibilità con la precedente azione dal Calendario.
 router.post("/", async (req: Request, res: Response) => {
   const parse = GenerateSchema.safeParse(req.body);
   if (!parse.success) {

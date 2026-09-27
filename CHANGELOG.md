@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.4] — 2026-09-27
+
+### Aggiunto
+
+- Documento Google unico per gli appuntamenti, aggiornabile manualmente, dopo ogni modifica agli eventi e ogni giorno alle 03:05.
+- Nel documento restano gli eventi da oggi in avanti e i due appuntamenti passati più recenti, attenuati in grigio.
+
+### Rimosso
+
+- Configurazione e generazione basata su template Google Doc.
+
 ## [0.21.3] — 2026-09-25
 
 ### Aggiunto

@@ -101,7 +101,7 @@ const SCHEMA_V1 = `
     sort_order   INTEGER NOT NULL DEFAULT 0
   );
 
-  -- Coppie chiave/valore per impostazioni runtime (es. id del template Google Doc).
+  -- Coppie chiave/valore per impostazioni runtime e integrazioni Google.
   CREATE TABLE IF NOT EXISTS app_settings (
     key   TEXT PRIMARY KEY,
     value TEXT

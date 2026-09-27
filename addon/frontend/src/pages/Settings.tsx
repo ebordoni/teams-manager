@@ -55,9 +55,6 @@ export default function Settings() {
   const [typeError, setTypeError] = useState<string | null>(null);
   const [editingType, setEditingType] = useState<EventTypeDef | null>(null);
 
-  const [templateDocId, setTemplateDocId] = useState("");
-  const [savingTemplate, setSavingTemplate] = useState(false);
-  const [templateSaved, setTemplateSaved] = useState(false);
   const [calendarId, setCalendarId] = useState("primary");
   const [savingCalendar, setSavingCalendar] = useState(false);
   const [testingCalendar, setTestingCalendar] = useState(false);
@@ -73,7 +70,6 @@ export default function Settings() {
       .then(([statusRes, typesRes, settingsRes]) => {
         setStatus(statusRes.data);
         setEventTypes(typesRes.data);
-        setTemplateDocId(settingsRes.data.googleTemplateDocId ?? "");
         setCalendarId(settingsRes.data.googleCalendarId);
         setTeamName(settingsRes.data.teamName);
       })
@@ -168,19 +164,6 @@ export default function Settings() {
       setTypeError(
         apiErrorMessage(err, "Errore durante l'eliminazione del tipo"),
       );
-    }
-  }
-
-  async function handleSaveTemplate() {
-    setSavingTemplate(true);
-    setTemplateSaved(false);
-    try {
-      await api.updateSettings({
-        googleTemplateDocId: templateDocId.trim() || null,
-      });
-      setTemplateSaved(true);
-    } finally {
-      setSavingTemplate(false);
     }
   }
 
@@ -369,39 +352,6 @@ export default function Settings() {
             condiviso con l'account Google collegato. Dopo aver cambiato gli
             scope o le credenziali, disconnetti e ricollega Google.
           </Text>
-        </Stack>
-      </Card>
-
-      <Card withBorder padding="md" radius="md">
-        <Stack gap="sm">
-          <Title order={5}>Template Google Doc (opzionale)</Title>
-          <Text size="sm" c="dimmed">
-            Incolla il link (o l'id) di un Google Doc con i placeholder{" "}
-            <code>{"{{TITOLO}}"}</code>, <code>{"{{SETTIMANA}}"}</code>,{" "}
-            <code>{"{{PARTITE}}"}</code>, <code>{"{{ALLENAMENTI}}"}</code>,{" "}
-            <code>{"{{FORMAZIONI}}"}</code> e <code>{"{{PRESENZE}}"}</code>. Se
-            lasciato vuoto, il documento viene generato automaticamente senza
-            template.
-          </Text>
-          <Group align="flex-end">
-            <TextInput
-              placeholder="https://docs.google.com/document/d/..."
-              value={templateDocId}
-              onChange={(e) => {
-                setTemplateDocId(e.currentTarget.value);
-                setTemplateSaved(false);
-              }}
-              style={{ flex: 1 }}
-            />
-            <Button onClick={handleSaveTemplate} loading={savingTemplate}>
-              Salva
-            </Button>
-          </Group>
-          {templateSaved && (
-            <Text size="sm" c="green">
-              Salvato.
-            </Text>
-          )}
         </Stack>
       </Card>
 

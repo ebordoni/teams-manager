@@ -6,21 +6,13 @@ const router = Router();
 
 const UpdateSchema = z.object({
   teamName: z.string().trim().min(1).max(100).optional(),
-  googleTemplateDocId: z.string().trim().optional().nullable(),
   googleCalendarId: z.string().trim().min(1).optional().nullable(),
 });
-
-/** Accetta sia l'id nudo del documento sia un link completo di Google Docs. */
-function extractDocId(input: string): string {
-  const match = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  return match ? match[1] : input;
-}
 
 // GET /api/settings
 router.get("/", (_req: Request, res: Response) => {
   res.json({
     teamName: getTeamName(),
-    googleTemplateDocId: getSetting(SETTINGS_KEYS.googleTemplateDocId),
     googleCalendarId: getSetting(SETTINGS_KEYS.googleCalendarId) ?? "primary",
   });
 });
@@ -32,15 +24,9 @@ router.put("/", (req: Request, res: Response) => {
     res.status(400).json({ error: parse.error.flatten() });
     return;
   }
-  const { teamName, googleTemplateDocId } = parse.data;
+  const { teamName } = parse.data;
   if (teamName !== undefined) {
     setSetting(SETTINGS_KEYS.teamName, teamName);
-  }
-  if (googleTemplateDocId !== undefined) {
-    const value = googleTemplateDocId?.trim()
-      ? extractDocId(googleTemplateDocId.trim())
-      : null;
-    setSetting(SETTINGS_KEYS.googleTemplateDocId, value);
   }
   if (parse.data.googleCalendarId !== undefined) {
     setSetting(
@@ -50,7 +36,6 @@ router.put("/", (req: Request, res: Response) => {
   }
   res.json({
     teamName: getTeamName(),
-    googleTemplateDocId: getSetting(SETTINGS_KEYS.googleTemplateDocId),
     googleCalendarId: getSetting(SETTINGS_KEYS.googleCalendarId) ?? "primary",
   });
 });

@@ -1,7 +1,7 @@
 # Teams Manager — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.21.3)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
+> Stato attuale: **MVP operativo (v0.21.4)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 ---
@@ -113,11 +113,10 @@ addon/
 
 | ID  | Funzionalità                                                                                                                                                                                                                                                | Stato |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| F07 | **Generazione comunicazione Google Docs** — pulsante "Genera comunicazione", creazione documento (da zero o da template con placeholder), salvataggio su Drive, link condivisibile.                                                                         | DONE  |
+| F07 | **Documento appuntamenti Google Docs** — un unico documento aggiornabile, con link condivisibile stabile e aggiornamento automatico degli eventi.                                                                                                         | DONE  |
 | F08 | **OAuth 2.0 Google** — autenticazione con account Google personale (preferita a Service Account).                                                                                                                                                           | DONE  |
 | F09 | **Messaggio WhatsApp** — generazione testo precompilato + pulsante "Copia messaggio WhatsApp" (nessun invio automatico).                                                                                                                                    | DONE  |
 | F10 | **Storico comunicazioni** — pagina "Comunicazioni": elenco dei documenti generati, apertura e **eliminazione** (rimuove anche il file da Drive).                                                                                                            | DONE  |
-| F16 | **Template Google Doc** — documento personalizzato con placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`, `{{FORMAZIONI}}`, `{{PRESENZE}}`, configurabile dalle Impostazioni. Se non impostato, si usa la generazione automatica. | DONE  |
 | F11 | **Statistiche avanzate** — formazioni, minutaggio, risultati partite, classifiche tornei.                                                                                                                                                                   | TODO  |
 | F12 | **Archivio allenamenti** — temi, esercizi, durata per singola sessione.                                                                                                                                                                                     | TODO  |
 | F17 | **Piani partita** — creazione manuale sul campo virtuale o proposta AI per ciascun tempo, minimizzazione della differenza di minutaggio, rispetto dei ruoli, modifica e conferma.                                                                         | DONE  |
@@ -195,7 +194,7 @@ scope
 token_type
 expiry_date
 
-app_settings          -- coppie chiave/valore (es. google_template_doc_id)
+app_settings          -- coppie chiave/valore per impostazioni e integrazioni Google
 ------------
 key
 value
@@ -261,8 +260,8 @@ GET    /api/communications           -- storico comunicazioni generate
 POST   /api/communications           -- body: { eventIds: number[] } — genera il Google Doc
 DELETE /api/communications/:id       -- elimina il file da Drive e dallo storico
 
-GET    /api/settings                 -- { googleTemplateDocId }
-PUT    /api/settings                 -- body: { googleTemplateDocId } (accetta anche URL completo)
+GET    /api/settings                 -- impostazioni squadra e Google Calendar
+PUT    /api/settings                 -- aggiornamento impostazioni squadra e Google Calendar
 ```
 
 ---
@@ -328,7 +327,7 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 
 - ✅ OAuth 2.0 (`services/google/auth.ts`, token persistiti in `google_tokens`)
 - ✅ Google Drive API (`services/google/drive.ts`: cartella "Teams Manager/Comunicazioni", condivisione, copia/eliminazione file)
-- ✅ Google Docs API (`services/google/docs.ts`: creazione documento con contenuto formattato o da template + `batchUpdate` sui placeholder)
+- ✅ Google Docs API (`services/google/docs.ts`: creazione e aggiornamento del documento appuntamenti formattato)
 - ✅ pulsante "Genera comunicazione" (Calendario) + messaggio WhatsApp precompilato
 - ✅ pagina "Comunicazioni": storico, apertura documento, eliminazione (F10)
 - ✅ collegamento OAuth testato con successo sull'istanza reale dell'utente
@@ -337,7 +336,6 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 
 - ✅ Migrazione UI a Mantine 9 (React 19): AppShell, form, tabelle, notifiche
 - ✅ Tipi di evento configurabili dalle Impostazioni (F15), con flag "ha avversario"
-- ✅ Generazione documento basata su template Google Doc opzionale (F16), con fallback automatico
 
 ## Fase 7 — Estensioni future
 

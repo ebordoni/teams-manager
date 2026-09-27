@@ -9,11 +9,10 @@ import type {
   FormationRow,
 } from "../types";
 import { GoogleAuthRequiredError, withGoogleAuth } from "./google/auth";
-import { createStyledDocument, replacePlaceholders } from "./google/docs";
+import { createStyledDocument, replaceStyledDocument } from "./google/docs";
 import { documentStyles } from "./google/document-styles";
 import { DocumentBuilder } from "./google/DocumentBuilder";
 import {
-  copyFile,
   deleteFile,
   ensureCommunicationsFolder,
   makeShareableAndGetLink,
@@ -140,54 +139,6 @@ function eventIcon(icon?: string): string {
   return icon?.startsWith("Icon") ? "⚽" : (icon ?? "⚽");
 }
 
-function formatEvent(
-  event: Event,
-  eventTypes: Map<string, EventTypeDef>,
-  teamName: string,
-): string {
-  const typeDef = eventTypes.get(event.type);
-  const lines: string[] = [];
-  const header = `${formatDateIt(event.date)} — ${(typeDef?.label ?? event.type).toUpperCase()}`;
-  lines.push(header);
-
-  if (event.status !== "scheduled") {
-    lines.push(
-      `⚠️ ${event.status === "cancelled" ? "ANNULLATO" : "MODIFICATO"}${
-        event.notes ? `: ${event.notes}` : ""
-      }`,
-    );
-  }
-
-  if (typeDef?.hasOpponent && event.opponent) {
-    lines.push(`⚽ ${teamName} – ${event.opponent}`);
-  }
-  if (event.location) lines.push(`📍 ${event.location}`);
-  if (event.meetingTime) lines.push(`⏰ Ritrovo: ${event.meetingTime}`);
-  if (event.startTime) {
-    lines.push(
-      `⏰ Inizio: ${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}`,
-    );
-  }
-  if (event.notes && event.status === "scheduled") lines.push(event.notes);
-
-  if (typeDef?.hasOpponent) {
-    const teamPlayers = getTeamPlayerNames();
-    if (teamPlayers.length > 0) {
-      lines.push("");
-      lines.push("CONVOCATI");
-      for (const name of teamPlayers) lines.push(`- ${name}`);
-    }
-  }
-
-  const formation = getFormationLines(event);
-  if (formation.length > 0) lines.push("", ...formation);
-  const attendance = getAttendanceLines(event.id);
-  if (attendance.length > 0)
-    lines.push("", "PRESENZE REGISTRATE", ...attendance);
-
-  return lines.join("\n");
-}
-
 /** Costruisce il documento automatico con una gerarchia leggibile su mobile. */
 function buildStyledDocument(
   events: Event[],
@@ -195,78 +146,91 @@ function buildStyledDocument(
 ): { title: string; builder: DocumentBuilder } {
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
   const teamName = getTeamName();
-  const title = `${teamName} – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
+  const today = todayIso();
+  const title = `${teamName} – Appuntamenti`;
   const builder = new DocumentBuilder()
     .addParagraph(teamName.toLocaleUpperCase("it-IT"), documentStyles.title)
     .addParagraph(
-      `Appuntamenti dal ${formatDateIt(sorted[0].date)}`,
+      "Appuntamenti di squadra",
       documentStyles.subtitle,
     );
 
   for (const event of sorted) {
     const typeDef = eventTypes.get(event.type);
     const eventLabel = (typeDef?.label ?? event.type).toUpperCase();
+    const style = <T extends { textStyle?: object }>(base: T): T =>
+      event.date < today
+        ? {
+            ...base,
+            textStyle: {
+              ...base.textStyle,
+              foregroundColor: {
+                color: { rgbColor: { red: 0.48, green: 0.48, blue: 0.48 } },
+              },
+            },
+          }
+        : base;
 
     builder
-      .addParagraph(formatDateIt(event.date), documentStyles.date)
+      .addParagraph(formatDateIt(event.date), style(documentStyles.date))
       .addParagraph(
         `${eventIcon(typeDef?.icon)} ${eventLabel}`,
-        documentStyles.event,
+        style(documentStyles.event),
       );
 
     if (event.status !== "scheduled") {
       const status = event.status === "cancelled" ? "ANNULLATO" : "MODIFICATO";
       builder.addParagraph(
         `⚠️ ${status}${event.notes ? `: ${event.notes}` : ""}`,
-        documentStyles.note,
+        style(documentStyles.note),
       );
     }
 
     if (typeDef?.hasOpponent && event.opponent) {
       builder.addParagraph(
         `${teamName} – ${event.opponent}`,
-        documentStyles.match,
+        style(documentStyles.match),
       );
     }
     if (event.location)
-      builder.addParagraph(`📍 ${event.location}`, documentStyles.normal);
+      builder.addParagraph(`📍 ${event.location}`, style(documentStyles.normal));
     if (event.meetingTime)
       builder.addParagraph(
         `⏰ Ritrovo: ${event.meetingTime}`,
-        documentStyles.normal,
+        style(documentStyles.normal),
       );
     if (event.startTime) {
       builder.addParagraph(
         `⏰ Inizio: ${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}`,
-        documentStyles.normal,
+        style(documentStyles.normal),
       );
     }
     if (event.notes && event.status === "scheduled") {
-      builder.addParagraph(event.notes, documentStyles.note);
+      builder.addParagraph(event.notes, style(documentStyles.note));
     }
 
     if (typeDef?.hasOpponent) {
       const teamPlayers = getTeamPlayerNames();
       if (teamPlayers.length > 0) {
         builder
-          .addParagraph("Convocati", documentStyles.match)
-          .addParagraph(teamPlayers.join(" · "), documentStyles.normal);
+          .addParagraph("Convocati", style(documentStyles.match))
+          .addParagraph(teamPlayers.join(" · "), style(documentStyles.normal));
       }
     }
 
     const formation = getFormationLines(event);
     if (formation.length > 0) {
-      builder.addParagraph(formation[0], documentStyles.match);
+      builder.addParagraph(formation[0], style(documentStyles.match));
       builder.addParagraph(
         formation.slice(1).join(" · "),
-        documentStyles.normal,
+        style(documentStyles.normal),
       );
     }
     const attendance = getAttendanceLines(event.id);
     if (attendance.length > 0) {
       builder
-        .addParagraph("Presenze registrate", documentStyles.match)
-        .addParagraph(attendance.join(" · "), documentStyles.normal);
+        .addParagraph("Presenze registrate", style(documentStyles.match))
+        .addParagraph(attendance.join(" · "), style(documentStyles.normal));
     }
 
     builder.addEmptyLine();
@@ -275,58 +239,22 @@ function buildStyledDocument(
   return { title, builder };
 }
 
-/** Costruisce i placeholder `{{CHIAVE}}` usati dal template Google Docs. */
-function buildTemplatePlaceholders(
-  events: Event[],
-  eventTypes: Map<string, EventTypeDef>,
-): { title: string; replacements: Record<string, string> } {
-  const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
-  const teamName = getTeamName();
-  const title = `${teamName} – Appuntamenti dal ${formatDateIt(sorted[0].date)}`;
-
-  const matches = sorted.filter((e) => eventTypes.get(e.type)?.hasOpponent);
-  const trainings = sorted.filter((e) => !eventTypes.get(e.type)?.hasOpponent);
-
-  const partite = matches.length
-    ? matches.map((e) => formatEvent(e, eventTypes, teamName)).join("\n\n---\n\n")
-    : "Nessuna partita/torneo in programma.";
-  const allenamenti = trainings.length
-    ? trainings.map((e) => formatEvent(e, eventTypes, teamName)).join("\n\n---\n\n")
-    : "Nessun allenamento in programma.";
-  const formazione =
-    matches
-      .map((event) => getFormationLines(event).join("\n"))
-      .filter(Boolean)
-      .join("\n\n") || "Nessuna formazione associata.";
-  const presenze =
-    sorted
-      .map((event) => getAttendanceLines(event.id).join("\n"))
-      .filter(Boolean)
-      .join("\n\n") || "Nessuna presenza registrata.";
-
-  return {
-    title,
-    replacements: {
-      TITOLO: title,
-      SETTIMANA: formatDateIt(sorted[0].date),
-      PARTITE: partite,
-      ALLENAMENTI: allenamenti,
-      FORMAZIONI: formazione,
-      PRESENZE: presenze,
-    },
-  };
+function todayIso(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Rome",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = (type: string) => parts.find((part) => part.type === type)?.value;
+  return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
-function buildWhatsappMessage(url: string): string {
-  return `Ciao a tutti, vi condividiamo gli appuntamenti della prossima settimana ⚽\n\n👉 ${url}\n\nGrazie!`;
-}
-
-export interface GeneratedCommunication {
-  id: number;
+export interface LiveCommunication {
   title: string;
   googleDocId: string;
   googleDocUrl: string;
-  whatsappMessage: string;
+  updatedAt: string;
 }
 
 /** La richiesta non è valida: nessun evento selezionato o id inesistenti. */
@@ -356,66 +284,127 @@ function isGoogleNotFoundError(error: unknown): boolean {
   return candidate.code === 404 || candidate.response?.status === 404;
 }
 
-/** Genera un Google Doc con gli appuntamenti selezionati e lo salva su Drive. */
-export async function generateCommunication(
-  eventIds: number[],
-): Promise<GeneratedCommunication> {
-  if (eventIds.length === 0) {
-    throw new CommunicationRequestError("Seleziona almeno un evento");
-  }
-
+function loadLiveEvents(): Event[] {
   const db = getDb();
-  const placeholders = eventIds.map(() => "?").join(",");
-  const rows = db
-    .prepare(`SELECT * FROM events WHERE id IN (${placeholders})`)
-    .all(...eventIds) as unknown as EventRow[];
-  if (rows.length === 0) {
-    throw new CommunicationRequestError(
-      "Nessun evento trovato per gli id forniti",
-    );
-  }
-  const events = rows.map(rowToEvent);
+  const today = todayIso();
+  const recentPast = db
+    .prepare(
+      "SELECT * FROM events WHERE date < ? ORDER BY date DESC, start_time DESC LIMIT 2",
+    )
+    .all(today) as unknown as EventRow[];
+  const currentAndFuture = db
+    .prepare(
+      "SELECT * FROM events WHERE date >= ? ORDER BY date ASC, start_time ASC",
+    )
+    .all(today) as unknown as EventRow[];
+  return [...recentPast.reverse(), ...currentAndFuture].map(rowToEvent);
+}
+
+function savedLiveCommunication(): LiveCommunication | null {
+  const googleDocId = getSetting(SETTINGS_KEYS.googleLiveDocId);
+  const googleDocUrl = getSetting(SETTINGS_KEYS.googleLiveDocUrl);
+  if (!googleDocId || !googleDocUrl) return null;
+  return {
+    title: getSetting(SETTINGS_KEYS.googleLiveDocTitle) ?? `${getTeamName()} – Appuntamenti`,
+    googleDocId,
+    googleDocUrl,
+    updatedAt: getSetting(SETTINGS_KEYS.googleLiveDocUpdatedAt) ?? "",
+  };
+}
+
+/** Restituisce il documento unico, se è già stato creato o adottato. */
+export function getLiveCommunication(): LiveCommunication | null {
+  return savedLiveCommunication();
+}
+
+/**
+ * Crea una sola volta, quindi aggiorna sempre lo stesso Google Doc. Il body è
+ * completamente rigenerato: conserva solo i due appuntamenti passati più
+ * recenti (in grigio), l'evento odierno e quelli futuri.
+ */
+export async function refreshLiveCommunication(): Promise<LiveCommunication> {
+  const db = getDb();
+  const events = loadLiveEvents();
   const eventTypes = loadEventTypes();
-  const templateDocId = getSetting(SETTINGS_KEYS.googleTemplateDocId);
+  const built = buildStyledDocument(events, eventTypes);
+  let existing = savedLiveCommunication();
 
-  const { documentId, title, url } = await withGoogleAuth(async (auth) => {
-    let documentId: string;
-    let title: string;
-
-    if (templateDocId) {
-      const built = buildTemplatePlaceholders(events, eventTypes);
-      title = built.title;
-      documentId = await copyFile(auth, templateDocId, title);
-      await replacePlaceholders(auth, documentId, built.replacements);
-    } else {
-      const built = buildStyledDocument(events, eventTypes);
-      title = built.title;
-      documentId = await createStyledDocument(auth, title, built.builder);
+  // Al primo aggiornamento riutilizziamo l'ultimo documento già generato,
+  // così le installazioni esistenti mantengono il link già condiviso.
+  if (!existing) {
+    const latest = db
+      .prepare("SELECT * FROM communications ORDER BY created_at DESC LIMIT 1")
+      .get() as CommunicationRow | undefined;
+    if (latest) {
+      existing = {
+        title: latest.title,
+        googleDocId: latest.google_doc_id,
+        googleDocUrl: latest.google_doc_url,
+        updatedAt: latest.created_at,
+      };
     }
+  }
 
-    const folderId = await ensureCommunicationsFolder(auth);
-    await moveFileToFolder(auth, documentId, folderId);
+  const live = await withGoogleAuth(async (auth) => {
+    let documentId = existing?.googleDocId;
+    if (documentId) {
+      try {
+        await replaceStyledDocument(auth, documentId, built.builder);
+      } catch (error) {
+        if (!isGoogleNotFoundError(error)) throw error;
+        documentId = undefined;
+      }
+    }
+    if (!documentId) {
+      documentId = await createStyledDocument(auth, built.title, built.builder);
+      const folderId = await ensureCommunicationsFolder(auth);
+      await moveFileToFolder(auth, documentId, folderId);
+    }
     return {
-      documentId,
-      title,
-      url: await makeShareableAndGetLink(auth, documentId),
+      title: built.title,
+      googleDocId: documentId,
+      googleDocUrl: await makeShareableAndGetLink(auth, documentId),
+      updatedAt: new Date().toISOString(),
     };
   });
 
-  const result = db
-    .prepare(
-      `INSERT INTO communications (event_ids, title, google_doc_id, google_doc_url)
-       VALUES (?, ?, ?, ?)`,
-    )
-    .run(JSON.stringify(eventIds), title, documentId, url);
+  setLiveCommunication(live);
+  return live;
+}
 
-  return {
-    id: Number(result.lastInsertRowid),
-    title,
-    googleDocId: documentId,
-    googleDocUrl: url,
-    whatsappMessage: buildWhatsappMessage(url),
-  };
+function setLiveCommunication(live: LiveCommunication): void {
+  const db = getDb();
+  db.exec("BEGIN");
+  try {
+    db.prepare(
+      `INSERT INTO app_settings (key, value) VALUES (?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    ).run(SETTINGS_KEYS.googleLiveDocId, live.googleDocId);
+    db.prepare(
+      `INSERT INTO app_settings (key, value) VALUES (?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    ).run(SETTINGS_KEYS.googleLiveDocUrl, live.googleDocUrl);
+    db.prepare(
+      `INSERT INTO app_settings (key, value) VALUES (?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    ).run(SETTINGS_KEYS.googleLiveDocTitle, live.title);
+    db.prepare(
+      `INSERT INTO app_settings (key, value) VALUES (?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    ).run(SETTINGS_KEYS.googleLiveDocUpdatedAt, live.updatedAt);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
+/** Retrocompatibilità: le vecchie chiamate ora aggiornano il documento unico. */
+export async function generateCommunication(eventIds: number[]): Promise<LiveCommunication> {
+  if (eventIds.length === 0) {
+    throw new CommunicationRequestError("Seleziona almeno un evento");
+  }
+  return refreshLiveCommunication();
 }
 
 export function listCommunications(): CommunicationRow[] {

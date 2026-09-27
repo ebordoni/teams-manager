@@ -25,8 +25,8 @@ import EventCreationModal from "../components/EventCreationModal";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import type {
   EventTypeDef,
-  GeneratedCommunication,
   GoogleStatus,
+  LiveCommunication,
   TeamEvent,
 } from "../types";
 import { formatDisplayDate } from "../utils/date";
@@ -78,7 +78,7 @@ export default function Calendar() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [generated, setGenerated] = useState<GeneratedCommunication | null>(
+  const [generated, setGenerated] = useState<LiveCommunication | null>(
     null,
   );
   const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
@@ -155,9 +155,8 @@ export default function Calendar() {
     setNeedsGoogleAuth(false);
     setGenerating(true);
     try {
-      const res = await api.generateCommunication(Array.from(selectedIds));
+      const res = await api.refreshLiveCommunication();
       setGenerated(res.data);
-      setSelectedIds(new Set());
     } catch (err) {
       reportApiError(err, "Errore durante la generazione della comunicazione");
     } finally {
@@ -180,15 +179,6 @@ export default function Calendar() {
     } finally {
       setExporting(false);
     }
-  }
-
-  async function handleCopyWhatsapp() {
-    if (!generated) return;
-    await navigator.clipboard.writeText(generated.whatsappMessage);
-    notifications.show({
-      message: "Messaggio copiato negli appunti",
-      color: "green",
-    });
   }
 
   async function handleDelete(event: TeamEvent) {
@@ -407,6 +397,13 @@ export default function Calendar() {
               { label: "Elenco", value: "list" },
             ]}
           />
+          <Button
+            variant="light"
+            onClick={handleGenerateCommunication}
+            loading={generating}
+          >
+            📄 Aggiorna Google Doc
+          </Button>
           <Button onClick={handleOpenForm}>+ Nuovo evento</Button>
         </Group>
       </Group>
@@ -424,12 +421,6 @@ export default function Calendar() {
           <Group justify="space-between" wrap="wrap">
             <Text size="sm">{selectedIds.size} evento/i selezionato/i</Text>
             <Group gap="xs" wrap="wrap">
-              <Button
-                onClick={handleGenerateCommunication}
-                loading={generating}
-              >
-                📄 Genera comunicazione
-              </Button>
               <Button
                 variant="light"
                 onClick={handleExportCalendar}
@@ -461,7 +452,7 @@ export default function Calendar() {
       {generated && (
         <Card withBorder padding="md" radius="md">
           <Stack gap="xs">
-            <Text fw={600}>✅ Comunicazione generata</Text>
+            <Text fw={600}>✅ Documento aggiornato</Text>
             <Text
               component="a"
               href={generated.googleDocUrl}
@@ -471,13 +462,6 @@ export default function Calendar() {
             >
               🔗 Apri documento
             </Text>
-            <Button
-              variant="subtle"
-              onClick={handleCopyWhatsapp}
-              style={{ alignSelf: "flex-start" }}
-            >
-              📋 Copia messaggio WhatsApp
-            </Button>
           </Stack>
         </Card>
       )}

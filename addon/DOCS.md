@@ -56,21 +56,13 @@ configurato o non risponde, viene usato automaticamente il motore locale.
 
 ### Comunicazioni
 
-Dalla pagina Calendario, seleziona uno o più eventi e premi "Genera comunicazione": l'app crea un
-Google Document con gli appuntamenti (nella cartella Drive "Teams Manager/Comunicazioni"), fornisce
-il link al documento e un messaggio WhatsApp pronto da incollare nel gruppo genitori. Se hai
-configurato un **template** (vedi sotto), il documento viene generato a partire da quello.
+La pagina **Comunicazioni** crea un unico Google Document nella cartella Drive
+"Teams Manager/Comunicazioni". Lo stesso link viene aggiornato dopo ogni modifica agli eventi e
+ogni giorno alle 03:05; puoi anche forzare l'aggiornamento con il pulsante dedicato. Nel documento
+restano gli appuntamenti da oggi in avanti e i due passati più recenti, attenuati in grigio.
 
-La pagina **Comunicazioni** mostra lo storico dei documenti generati: da lì puoi aprirli o
-eliminarli (l'eliminazione rimuove anche il file da Google Drive).
-
-### Template Google Doc (opzionale)
-
-Nelle Impostazioni puoi collegare un Google Doc personale da usare come template: crealo su Google
-Docs con i placeholder `{{TITOLO}}`, `{{SETTIMANA}}`, `{{PARTITE}}`, `{{ALLENAMENTI}}`,
-`{{FORMAZIONI}}` e `{{PRESENZE}}` dove
-vuoi che compaiano i rispettivi contenuti, poi incolla il link del documento nel campo dedicato.
-Se il campo è vuoto, il documento viene generato automaticamente senza template.
+I documenti creati in precedenza restano disponibili nell'archivio e possono essere aperti o
+eliminati (l'eliminazione rimuove anche il file da Google Drive).
 
 ## Configurazione
 
