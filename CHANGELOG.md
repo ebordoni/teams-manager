@@ -7,6 +7,20 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.5] — 2026-09-28
+
+### Aggiunto
+
+- Flag nelle Impostazioni per mostrare o nascondere le convocazioni delle partite nel documento Google e nella dashboard.
+
+### Modificato
+
+- Il documento Google non mostra più le presenze dei giocatori.
+
+### Rimosso
+
+- Dipendenza frontend Zustand, non utilizzata.
+
 ## [0.21.4] — 2026-09-27
 
 ### Aggiunto

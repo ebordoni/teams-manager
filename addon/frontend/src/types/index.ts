@@ -59,6 +59,7 @@ export interface GoogleStatus {
 export interface AppSettings {
   teamName: string;
   googleCalendarId: string;
+  matchCallupsEnabled: boolean;
 }
 
 export interface Communication {

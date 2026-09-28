@@ -1,12 +1,14 @@
 import { Request, Response, Router } from "express";
 import { z } from "zod";
-import { getSetting, getTeamName, setSetting, SETTINGS_KEYS } from "../services/settings.service";
+import { areMatchCallupsEnabled, getSetting, getTeamName, setSetting, SETTINGS_KEYS } from "../services/settings.service";
+import { queueLiveCommunicationRefresh } from "../services/live-communication-scheduler.service";
 
 const router = Router();
 
 const UpdateSchema = z.object({
   teamName: z.string().trim().min(1).max(100).optional(),
   googleCalendarId: z.string().trim().min(1).optional().nullable(),
+  matchCallupsEnabled: z.boolean().optional(),
 });
 
 // GET /api/settings
@@ -14,6 +16,7 @@ router.get("/", (_req: Request, res: Response) => {
   res.json({
     teamName: getTeamName(),
     googleCalendarId: getSetting(SETTINGS_KEYS.googleCalendarId) ?? "primary",
+    matchCallupsEnabled: areMatchCallupsEnabled(),
   });
 });
 
@@ -34,9 +37,17 @@ router.put("/", (req: Request, res: Response) => {
       parse.data.googleCalendarId?.trim() || "primary",
     );
   }
+  if (parse.data.matchCallupsEnabled !== undefined) {
+    setSetting(
+      SETTINGS_KEYS.matchCallupsEnabled,
+      parse.data.matchCallupsEnabled ? "true" : "false",
+    );
+    queueLiveCommunicationRefresh();
+  }
   res.json({
     teamName: getTeamName(),
     googleCalendarId: getSetting(SETTINGS_KEYS.googleCalendarId) ?? "primary",
+    matchCallupsEnabled: areMatchCallupsEnabled(),
   });
 });
 

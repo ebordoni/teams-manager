@@ -18,7 +18,7 @@ import {
   makeShareableAndGetLink,
   moveFileToFolder,
 } from "./google/drive";
-import { getSetting, getTeamName, SETTINGS_KEYS } from "./settings.service";
+import { areMatchCallupsEnabled, getSetting, getTeamName, SETTINGS_KEYS } from "./settings.service";
 
 const FORMATION_SLOTS: Array<[string, string]> = [
   ["portiere", "Portiere"],
@@ -110,31 +110,6 @@ function getFormationLines(event: Event): string[] {
     : [];
 }
 
-function getAttendanceLines(eventId: number): string[] {
-  const rows = getDb()
-    .prepare(
-      `SELECT p.name AS name, a.status AS status
-     FROM attendance a JOIN players p ON p.id = a.player_id
-     WHERE a.event_id = ? ORDER BY p.name ASC`,
-    )
-    .all(eventId) as Array<{
-    name: string;
-    status: "present" | "absent" | "excused";
-  }>;
-  if (rows.length === 0) return [];
-  const labels = {
-    present: "Presenti",
-    absent: "Assenti",
-    excused: "Giustificati",
-  };
-  return (["present", "absent", "excused"] as const).flatMap((status) => {
-    const names = rows
-      .filter((row) => row.status === status)
-      .map((row) => row.name);
-    return names.length ? [`${labels[status]}: ${names.join(", ")}`] : [];
-  });
-}
-
 function eventIcon(icon?: string): string {
   return icon?.startsWith("Icon") ? "⚽" : (icon ?? "⚽");
 }
@@ -209,7 +184,7 @@ function buildStyledDocument(
       builder.addParagraph(event.notes, style(documentStyles.note));
     }
 
-    if (typeDef?.hasOpponent) {
+    if (typeDef?.hasOpponent && areMatchCallupsEnabled()) {
       const teamPlayers = getTeamPlayerNames();
       if (teamPlayers.length > 0) {
         builder
@@ -226,13 +201,6 @@ function buildStyledDocument(
         style(documentStyles.normal),
       );
     }
-    const attendance = getAttendanceLines(event.id);
-    if (attendance.length > 0) {
-      builder
-        .addParagraph("Presenze registrate", style(documentStyles.match))
-        .addParagraph(attendance.join(" · "), style(documentStyles.normal));
-    }
-
     builder.addEmptyLine();
   }
 

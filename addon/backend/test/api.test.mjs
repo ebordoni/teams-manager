@@ -89,6 +89,7 @@ test("team name is configurable and retained in settings", async () => {
   const initial = await request("/api/settings");
   assert.equal(initial.response.status, 200);
   assert.equal(initial.body.teamName, "GIPS Salizzole");
+  assert.equal(initial.body.matchCallupsEnabled, true);
 
   const updated = await request("/api/settings", {
     method: "PUT",
@@ -96,6 +97,13 @@ test("team name is configurable and retained in settings", async () => {
   });
   assert.equal(updated.response.status, 200);
   assert.equal(updated.body.teamName, "Squadra test");
+
+  const callups = await request("/api/settings", {
+    method: "PUT",
+    body: JSON.stringify({ matchCallupsEnabled: false }),
+  });
+  assert.equal(callups.response.status, 200);
+  assert.equal(callups.body.matchCallupsEnabled, false);
 });
 
 test("player and event workflow is available through the API", async () => {

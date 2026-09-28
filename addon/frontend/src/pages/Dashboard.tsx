@@ -23,7 +23,6 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
-import { formatDisplayDate } from "../utils/date";
 import type {
   Attendance,
   Communication,
@@ -32,6 +31,7 @@ import type {
   TeamEvent,
   TeamSummary,
 } from "../types";
+import { formatDisplayDate } from "../utils/date";
 
 type EventChecklist = { attendance: Attendance[] };
 
@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [checklist, setChecklist] = useState<EventChecklist | null>(null);
   const [summary, setSummary] = useState<TeamSummary | null>(null);
+  const [matchCallupsEnabled, setMatchCallupsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,20 +52,28 @@ export default function Dashboard() {
       setError(null);
       try {
         const today = new Date().toISOString().slice(0, 10);
-        const [playersRes, eventsRes, typesRes, communicationsRes, summaryRes] =
-          await Promise.all([
-            api.getPlayers(),
-            api.getEvents({ from: today }),
-            api.getEventTypes(),
-            api.getCommunications(),
-            api.getTeamSummary(),
-          ]);
+        const [
+          playersRes,
+          eventsRes,
+          typesRes,
+          communicationsRes,
+          summaryRes,
+          settingsRes,
+        ] = await Promise.all([
+          api.getPlayers(),
+          api.getEvents({ from: today }),
+          api.getEventTypes(),
+          api.getCommunications(),
+          api.getTeamSummary(),
+          api.getSettings(),
+        ]);
         const events = eventsRes.data.slice(0, 5);
         setPlayers(playersRes.data);
         setUpcomingEvents(events);
         setEventTypes(typesRes.data);
         setCommunications(communicationsRes.data);
         setSummary(summaryRes.data);
+        setMatchCallupsEnabled(settingsRes.data.matchCallupsEnabled);
         if (events[0]) {
           const attendanceRes = await api.getAttendance(events[0].id);
           setChecklist({ attendance: attendanceRes.data });
@@ -84,7 +93,8 @@ export default function Dashboard() {
   const nextEvent = upcomingEvents[0];
   const typeOf = (key: string) => eventTypes.find((type) => type.key === key);
   const presentCount =
-    checklist?.attendance.filter((record) => record.status === "present").length ?? 0;
+    checklist?.attendance.filter((record) => record.status === "present")
+      .length ?? 0;
   const hasCommunication = nextEvent
     ? communications.some((communication) =>
         communication.eventIds.includes(nextEvent.id),
@@ -104,6 +114,7 @@ export default function Dashboard() {
           {error}
         </Alert>
       )}
+
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
         <Card withBorder padding="md">
           <Group justify="space-between">
@@ -135,21 +146,23 @@ export default function Dashboard() {
             </ThemeIcon>
           </Group>
         </Card>
-        <Card withBorder padding="md">
-          <Group justify="space-between">
-            <div>
-              <Text size="sm" c="dimmed">
-                Rosa coinvolta
-              </Text>
-              <Text size="xl" fw={700}>
-                {nextEvent ? `${players.length}/${players.length}` : "—"}
-              </Text>
-            </div>
-            <ThemeIcon variant="light" color="orange" size="lg">
-              <IconUsersGroup />
-            </ThemeIcon>
-          </Group>
-        </Card>
+        {matchCallupsEnabled && (
+          <Card withBorder padding="md">
+            <Group justify="space-between">
+              <div>
+                <Text size="sm" c="dimmed">
+                  Rosa coinvolta
+                </Text>
+                <Text size="xl" fw={700}>
+                  {nextEvent ? `${players.length}/${players.length}` : "—"}
+                </Text>
+              </div>
+              <ThemeIcon variant="light" color="orange" size="lg">
+                <IconUsersGroup />
+              </ThemeIcon>
+            </Group>
+          </Card>
+        )}
         <Card withBorder padding="md">
           <Group justify="space-between">
             <div>
@@ -168,8 +181,48 @@ export default function Dashboard() {
       </SimpleGrid>
 
       <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Partite disputate</Text><Text size="xl" fw={700}>{summary?.results.played ?? 0}</Text><Text size="sm" c="dimmed">{summary ? `${summary.results.wins} V · ${summary.results.draws} N · ${summary.results.losses} P · ${summary.results.goalsFor}-${summary.results.goalsAgainst}` : "—"}</Text></div><ThemeIcon variant="light" color="yellow" size="lg"><IconTrophy /></ThemeIcon></Group></Card>
-        <Card withBorder padding="md"><Group justify="space-between"><div><Text size="sm" c="dimmed">Presenze confermate</Text><Text size="xl" fw={700}>{summary?.attendance.total ? `${Math.round((summary.attendance.present / summary.attendance.total) * 100)}%` : "—"}</Text><Text size="sm" c="dimmed">{summary ? `${summary.attendance.present}/${summary.attendance.total} registrazioni` : "Nessun registro chiuso"}</Text></div><ThemeIcon variant="light" color="violet" size="lg"><IconClipboardCheck /></ThemeIcon></Group></Card>
+        <Card withBorder padding="md">
+          <Group justify="space-between">
+            <div>
+              <Text size="sm" c="dimmed">
+                Partite disputate
+              </Text>
+              <Text size="xl" fw={700}>
+                {summary?.results.played ?? 0}
+              </Text>
+              <Text size="sm" c="dimmed">
+                {summary
+                  ? `${summary.results.wins} V · ${summary.results.draws} N · ${summary.results.losses} P · ${summary.results.goalsFor}-${summary.results.goalsAgainst}`
+                  : "—"}
+              </Text>
+            </div>
+            <ThemeIcon variant="light" color="yellow" size="lg">
+              <IconTrophy />
+            </ThemeIcon>
+          </Group>
+        </Card>
+        <Card withBorder padding="md">
+          <Group justify="space-between">
+            <div>
+              <Text size="sm" c="dimmed">
+                Presenze confermate
+              </Text>
+              <Text size="xl" fw={700}>
+                {summary?.attendance.total
+                  ? `${Math.round((summary.attendance.present / summary.attendance.total) * 100)}%`
+                  : "—"}
+              </Text>
+              <Text size="sm" c="dimmed">
+                {summary
+                  ? `${summary.attendance.present}/${summary.attendance.total} registrazioni`
+                  : "Nessun registro chiuso"}
+              </Text>
+            </div>
+            <ThemeIcon variant="light" color="violet" size="lg">
+              <IconClipboardCheck />
+            </ThemeIcon>
+          </Group>
+        </Card>
       </SimpleGrid>
 
       <Card withBorder padding="lg">
@@ -204,7 +257,42 @@ export default function Dashboard() {
         </Group>
       </Card>
 
-      {summary && summary.recentResults.length > 0 && <Card withBorder padding="lg"><Group justify="space-between" mb="sm"><Title order={4}>Ultimi risultati</Title><Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Apri calendario</Button></Group><Stack gap="xs">{summary.recentResults.map((match) => <Group key={match.eventId} justify="space-between"><Text>{formatDisplayDate(match.date)}{match.opponent ? ` · vs ${match.opponent}` : ""}</Text><Badge color={match.teamScore > match.opponentScore ? "green" : match.teamScore < match.opponentScore ? "red" : "gray"}>{match.teamScore}–{match.opponentScore}</Badge></Group>)}</Stack></Card>}
+      {summary && summary.recentResults.length > 0 && (
+        <Card withBorder padding="lg">
+          <Group justify="space-between" mb="sm">
+            <Title order={4}>Ultimi risultati</Title>
+            <Button
+              component={Link}
+              to="/calendar"
+              variant="subtle"
+              size="compact-sm"
+            >
+              Apri calendario
+            </Button>
+          </Group>
+          <Stack gap="xs">
+            {summary.recentResults.map((match) => (
+              <Group key={match.eventId} justify="space-between">
+                <Text>
+                  {formatDisplayDate(match.date)}
+                  {match.opponent ? ` · vs ${match.opponent}` : ""}
+                </Text>
+                <Badge
+                  color={
+                    match.teamScore > match.opponentScore
+                      ? "green"
+                      : match.teamScore < match.opponentScore
+                        ? "red"
+                        : "gray"
+                  }
+                >
+                  {match.teamScore}–{match.opponentScore}
+                </Badge>
+              </Group>
+            ))}
+          </Stack>
+        </Card>
+      )}
 
       {nextEvent && (
         <Alert
@@ -212,8 +300,10 @@ export default function Dashboard() {
           title="Preparazione prossimo appuntamento"
         >
           {!hasCommunication
+            ? matchCallupsEnabled
               ? "La rosa è inclusa automaticamente: genera ora la comunicazione per i genitori dal calendario."
-              : "La comunicazione per il prossimo evento è già stata generata."}
+              : "Genera ora la comunicazione per i genitori dal calendario."
+            : "La comunicazione per il prossimo evento è già stata generata."}
           <Button
             component={Link}
             to={`/events/${nextEvent.id}`}

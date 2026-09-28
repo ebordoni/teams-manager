@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.21.5] — 2026-09-28
+
+### Added
+
+- Settings flag to show or hide match call-ups in the Google document and dashboard.
+
+### Changed
+
+- The Google document no longer displays player attendance.
+
+### Removed
+
+- Unused Zustand frontend dependency.
+
 ## [0.21.4] — 2026-09-27
 
 ### Added

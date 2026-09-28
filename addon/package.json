@@ -1,6 +1,6 @@
 {
   "name": "teams-manager",
-  "version": "0.21.4",
+  "version": "0.21.5",
   "private": true,
   "scripts": {
     "check": "npm run verify:version && npm test --prefix addon/backend && npm run build --prefix addon/frontend",

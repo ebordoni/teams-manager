@@ -24,6 +24,7 @@ export const SETTINGS_KEYS = {
   googleLiveDocTitle: "google_live_doc_title",
   googleLiveDocUpdatedAt: "google_live_doc_updated_at",
   googleCalendarId: "google_calendar_id",
+  matchCallupsEnabled: "match_callups_enabled",
   // Valore temporaneo per proteggere il redirect OAuth da callback forgiati.
   // Non viene mai esposto dall'endpoint delle impostazioni.
   googleOAuthState: "google_oauth_state",
@@ -40,4 +41,9 @@ export const SETTINGS_KEYS = {
 /** Nome mostrato in comunicazioni e pagine di partita; mantiene retrocompatibilità con le comunicazioni esistenti. */
 export function getTeamName(): string {
   return getSetting(SETTINGS_KEYS.teamName)?.trim() || "GIPS Salizzole";
+}
+
+/** Le convocazioni restano attive per le installazioni già esistenti. */
+export function areMatchCallupsEnabled(): boolean {
+  return getSetting(SETTINGS_KEYS.matchCallupsEnabled) !== "false";
 }

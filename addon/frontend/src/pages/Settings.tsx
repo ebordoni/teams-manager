@@ -59,6 +59,8 @@ export default function Settings() {
   const [savingCalendar, setSavingCalendar] = useState(false);
   const [testingCalendar, setTestingCalendar] = useState(false);
   const [calendarTest, setCalendarTest] = useState<{ color: "green" | "red"; message: string } | null>(null);
+  const [matchCallupsEnabled, setMatchCallupsEnabled] = useState(true);
+  const [savingMatchCallups, setSavingMatchCallups] = useState(false);
   const [teamName, setTeamName] = useState("");
   const [savingTeamName, setSavingTeamName] = useState(false);
   const [teamNameSaved, setTeamNameSaved] = useState(false);
@@ -71,6 +73,7 @@ export default function Settings() {
         setStatus(statusRes.data);
         setEventTypes(typesRes.data);
         setCalendarId(settingsRes.data.googleCalendarId);
+        setMatchCallupsEnabled(settingsRes.data.matchCallupsEnabled);
         setTeamName(settingsRes.data.teamName);
       })
       .finally(() => setLoading(false));
@@ -177,6 +180,21 @@ export default function Settings() {
       setCalendarId(calendarId.trim() || "primary");
     } finally {
       setSavingCalendar(false);
+    }
+  }
+
+  async function handleMatchCallupsChange(enabled: boolean) {
+    const previous = matchCallupsEnabled;
+    setMatchCallupsEnabled(enabled);
+    setSavingMatchCallups(true);
+    try {
+      const response = await api.updateSettings({ matchCallupsEnabled: enabled });
+      setMatchCallupsEnabled(response.data.matchCallupsEnabled);
+    } catch (err) {
+      setMatchCallupsEnabled(previous);
+      setError(apiErrorMessage(err, "Impossibile aggiornare le convocazioni"));
+    } finally {
+      setSavingMatchCallups(false);
     }
   }
 
@@ -352,6 +370,19 @@ export default function Settings() {
             condiviso con l'account Google collegato. Dopo aver cambiato gli
             scope o le credenziali, disconnetti e ricollega Google.
           </Text>
+        </Stack>
+      </Card>
+
+      <Card withBorder padding="md" radius="md">
+        <Stack gap="xs">
+          <Title order={5}>Convocazioni</Title>
+          <Checkbox
+            label="Mostra le convocazioni per le partite"
+            description="Quando attivo, il documento Google include l'elenco dei giocatori per gli eventi partita."
+            checked={matchCallupsEnabled}
+            disabled={savingMatchCallups}
+            onChange={(event) => handleMatchCallupsChange(event.currentTarget.checked)}
+          />
         </Stack>
       </Card>
 
