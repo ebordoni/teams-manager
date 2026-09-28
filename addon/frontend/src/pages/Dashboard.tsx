@@ -3,6 +3,7 @@ import {
   Badge,
   Button,
   Card,
+  Divider,
   Group,
   SimpleGrid,
   Stack,
@@ -11,38 +12,50 @@ import {
   Title,
 } from "@mantine/core";
 import {
+  IconBallFootball,
+  IconCalendarEvent,
   IconCalendarPlus,
-  IconClipboardCheck,
+  IconChevronRight,
   IconFileText,
   IconLayoutList,
+  IconMapPin,
   IconTrophy,
-  IconUsersGroup,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
-import type {
-  Attendance,
-  Communication,
-  EventTypeDef,
-  Player,
-  TeamEvent,
-  TeamSummary,
-} from "../types";
+import type { EventTypeDef, Player, TeamEvent, TeamSummary } from "../types";
 import { formatDisplayDate } from "../utils/date";
 
-type EventChecklist = { attendance: Attendance[] };
+function todayIso(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Rome",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = (type: string) => parts.find((part) => part.type === type)?.value;
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
+function formatFullDate(date: string, time?: string | null): string {
+  const formatted = new Intl.DateTimeFormat("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00`));
+  return `${formatted.charAt(0).toUpperCase()}${formatted.slice(1)}${time ? ` alle ${time}` : ""}`;
+}
 
 export default function Dashboard() {
   const [players, setPlayers] = useState<Player[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<TeamEvent[]>([]);
+  const [events, setEvents] = useState<TeamEvent[]>([]);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
-  const [communications, setCommunications] = useState<Communication[]>([]);
-  const [checklist, setChecklist] = useState<EventChecklist | null>(null);
   const [summary, setSummary] = useState<TeamSummary | null>(null);
-  const [matchCallupsEnabled, setMatchCallupsEnabled] = useState(true);
+  const [teamName, setTeamName] = useState("La squadra");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,37 +64,20 @@ export default function Dashboard() {
       setLoading(true);
       setError(null);
       try {
-        const today = new Date().toISOString().slice(0, 10);
-        const [
-          playersRes,
-          eventsRes,
-          typesRes,
-          communicationsRes,
-          summaryRes,
-          settingsRes,
-        ] = await Promise.all([
+        const [playersRes, eventsRes, typesRes, summaryRes, settingsRes] = await Promise.all([
           api.getPlayers(),
-          api.getEvents({ from: today }),
+          api.getEvents(),
           api.getEventTypes(),
-          api.getCommunications(),
           api.getTeamSummary(),
           api.getSettings(),
         ]);
-        const events = eventsRes.data.slice(0, 5);
         setPlayers(playersRes.data);
-        setUpcomingEvents(events);
+        setEvents(eventsRes.data);
         setEventTypes(typesRes.data);
-        setCommunications(communicationsRes.data);
         setSummary(summaryRes.data);
-        setMatchCallupsEnabled(settingsRes.data.matchCallupsEnabled);
-        if (events[0]) {
-          const attendanceRes = await api.getAttendance(events[0].id);
-          setChecklist({ attendance: attendanceRes.data });
-        } else setChecklist(null);
+        setTeamName(settingsRes.data.teamName);
       } catch {
-        setError(
-          "Impossibile caricare la panoramica della squadra. Riprova tra poco.",
-        );
+        setError("Impossibile caricare la panoramica della squadra. Riprova tra poco.");
       } finally {
         setLoading(false);
       }
@@ -90,300 +86,149 @@ export default function Dashboard() {
   }, []);
 
   if (loading) return <PageLoader />;
-  const nextEvent = upcomingEvents[0];
+
+  const today = todayIso();
+  const pastEvents = events.filter((event) => event.date < today);
+  const lastEvent = pastEvents[pastEvents.length - 1];
+  const nextEvent = events.find((event) => event.date >= today);
+  const upcomingEvents = events.filter((event) => event.date >= today).slice(0, 4);
   const typeOf = (key: string) => eventTypes.find((type) => type.key === key);
-  const presentCount =
-    checklist?.attendance.filter((record) => record.status === "present")
-      .length ?? 0;
-  const hasCommunication = nextEvent
-    ? communications.some((communication) =>
-        communication.eventIds.includes(nextEvent.id),
-      )
-    : false;
+
+  function renderEventOverview(event: TeamEvent, variant: "last" | "next") {
+    const type = typeOf(event.type);
+    const isMatch = type?.hasOpponent;
+    return (
+      <Stack gap="xs">
+        <Group justify="space-between" wrap="nowrap">
+          <Group gap="xs" wrap="nowrap">
+            <ThemeIcon variant="light" color={variant === "next" ? "blue" : "gray"} size="lg">
+              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={20} />
+            </ThemeIcon>
+            <div>
+              <Text fw={700}>{type?.label ?? event.type}</Text>
+              <Text size="sm" c="dimmed">{formatFullDate(event.date, event.startTime)}</Text>
+            </div>
+          </Group>
+          {event.status !== "scheduled" && (
+            <Badge color={event.status === "cancelled" ? "red" : "orange"} variant="light">
+              {event.status === "cancelled" ? "Annullato" : "Modificato"}
+            </Badge>
+          )}
+        </Group>
+        <Divider />
+        {isMatch && (
+          <Group justify="space-between" wrap="nowrap">
+            <Text>{teamName}</Text>
+            <Text fw={600}>{event.opponent ?? "Avversario da definire"}</Text>
+          </Group>
+        )}
+        {event.location && (
+          <Group gap={6} c="dimmed">
+            <IconMapPin size={16} />
+            <Text size="sm">{event.location}</Text>
+          </Group>
+        )}
+        <Button component={Link} to={`/events/${event.id}`} variant="subtle" size="compact-sm" rightSection={<IconChevronRight size={15} />} style={{ alignSelf: "flex-end" }}>
+          Vedi l'evento
+        </Button>
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="lg">
       <div>
-        <Title order={3}>Gestione squadra</Title>
-        <Text c="dimmed">
-          Una vista operativa per preparare il prossimo appuntamento.
-        </Text>
+        <Title order={2} c="red.7">Dashboard</Title>
+        <Text c="dimmed">Una panoramica chiara di squadra, appuntamenti e risultati.</Text>
       </div>
-      {error && (
-        <Alert color="red" title="Caricamento non riuscito">
-          {error}
-        </Alert>
-      )}
 
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
-        <Card withBorder padding="md">
-          <Group justify="space-between">
-            <div>
-              <Text size="sm" c="dimmed">
-                Giocatori
-              </Text>
-              <Text size="xl" fw={700}>
-                {players.length}
-              </Text>
-            </div>
-            <ThemeIcon variant="light" color="blue" size="lg">
-              <IconUsersGroup />
+      {error && <Alert color="red" title="Caricamento non riuscito">{error}</Alert>}
+
+      <Card withBorder padding={0} radius="md" style={{ overflow: "hidden" }}>
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={0}>
+          <div style={{ minHeight: 190, display: "grid", placeItems: "center", background: "linear-gradient(135deg, var(--mantine-color-red-7), var(--mantine-color-orange-6))" }}>
+            <ThemeIcon size={88} radius="xl" variant="white" color="red">
+              <IconBallFootball size={52} />
             </ThemeIcon>
-          </Group>
-        </Card>
-        <Card withBorder padding="md">
-          <Group justify="space-between">
+          </div>
+          <Stack gap="md" p="lg" style={{ gridColumn: "span 2" }}>
             <div>
-              <Text size="sm" c="dimmed">
-                Prossimo evento
-              </Text>
-              <Text size="lg" fw={700}>
-                {formatDisplayDate(nextEvent?.date)}
-              </Text>
+              <Title order={3}>{teamName.toUpperCase()}</Title>
+              <Text c="dimmed">Calcio · Gestione squadra</Text>
             </div>
-            <ThemeIcon variant="light" color="green" size="lg">
-              <IconClipboardCheck />
-            </ThemeIcon>
-          </Group>
-        </Card>
-        {matchCallupsEnabled && (
-          <Card withBorder padding="md">
-            <Group justify="space-between">
-              <div>
-                <Text size="sm" c="dimmed">
-                  Rosa coinvolta
-                </Text>
-                <Text size="xl" fw={700}>
-                  {nextEvent ? `${players.length}/${players.length}` : "—"}
-                </Text>
-              </div>
-              <ThemeIcon variant="light" color="orange" size="lg">
-                <IconUsersGroup />
-              </ThemeIcon>
+            <Group gap="xl" wrap="wrap">
+              <div><Text size="xl" fw={700}>{players.length}</Text><Text size="sm" c="dimmed">Giocatori</Text></div>
+              <Divider orientation="vertical" />
+              <div><Text size="xl" fw={700}>{summary?.results.played ?? 0}</Text><Text size="sm" c="dimmed">Partite</Text></div>
+              <Divider orientation="vertical" />
+              <div><Text size="xl" fw={700}>{summary?.results.goalsFor ?? 0}</Text><Text size="sm" c="dimmed">Reti</Text></div>
             </Group>
-          </Card>
-        )}
-        <Card withBorder padding="md">
-          <Group justify="space-between">
-            <div>
-              <Text size="sm" c="dimmed">
-                Presenze
-              </Text>
-              <Text size="xl" fw={700}>
-                {nextEvent ? `${presentCount}/${players.length}` : "—"}
-              </Text>
-            </div>
-            <ThemeIcon variant="light" color="violet" size="lg">
-              <IconClipboardCheck />
-            </ThemeIcon>
-          </Group>
-        </Card>
-      </SimpleGrid>
-
-      <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <Card withBorder padding="md">
-          <Group justify="space-between">
-            <div>
-              <Text size="sm" c="dimmed">
-                Partite disputate
-              </Text>
-              <Text size="xl" fw={700}>
-                {summary?.results.played ?? 0}
-              </Text>
-              <Text size="sm" c="dimmed">
-                {summary
-                  ? `${summary.results.wins} V · ${summary.results.draws} N · ${summary.results.losses} P · ${summary.results.goalsFor}-${summary.results.goalsAgainst}`
-                  : "—"}
-              </Text>
-            </div>
-            <ThemeIcon variant="light" color="yellow" size="lg">
-              <IconTrophy />
-            </ThemeIcon>
-          </Group>
-        </Card>
-        <Card withBorder padding="md">
-          <Group justify="space-between">
-            <div>
-              <Text size="sm" c="dimmed">
-                Presenze confermate
-              </Text>
-              <Text size="xl" fw={700}>
-                {summary?.attendance.total
-                  ? `${Math.round((summary.attendance.present / summary.attendance.total) * 100)}%`
-                  : "—"}
-              </Text>
-              <Text size="sm" c="dimmed">
-                {summary
-                  ? `${summary.attendance.present}/${summary.attendance.total} registrazioni`
-                  : "Nessun registro chiuso"}
-              </Text>
-            </div>
-            <ThemeIcon variant="light" color="violet" size="lg">
-              <IconClipboardCheck />
-            </ThemeIcon>
-          </Group>
-        </Card>
-      </SimpleGrid>
-
-      <Card withBorder padding="lg">
-        <Group justify="space-between" mb="sm">
-          <Title order={4}>Azioni rapide</Title>
-        </Group>
-        <Group>
-          <Button
-            component={Link}
-            to="/calendar"
-            leftSection={<IconCalendarPlus size={18} />}
-          >
-            Nuovo appuntamento
-          </Button>
-          <Button
-            component={Link}
-            to="/formations"
-            variant="light"
-            leftSection={<IconLayoutList size={18} />}
-          >
-            Prepara formazione
-          </Button>
-          <Button
-            component={Link}
-            to="/communications"
-            variant="light"
-            leftSection={<IconFileText size={18} />}
-          >
-            Comunicazioni
-          </Button>
-          <Button component={Link} to="/attendance" variant="light" leftSection={<IconClipboardCheck size={18} />}>Registro presenze</Button>
-        </Group>
+          </Stack>
+        </SimpleGrid>
       </Card>
 
-      {summary && summary.recentResults.length > 0 && (
-        <Card withBorder padding="lg">
+      <SimpleGrid cols={{ base: 1, md: 2 }}>
+        <Card withBorder padding="lg" radius="md">
+          <Title order={4} mb="md">Ultimo evento</Title>
+          {lastEvent ? renderEventOverview(lastEvent, "last") : (
+            <Text c="dimmed">Nessun evento passato da mostrare.</Text>
+          )}
+        </Card>
+        <Card withBorder padding="lg" radius="md">
+          <Title order={4} mb="md">Prossimo evento</Title>
+          {nextEvent ? renderEventOverview(nextEvent, "next") : (
+            <Stack align="center" justify="center" py="xl" gap="xs" c="dimmed">
+              <IconCalendarEvent size={30} />
+              <Text>Nessun evento futuro</Text>
+              <Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Vedi il calendario</Button>
+            </Stack>
+          )}
+        </Card>
+      </SimpleGrid>
+
+      <SimpleGrid cols={{ base: 1, lg: 2 }}>
+        <Card withBorder padding="lg" radius="md">
           <Group justify="space-between" mb="sm">
             <Title order={4}>Ultimi risultati</Title>
-            <Button
-              component={Link}
-              to="/calendar"
-              variant="subtle"
-              size="compact-sm"
-            >
-              Apri calendario
-            </Button>
+            <ThemeIcon variant="light" color="yellow"><IconTrophy size={18} /></ThemeIcon>
           </Group>
-          <Stack gap="xs">
-            {summary.recentResults.map((match) => (
-              <Group key={match.eventId} justify="space-between">
-                <Text>
-                  {formatDisplayDate(match.date)}
-                  {match.opponent ? ` · vs ${match.opponent}` : ""}
-                </Text>
-                <Badge
-                  color={
-                    match.teamScore > match.opponentScore
-                      ? "green"
-                      : match.teamScore < match.opponentScore
-                        ? "red"
-                        : "gray"
-                  }
-                >
-                  {match.teamScore}–{match.opponentScore}
-                </Badge>
-              </Group>
-            ))}
-          </Stack>
+          {summary?.recentResults.length ? (
+            <Stack gap="xs">
+              {summary.recentResults.map((match) => (
+                <Group key={match.eventId} justify="space-between">
+                  <Text size="sm">{formatDisplayDate(match.date)}{match.opponent ? ` · vs ${match.opponent}` : ""}</Text>
+                  <Badge color={match.teamScore > match.opponentScore ? "green" : match.teamScore < match.opponentScore ? "red" : "gray"}>{match.teamScore}–{match.opponentScore}</Badge>
+                </Group>
+              ))}
+            </Stack>
+          ) : <Text c="dimmed">Nessun risultato registrato.</Text>}
         </Card>
-      )}
-
-      {nextEvent && (
-        <Alert
-          color={hasCommunication ? "green" : "blue"}
-          title="Preparazione prossimo appuntamento"
-        >
-          {!hasCommunication
-            ? matchCallupsEnabled
-              ? "La rosa è inclusa automaticamente: genera ora la comunicazione per i genitori dal calendario."
-              : "Genera ora la comunicazione per i genitori dal calendario."
-            : "La comunicazione per il prossimo evento è già stata generata."}
-          <Button
-            component={Link}
-            to={`/events/${nextEvent.id}`}
-            size="compact-sm"
-            variant="subtle"
-            ml="xs"
-          >
-            Apri evento
-          </Button>
-        </Alert>
-      )}
-
-      <div>
-        <Group justify="space-between" mb="sm">
-          <Title order={4}>Prossimi appuntamenti</Title>
-          <Button
-            component={Link}
-            to="/calendar"
-            variant="subtle"
-            size="compact-sm"
-          >
-            Apri calendario
-          </Button>
-        </Group>
-        {upcomingEvents.length === 0 ? (
-          <Text c="dimmed">
-            Nessun evento in programma. Crea il primo appuntamento della
-            squadra.
-          </Text>
-        ) : (
-          <Stack gap="xs">
-            {upcomingEvents.map((event) => {
-              const type = typeOf(event.type);
-              return (
-                <Card
-                  key={event.id}
-                  component={Link}
-                  to={`/events/${event.id}`}
-                  withBorder
-                  padding="sm"
-                  radius="md"
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
+        <Card withBorder padding="lg" radius="md">
+          <Group justify="space-between" mb="sm">
+            <Title order={4}>In programma</Title>
+            <Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Calendario</Button>
+          </Group>
+          {upcomingEvents.length ? (
+            <Stack gap="xs">
+              {upcomingEvents.map((event) => {
+                const type = typeOf(event.type);
+                return <Link key={event.id} to={`/events/${event.id}`} style={{ color: "inherit", textDecoration: "none" }}>
                   <Group justify="space-between" wrap="nowrap">
-                    <Group wrap="nowrap">
-                      <ThemeIcon variant="light" color="blue" size="md">
-                        <EventTypeIcon
-                          name={type?.icon ?? "IconCalendarEvent"}
-                          size={18}
-                        />
-                      </ThemeIcon>
-                      <div>
-                        <Text fw={600}>
-                          {type?.label ?? event.type}
-                          {event.opponent ? ` · vs ${event.opponent}` : ""}
-                        </Text>
-                        <Text size="sm" c="dimmed">
-                          {event.location ?? "Luogo da definire"}
-                        </Text>
-                      </div>
-                    </Group>
-                    <Badge
-                      variant="light"
-                      color={
-                        event.status === "cancelled"
-                          ? "red"
-                          : event.status === "modified"
-                            ? "orange"
-                            : "gray"
-                      }
-                    >
-                      {formatDisplayDate(event.date)} {event.startTime ?? ""}
-                    </Badge>
+                    <Group gap="xs" wrap="nowrap"><EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={17} /><Text size="sm" truncate>{type?.label ?? event.type}{event.opponent ? ` · vs ${event.opponent}` : ""}</Text></Group>
+                    <Text size="sm" c="dimmed" style={{ whiteSpace: "nowrap" }}>{formatDisplayDate(event.date)}</Text>
                   </Group>
-                </Card>
-              );
-            })}
-          </Stack>
-        )}
-      </div>
+                </Link>;
+              })}
+            </Stack>
+          ) : <Text c="dimmed">Nessun appuntamento in programma.</Text>}
+        </Card>
+      </SimpleGrid>
+
+      <Group gap="sm" wrap="wrap">
+        <Button component={Link} to="/calendar" leftSection={<IconCalendarPlus size={18} />}>Nuovo appuntamento</Button>
+        <Button component={Link} to="/formations" variant="light" leftSection={<IconLayoutList size={18} />}>Formazioni</Button>
+        <Button component={Link} to="/communications" variant="light" leftSection={<IconFileText size={18} />}>Comunicazioni</Button>
+      </Group>
     </Stack>
   );
 }

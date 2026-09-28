@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.6] — 2026-09-28
+
+### Aggiunto
+
+- Dashboard ridisegnata con profilo squadra, ultimo e prossimo evento, risultati recenti e appuntamenti in programma.
+
+### Modificato
+
+- Rimossi dalla dashboard i riquadri ridondanti su presenze e convocazioni.
+
 ## [0.21.5] — 2026-09-28
 
 ### Aggiunto

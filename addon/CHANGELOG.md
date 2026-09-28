@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.6] — 2026-09-28
+
+### Added
+
+- Redesigned dashboard with a team profile, last and next event, recent results, and upcoming appointments.
+
+### Changed
+
+- Removed redundant attendance and call-up cards from the dashboard.
+
 ## [0.21.5] — 2026-09-28
 
 ### Added
