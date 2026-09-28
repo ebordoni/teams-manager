@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21.8] — 2026-09-28
+
+### Added
+
+- Buld remove events
+
 ## [0.21.7] — 2026-09-28
 
 ### Changed

@@ -7,6 +7,12 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.8] — 2026-09-28
+
+### Aggiunto
+
+- Buld remove events
+
 ## [0.21.7] — 2026-09-28
 
 ### Modificato

@@ -83,6 +83,7 @@ export default function Calendar() {
   );
   const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [deletingSelected, setDeletingSelected] = useState(false);
   const [needsGoogleAuth, setNeedsGoogleAuth] = useState(false);
   // Le etichette restano leggibili anche su schermi stretti: l'agenda sotto
   // il calendario conserva comunque tutti i dettagli della giornata.
@@ -197,6 +198,38 @@ export default function Calendar() {
       return next;
     });
     loadEvents();
+  }
+
+  async function handleDeleteSelected() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (
+      !window.confirm(
+        `Eliminare ${ids.length} evento/i selezionato/i? Verranno eliminate anche le presenze collegate.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingSelected(true);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) => api.deleteEvent(id)),
+      );
+      const deleted = results.filter((result) => result.status === "fulfilled").length;
+      const failed = ids.length - deleted;
+      setSelectedIds(new Set());
+      notifications.show({
+        message:
+          failed === 0
+            ? `${deleted} evento/i eliminato/i`
+            : `${deleted} evento/i eliminato/i, ${failed} non eliminato/i`,
+        color: failed === 0 ? "green" : "orange",
+      });
+      loadEvents();
+    } finally {
+      setDeletingSelected(false);
+    }
   }
 
   function handleOpenForm() {
@@ -378,6 +411,16 @@ export default function Calendar() {
             )}
           </Table.Td>
         )}
+        <Table.Td w={48}>
+          <ActionIcon
+            color="red"
+            variant="subtle"
+            onClick={() => handleDelete(event)}
+            aria-label={`Elimina ${eventLabel}`}
+          >
+            <IconTrash size={18} />
+          </ActionIcon>
+        </Table.Td>
       </Table.Tr>
     );
   }
@@ -428,6 +471,15 @@ export default function Calendar() {
                 disabled={!googleStatus?.calendarConnected}
               >
                 📅 Esporta in Google Calendar
+              </Button>
+              <Button
+                color="red"
+                variant="light"
+                leftSection={<IconTrash size={16} />}
+                onClick={handleDeleteSelected}
+                loading={deletingSelected}
+              >
+                Elimina selezionati
               </Button>
             </Group>
           </Group>
@@ -624,7 +676,7 @@ export default function Calendar() {
                 {eventsByDate.size === 0 ? (
                   <Text c="dimmed">Nessun evento in questo mese.</Text>
                 ) : (
-                  <Table.ScrollContainer minWidth={compactDays ? 340 : 540}>
+                  <Table.ScrollContainer minWidth={compactDays ? 390 : 600}>
                     <Table
                       highlightOnHover
                       horizontalSpacing="sm"
@@ -647,6 +699,7 @@ export default function Calendar() {
                           <Table.Th>Tipo</Table.Th>
                           <Table.Th>Avversario</Table.Th>
                           {!compactDays && <Table.Th>Risultato</Table.Th>}
+                          <Table.Th w={48}>Azioni</Table.Th>
                         </Table.Tr>
                       </Table.Thead>
                       <Table.Tbody>{events.map(renderEventListRow)}</Table.Tbody>
