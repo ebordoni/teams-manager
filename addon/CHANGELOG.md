@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21.7] — 2026-09-28
+
+### Changed
+
+- Redesigned characters forms
+
 ## [0.21.6] — 2026-09-28
 
 ### Added

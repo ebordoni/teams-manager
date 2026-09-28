@@ -6,16 +6,17 @@ import {
   Card,
   Collapse,
   DataList,
+  Divider,
   Group,
   Indicator,
   Loader,
-  MultiSelect,
   NumberInput,
   Select,
   SimpleGrid,
   Stack,
   Text,
   TextInput,
+  Textarea,
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -100,75 +101,104 @@ function PlayerFields({
   const roles = [value.role, ...value.secondaryRoles].filter(
     Boolean,
   ) as string[];
+  function toggleRole(role: string) {
+    const nextRoles = roles.includes(role)
+      ? roles.filter((current) => current !== role)
+      : [...roles, role];
+    onChange({
+      ...value,
+      role: nextRoles[0] ?? null,
+      secondaryRoles: nextRoles.slice(1),
+    });
+  }
+
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+    <Stack gap="lg">
       <TextInput
-        label="Nome e Cognome"
+        label="Nome"
         required
+        size="md"
+        placeholder="Nome e cognome del giocatore"
         value={value.name}
         onChange={(event) =>
           onChange({ ...value, name: event.currentTarget.value })
         }
       />
-      <NumberInput
-        label="Numero di maglia"
-        value={value.jerseyNumber ?? ""}
-        min={1}
-        max={99}
-        clampBehavior="strict"
-        onChange={(jerseyNumber) =>
-          onChange({ ...value, jerseyNumber: optionalNumber(jerseyNumber) })
-        }
-      />
-      <MultiSelect
-        label="Ruoli"
-        data={ROLES}
-        value={roles}
-        onChange={(nextRoles) =>
-          onChange({
-            ...value,
-            role: nextRoles[0] ?? null,
-            secondaryRoles: nextRoles.slice(1),
-          })
-        }
-        searchable
-      />
-      <Select
-        label="Piede preferito"
-        data={FOOT_OPTIONS}
-        value={value.preferredFoot}
-        onChange={(preferredFoot) =>
-          onChange({
-            ...value,
-            preferredFoot: (preferredFoot ?? "both") as PreferredFoot,
-          })
-        }
-        allowDeselect={false}
-      />
-      {SKILLS.map(([key, label]) => (
+      <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <NumberInput
-          key={key}
-          label={label}
-          description="0–100"
-          value={value[key]}
-          min={0}
-          max={100}
+          label="Numero di maglia"
+          placeholder="Es. 10"
+          value={value.jerseyNumber ?? ""}
+          min={1}
+          max={99}
           clampBehavior="strict"
-          onChange={(nextValue) =>
-            onChange({ ...value, [key]: numericValue(nextValue) })
+          onChange={(jerseyNumber) =>
+            onChange({ ...value, jerseyNumber: optionalNumber(jerseyNumber) })
           }
         />
-      ))}
+        <Select
+          label="Piede preferito"
+          data={FOOT_OPTIONS}
+          value={value.preferredFoot}
+          onChange={(preferredFoot) =>
+            onChange({
+              ...value,
+              preferredFoot: (preferredFoot ?? "both") as PreferredFoot,
+            })
+          }
+          allowDeselect={false}
+        />
+      </SimpleGrid>
+
+      <div>
+        <Text fw={500} size="sm" mb="xs">Ruoli</Text>
+        <Text size="xs" c="dimmed" mb="sm">Il primo ruolo selezionato è quello principale.</Text>
+        <Group gap="xs">
+          {ROLES.map((role) => (
+            <Button
+              key={role}
+              type="button"
+              size="compact-sm"
+              radius="xl"
+              variant={roles.includes(role) ? (roles[0] === role ? "filled" : "light") : "default"}
+              onClick={() => toggleRole(role)}
+            >
+              {role}
+            </Button>
+          ))}
+        </Group>
+      </div>
+
+      <Divider label="Caratteristiche tecniche" labelPosition="left" />
+      <SimpleGrid cols={{ base: 2, sm: 3 }}>
+        {SKILLS.map(([key, label]) => (
+          <NumberInput
+            key={key}
+            label={label}
+            description="0–100"
+            value={value[key]}
+            min={0}
+            max={100}
+            clampBehavior="strict"
+            onChange={(nextValue) =>
+              onChange({ ...value, [key]: numericValue(nextValue) })
+            }
+          />
+        ))}
+      </SimpleGrid>
       {includeNotes && (
-        <TextInput
+        <Textarea
           label="Note"
+          autosize
+          minRows={2}
+          placeholder="Annotazioni facoltative sul giocatore"
           value={value.notes ?? ""}
           onChange={(event) =>
             onChange({ ...value, notes: event.currentTarget.value || null })
           }
         />
       )}
-    </SimpleGrid>
+    </Stack>
   );
 }
 
@@ -264,31 +294,29 @@ export default function Players() {
       {editing && (
         <Card
           withBorder
-          padding="md"
+          padding="lg"
           radius="md"
           style={{ borderColor: "var(--mantine-primary-color-filled)" }}
         >
           <form onSubmit={handleUpdate}>
-            <Stack gap="md">
+            <Stack gap="lg">
               <Group justify="space-between">
                 <div>
-                  <Title order={5}>Modifica giocatore</Title>
+                  <Title order={4}>Modifica giocatore</Title>
                   <Text size="sm" c="dimmed">
-                    Aggiorna ruolo, piede preferito e caratteristiche tecniche.
+                    Aggiorna i dati anagrafici e le caratteristiche tecniche.
                   </Text>
                 </div>
-                <Button variant="subtle" onClick={() => setEditing(null)}>
-                  Annulla
-                </Button>
               </Group>
               <PlayerFields
                 value={editing}
                 onChange={(next) => setEditing({ ...editing, ...next })}
                 includeNotes
               />
-              <Button type="submit" style={{ alignSelf: "flex-start" }}>
-                Salva modifiche
-              </Button>
+              <Group>
+                <Button type="submit">Salva modifiche</Button>
+                <Button variant="subtle" type="button" onClick={() => setEditing(null)}>Annulla</Button>
+              </Group>
             </Stack>
           </form>
         </Card>
@@ -345,14 +373,19 @@ export default function Players() {
         </Card>
       )}
       <Collapse expanded={showForm}>
-        <Card withBorder padding="md" radius="md">
+        <Card withBorder padding="lg" radius="md">
           <form onSubmit={handleSubmit}>
-            <Stack gap="md">
-              <Title order={5}>Nuovo giocatore</Title>
+            <Stack gap="lg">
+              <div>
+                <Title order={4}>Aggiungi giocatore</Title>
+                <Text size="sm" c="dimmed">Inserisci i dati disponibili per il nuovo componente della rosa.</Text>
+              </div>
+              <Divider label="Giocatore" labelPosition="left" />
               <PlayerFields value={draft} onChange={setDraft} includeNotes />
-              <Button type="submit" style={{ alignSelf: "flex-start" }}>
-                Salva
-              </Button>
+              <Group>
+                <Button type="submit">Aggiungi giocatore</Button>
+                <Button variant="subtle" type="button" onClick={closeForm}>Annulla</Button>
+              </Group>
             </Stack>
           </form>
         </Card>
