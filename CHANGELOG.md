@@ -7,6 +7,12 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.9] — 2026-09-29
+
+### Aggiunto
+
+- Formation Pitch
+
 ## [0.21.8] — 2026-09-28
 
 ### Aggiunto
