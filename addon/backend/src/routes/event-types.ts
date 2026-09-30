@@ -2,6 +2,7 @@ import { Request, Response, Router } from "express";
 import { z } from "zod";
 import { rowToEventTypeDef } from "../db/helpers";
 import { getDb } from "../db/schema";
+import { queueLiveCommunicationRefresh } from "../services/live-communication-scheduler.service";
 import type { EventTypeDefRow } from "../types";
 
 const router = Router();
@@ -28,6 +29,7 @@ const EventTypeSchema = z.object({
   // Nome di un'icona Tabler (vedi frontend/src/components/EventTypeIcon.tsx).
   icon: z.string().trim().min(1).default("IconBallFootball"),
   hasOpponent: z.boolean().default(false),
+  includeInGoogleDoc: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
 });
 
@@ -49,7 +51,7 @@ router.post("/", (req: Request, res: Response) => {
     res.status(400).json({ error: parse.error.flatten() });
     return;
   }
-  const { key, label, icon, hasOpponent, sortOrder } = parse.data;
+  const { key, label, icon, hasOpponent, includeInGoogleDoc, sortOrder } = parse.data;
   const db = getDb();
 
   const existing = db
@@ -62,14 +64,15 @@ router.post("/", (req: Request, res: Response) => {
 
   const result = db
     .prepare(
-      `INSERT INTO event_types (key, label, icon, has_opponent, sort_order)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO event_types (key, label, icon, has_opponent, include_in_google_doc, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?)`,
     )
-    .run(key, label, icon, hasOpponent ? 1 : 0, sortOrder);
+    .run(key, label, icon, hasOpponent ? 1 : 0, includeInGoogleDoc ? 1 : 0, sortOrder);
 
   const row = db
     .prepare("SELECT * FROM event_types WHERE id = ?")
     .get(result.lastInsertRowid) as unknown as EventTypeDefRow;
+  queueLiveCommunicationRefresh();
   res.status(201).json(rowToEventTypeDef(row));
 });
 
@@ -119,7 +122,7 @@ router.put("/:id", (req: Request, res: Response) => {
   }
   db.prepare(
     `UPDATE event_types SET
-      key = ?, label = ?, icon = ?, has_opponent = ?, sort_order = ?
+      key = ?, label = ?, icon = ?, has_opponent = ?, include_in_google_doc = ?, sort_order = ?
      WHERE id = ?`,
   ).run(
     e.key ?? existing.key,
@@ -130,6 +133,11 @@ router.put("/:id", (req: Request, res: Response) => {
         ? 1
         : 0
       : existing.has_opponent,
+    e.includeInGoogleDoc !== undefined
+      ? e.includeInGoogleDoc
+        ? 1
+        : 0
+      : existing.include_in_google_doc,
     e.sortOrder ?? existing.sort_order,
     idParse.data,
   );
@@ -137,6 +145,7 @@ router.put("/:id", (req: Request, res: Response) => {
   const row = db
     .prepare("SELECT * FROM event_types WHERE id = ?")
     .get(idParse.data) as unknown as EventTypeDefRow;
+  queueLiveCommunicationRefresh();
   res.json(rowToEventTypeDef(row));
 });
 

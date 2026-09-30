@@ -10,6 +10,7 @@ export interface EventTypeDef {
   label: string;
   icon: string;
   hasOpponent: boolean;
+  includeInGoogleDoc: boolean;
   sortOrder: number;
 }
 

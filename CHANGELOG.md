@@ -7,6 +7,17 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.11] — 2026-09-30
+
+### Aggiunto
+
+- Flag per tipo evento che controlla l'inclusione degli appuntamenti nel documento Google, attivo per impostazione predefinita.
+
+### Modificato
+
+- Il documento Google usa emoji diverse per i tipi evento, mostra le partite in maiuscolo nell'ordine casa vs trasferta e indica la sede della partita.
+- Il documento conserva un solo appuntamento passato, visualizzato in grigio e barrato.
+
 ## [0.21.10] — 2026-09-30
 
 ### Aggiunto

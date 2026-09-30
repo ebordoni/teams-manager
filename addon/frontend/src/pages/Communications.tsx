@@ -126,7 +126,7 @@ export default function Communications() {
                 </Group>
               </Group>
               <Text size="sm" c="dimmed">
-                Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. Il documento conserva soltanto i due appuntamenti passati più recenti, in grigio, e quelli da oggi in avanti.
+                Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. Il documento conserva soltanto l'ultimo appuntamento passato, in grigio e barrato, e quelli da oggi in avanti.
               </Text>
             </Stack>
           </Card>

@@ -51,6 +51,7 @@ export default function Settings() {
     label: "",
     icon: "IconBallFootball",
     hasOpponent: false,
+    includeInGoogleDoc: true,
   });
   const [typeError, setTypeError] = useState<string | null>(null);
   const [editingType, setEditingType] = useState<EventTypeDef | null>(null);
@@ -123,9 +124,15 @@ export default function Settings() {
         label,
         icon: newType.icon.trim() || "IconBallFootball",
         hasOpponent: newType.hasOpponent,
+        includeInGoogleDoc: newType.includeInGoogleDoc,
         sortOrder: eventTypes.length,
       });
-      setNewType({ label: "", icon: "IconBallFootball", hasOpponent: false });
+      setNewType({
+        label: "",
+        icon: "IconBallFootball",
+        hasOpponent: false,
+        includeInGoogleDoc: true,
+      });
       loadAll();
     } catch (err) {
       setTypeError(
@@ -148,6 +155,7 @@ export default function Settings() {
         label: editingType.label.trim(),
         icon: editingType.icon.trim() || "IconBallFootball",
         hasOpponent: editingType.hasOpponent,
+        includeInGoogleDoc: editingType.includeInGoogleDoc,
       });
       setEditingType(null);
       loadAll();
@@ -477,6 +485,17 @@ export default function Settings() {
                         })
                       }
                     />
+                    <Checkbox
+                      label="Includi in documento Google"
+                      mb={8}
+                      checked={editingType.includeInGoogleDoc}
+                      onChange={(e) =>
+                        setEditingType({
+                          ...editingType,
+                          includeInGoogleDoc: e.currentTarget.checked,
+                        })
+                      }
+                    />
                     <Button type="submit">Salva</Button>
                     <Button
                       variant="subtle"
@@ -525,6 +544,17 @@ export default function Settings() {
                   setNewType({
                     ...newType,
                     hasOpponent: e.currentTarget.checked,
+                  })
+                }
+              />
+              <Checkbox
+                label="Includi in documento Google"
+                mb={8}
+                checked={newType.includeInGoogleDoc}
+                onChange={(e) =>
+                  setNewType({
+                    ...newType,
+                    includeInGoogleDoc: e.currentTarget.checked,
                   })
                 }
               />

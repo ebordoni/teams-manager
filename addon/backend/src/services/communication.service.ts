@@ -110,8 +110,46 @@ function getFormationLines(event: Event): string[] {
     : [];
 }
 
+// Google Docs non può usare le icone Tabler dell'interfaccia: le traduciamo
+// quindi in emoji equivalenti, mantenendo distinguibili i tipi configurati.
+const GOOGLE_DOCUMENT_EVENT_ICONS: Record<string, string> = {
+  IconBallFootball: "⚽",
+  IconRun: "🏃",
+  IconTrophy: "🏆",
+  IconMedal: "🏅",
+  IconAward: "🏆",
+  IconFlag: "🚩",
+  IconPennant: "🚩",
+  IconBuildingStadium: "🏟️",
+  IconShirtSport: "👕",
+  IconTargetArrow: "🎯",
+  IconSwords: "⚔️",
+  IconCalendarEvent: "📅",
+  IconClock: "🕒",
+  IconClipboardCheck: "✅",
+  IconUsersGroup: "👥",
+  IconHeartHandshake: "🤝",
+  IconMessageCircle: "💬",
+  IconBell: "🔔",
+  IconSpeakerphone: "📣",
+  IconMapPin: "📍",
+  IconBus: "🚌",
+  IconCar: "🚗",
+  IconHome: "🏠",
+  IconSchool: "🏫",
+  IconSun: "☀️",
+  IconCloudRain: "🌧️",
+  IconFirstAidKit: "🩹",
+  IconStethoscope: "🩺",
+  IconBottle: "🧴",
+  IconMoodSmile: "😊",
+  IconCamera: "📷",
+  IconVideo: "🎥",
+  IconBallBasketball: "🏀",
+};
+
 function eventIcon(icon?: string): string {
-  return icon?.startsWith("Icon") ? "⚽" : (icon ?? "⚽");
+  return GOOGLE_DOCUMENT_EVENT_ICONS[icon ?? ""] ?? "📅";
 }
 
 /** Costruisce il documento automatico con una gerarchia leggibile su mobile. */
@@ -119,7 +157,9 @@ function buildStyledDocument(
   events: Event[],
   eventTypes: Map<string, EventTypeDef>,
 ): { title: string; builder: DocumentBuilder } {
-  const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = events
+    .filter((event) => eventTypes.get(event.type)?.includeInGoogleDoc ?? true)
+    .sort((a, b) => a.date.localeCompare(b.date));
   const teamName = getTeamName();
   const today = todayIso();
   const title = `${teamName} – Appuntamenti`;
@@ -133,6 +173,15 @@ function buildStyledDocument(
   for (const event of sorted) {
     const typeDef = eventTypes.get(event.type);
     const eventLabel = (typeDef?.label ?? event.type).toUpperCase();
+    const eventTitle = typeDef?.hasOpponent
+      ? `${eventLabel} ${
+          event.venue === "away"
+            ? "IN TRASFERTA"
+            : event.venue === "neutral"
+              ? "IN CAMPO NEUTRO"
+              : "IN CASA"
+        }`
+      : eventLabel;
     const style = <T extends { textStyle?: object }>(base: T): T =>
       event.date < today
         ? {
@@ -142,6 +191,7 @@ function buildStyledDocument(
               foregroundColor: {
                 color: { rgbColor: { red: 0.48, green: 0.48, blue: 0.48 } },
               },
+              strikethrough: true,
             },
           }
         : base;
@@ -149,7 +199,7 @@ function buildStyledDocument(
     builder
       .addParagraph(formatDateIt(event.date), style(documentStyles.date))
       .addParagraph(
-        `${eventIcon(typeDef?.icon)} ${eventLabel}`,
+        `${eventIcon(typeDef?.icon)} ${eventTitle}`,
         style(documentStyles.event),
       );
 
@@ -162,8 +212,10 @@ function buildStyledDocument(
     }
 
     if (typeDef?.hasOpponent && event.opponent) {
+      const homeTeam = event.venue === "away" ? event.opponent : teamName;
+      const awayTeam = event.venue === "away" ? teamName : event.opponent;
       builder.addParagraph(
-        `${teamName} – ${event.opponent}`,
+        `${homeTeam.toLocaleUpperCase("it-IT")} VS ${awayTeam.toLocaleUpperCase("it-IT")}`,
         style(documentStyles.match),
       );
     }
@@ -274,7 +326,7 @@ function loadLiveEvents(): Event[] {
   const today = todayIso();
   const recentPast = db
     .prepare(
-      "SELECT * FROM events WHERE date < ? ORDER BY date DESC, start_time DESC LIMIT 2",
+      "SELECT * FROM events WHERE date < ? ORDER BY date DESC, start_time DESC LIMIT 1",
     )
     .all(today) as unknown as EventRow[];
   const currentAndFuture = db
@@ -304,8 +356,8 @@ export function getLiveCommunication(): LiveCommunication | null {
 
 /**
  * Crea una sola volta, quindi aggiorna sempre lo stesso Google Doc. Il body è
- * completamente rigenerato: conserva solo i due appuntamenti passati più
- * recenti (in grigio), l'evento odierno e quelli futuri.
+ * completamente rigenerato: conserva solo l'ultimo appuntamento passato
+ * (in grigio e barrato), l'evento odierno e quelli futuri.
  */
 export function refreshLiveCommunication(
   options: RefreshLiveCommunicationOptions = {},

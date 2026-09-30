@@ -65,7 +65,7 @@ test("health endpoint reports the running service", async () => {
 
 test("database migrations reach the latest schema and pass integrity validation", () => {
   const versions = getDb().prepare("SELECT version FROM schema_version ORDER BY version").all();
-  assert.deepEqual(versions.map((row) => row.version), [1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(versions.map((row) => row.version), [1, 2, 3, 4, 5, 6, 7]);
   const integrity = getDb().prepare("PRAGMA integrity_check").get();
   assert.equal(integrity.integrity_check, "ok");
 });

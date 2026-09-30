@@ -59,7 +59,7 @@ configurato o non risponde, viene usato automaticamente il motore locale.
 La pagina **Comunicazioni** crea un unico Google Document nella cartella Drive
 "Teams Manager/Comunicazioni". Lo stesso link viene aggiornato dopo ogni modifica agli eventi e
 ogni giorno alle 03:05; puoi anche forzare l'aggiornamento con il pulsante dedicato. Nel documento
-restano gli appuntamenti da oggi in avanti e i due passati più recenti, attenuati in grigio.
+restano gli appuntamenti da oggi in avanti e l'ultimo passato, attenuato in grigio e barrato.
 
 I documenti creati in precedenza restano disponibili nell'archivio e possono essere aperti o
 eliminati (l'eliminazione rimuove anche il file da Google Drive).

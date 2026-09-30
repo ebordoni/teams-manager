@@ -156,6 +156,7 @@ export interface EventTypeDefRow {
   label: string;
   icon: string;
   has_opponent: number;
+  include_in_google_doc: number;
   sort_order: number;
 }
 
@@ -165,6 +166,7 @@ export interface EventTypeDef {
   label: string;
   icon: string;
   hasOpponent: boolean;
+  includeInGoogleDoc: boolean;
   sortOrder: number;
 }
 

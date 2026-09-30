@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.11] — 2026-09-30
+
+### Added
+
+- Per-event-type flag, enabled by default, that controls whether appointments appear in the Google document.
+
+### Changed
+
+- The Google document uses distinct emoji for event types, displays matches in uppercase as home vs away, and indicates the match venue.
+- The document retains one past appointment only, shown in gray with strikethrough.
+
 ## [0.21.10] — 2026-09-30
 
 ### Added

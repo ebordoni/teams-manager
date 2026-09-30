@@ -67,6 +67,7 @@ export function rowToEventTypeDef(row: EventTypeDefRow): EventTypeDef {
     label: row.label,
     icon: row.icon,
     hasOpponent: row.has_opponent === 1,
+    includeInGoogleDoc: row.include_in_google_doc === 1,
     sortOrder: row.sort_order,
   };
 }

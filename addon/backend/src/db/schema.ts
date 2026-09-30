@@ -4,7 +4,7 @@ import path from "path";
 import { config } from "../config";
 
 let db: DatabaseSync | undefined;
-const LATEST_SCHEMA_VERSION = 6;
+const LATEST_SCHEMA_VERSION = 7;
 
 const SCHEMA_V1 = `
   CREATE TABLE IF NOT EXISTS schema_version (
@@ -98,6 +98,7 @@ const SCHEMA_V1 = `
     label        TEXT    NOT NULL,
     icon         TEXT    NOT NULL DEFAULT 'IconBallFootball',
     has_opponent INTEGER NOT NULL DEFAULT 0,
+    include_in_google_doc INTEGER NOT NULL DEFAULT 1,
     sort_order   INTEGER NOT NULL DEFAULT 0
   );
 
@@ -208,6 +209,7 @@ const migrations: Record<number, () => void> = {
   // La sede della partita è una proprietà dell'evento, non soltanto del
   // risultato finale: serve già in fase di convocazione e di export.
   6: () => ensureColumn("events", "venue", "TEXT NOT NULL DEFAULT 'home' CHECK (venue IN ('home', 'away', 'neutral'))"),
+  7: () => ensureColumn("event_types", "include_in_google_doc", "INTEGER NOT NULL DEFAULT 1"),
 };
 
 function applyMigrations(dbPath: string, databaseAlreadyExists: boolean): void {
