@@ -225,6 +225,16 @@ export interface LiveCommunication {
   updatedAt: string;
 }
 
+export interface RefreshLiveCommunicationOptions {
+  /** Crea intenzionalmente un nuovo documento e aggiorna il link salvato. */
+  recreate?: boolean;
+}
+
+// Gli aggiornamenti possono arrivare dal pulsante, dal salvataggio di un
+// evento e dal job giornaliero. Serializzarli evita che due sostituzioni del
+// body leggano lo stesso contenuto e lo inseriscano entrambe.
+let liveRefreshQueue: Promise<void> = Promise.resolve();
+
 /** La richiesta non è valida: nessun evento selezionato o id inesistenti. */
 export class CommunicationRequestError extends Error {
   constructor(message: string) {
@@ -248,8 +258,15 @@ function isGoogleNotFoundError(error: unknown): boolean {
   const candidate = error as {
     code?: unknown;
     response?: { status?: unknown };
+    message?: unknown;
+    errors?: Array<{ reason?: unknown }>;
   };
-  return candidate.code === 404 || candidate.response?.status === 404;
+  return (
+    Number(candidate.code) === 404 ||
+    Number(candidate.response?.status) === 404 ||
+    candidate.errors?.some((item) => item.reason === "notFound") === true ||
+    (typeof candidate.message === "string" && /not found/i.test(candidate.message))
+  );
 }
 
 function loadLiveEvents(): Event[] {
@@ -290,16 +307,29 @@ export function getLiveCommunication(): LiveCommunication | null {
  * completamente rigenerato: conserva solo i due appuntamenti passati più
  * recenti (in grigio), l'evento odierno e quelli futuri.
  */
-export async function refreshLiveCommunication(): Promise<LiveCommunication> {
+export function refreshLiveCommunication(
+  options: RefreshLiveCommunicationOptions = {},
+): Promise<LiveCommunication> {
+  const refresh = liveRefreshQueue.then(() => refreshLiveCommunicationNow(options));
+  liveRefreshQueue = refresh.then(
+    () => undefined,
+    () => undefined,
+  );
+  return refresh;
+}
+
+async function refreshLiveCommunicationNow(
+  { recreate = false }: RefreshLiveCommunicationOptions,
+): Promise<LiveCommunication> {
   const db = getDb();
   const events = loadLiveEvents();
   const eventTypes = loadEventTypes();
   const built = buildStyledDocument(events, eventTypes);
-  let existing = savedLiveCommunication();
+  let existing = recreate ? null : savedLiveCommunication();
 
   // Al primo aggiornamento riutilizziamo l'ultimo documento già generato,
   // così le installazioni esistenti mantengono il link già condiviso.
-  if (!existing) {
+  if (!existing && !recreate) {
     const latest = db
       .prepare("SELECT * FROM communications ORDER BY created_at DESC LIMIT 1")
       .get() as CommunicationRow | undefined;

@@ -2,7 +2,6 @@ import {
   Button,
   Group,
   Modal,
-  Select,
   SimpleGrid,
   Stack,
   Tabs,
@@ -13,7 +12,7 @@ import {
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import type { EventTypeDef } from "../types";
 import { EventTypeIcon } from "./EventTypeIcon";
@@ -46,19 +45,94 @@ const EMPTY_FORM: FormState = {
   recurrenceEndDate: null,
 };
 
-const TIME_OPTIONS = Array.from({ length: 24 * 12 }, (_, index) => {
-  const hours = String(Math.floor(index / 12)).padStart(2, "0");
-  const minutes = String((index % 12) * 5).padStart(2, "0");
-  const value = `${hours}:${minutes}`;
-  return { value, label: value };
-});
-
 interface EventCreationModalProps {
   opened: boolean;
   eventTypes: EventTypeDef[];
   initialDate: string | null;
   onClose: () => void;
   onCreated: () => void;
+}
+
+/**
+ * Input manuale ottimizzato per tastiere mobile: due cifre per le ore, poi il
+ * focus passa ai minuti. Il valore viene propagato solo quando è un HH:mm
+ * valido, evitando che un campo in modifica azzeri gli altri orari.
+ */
+function TimeInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [hours, setHours] = useState("");
+  const [minutes, setMinutes] = useState("");
+  const minutesRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const match = value.match(/^(\d{2}):(\d{2})$/);
+    setHours(match?.[1] ?? "");
+    setMinutes(match?.[2] ?? "");
+  }, [value]);
+
+  const publish = (nextHours: string, nextMinutes: string) => {
+    if (nextHours.length === 2 && nextMinutes.length === 2) {
+      onChange(`${nextHours}:${nextMinutes}`);
+    }
+  };
+  const digits = (input: string) => input.replace(/\D/g, "").slice(0, 2);
+
+  return (
+    <Stack gap={4}>
+      <Text size="sm" fw={500}>{label}</Text>
+      <Group gap={4} wrap="nowrap">
+        <TextInput
+          aria-label={`${label}, ore`}
+          placeholder="HH"
+          value={hours}
+          onChange={(event) => {
+            const next = digits(event.currentTarget.value);
+            if (next.length === 2 && Number(next) > 23) return;
+            setHours(next);
+            if (!next) {
+              setMinutes("");
+              onChange("");
+              return;
+            }
+            publish(next, minutes);
+            if (next.length === 2) minutesRef.current?.focus();
+          }}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={2}
+          w={60}
+        />
+        <Text fw={700}>:</Text>
+        <TextInput
+          ref={minutesRef}
+          aria-label={`${label}, minuti`}
+          placeholder="MM"
+          value={minutes}
+          onChange={(event) => {
+            const next = digits(event.currentTarget.value);
+            if (next.length === 2 && Number(next) > 59) return;
+            setMinutes(next);
+            if (!next) {
+              onChange("");
+              return;
+            }
+            publish(hours, next);
+          }}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={2}
+          w={60}
+        />
+      </Group>
+    </Stack>
+  );
 }
 
 /**
@@ -249,41 +323,26 @@ export default function EventCreationModal({
                 }
                 valueFormat="DD-MM-YYYY"
               />
-              <Select
+              <TimeInput
                 label="Ora di inizio"
-                placeholder="Non indicata"
-                data={TIME_OPTIONS}
-                value={form.startTime || null}
-                onChange={(value) =>
-                  setForm((current) => ({ ...current, startTime: value ?? "" }))
+                value={form.startTime}
+                onChange={(startTime) =>
+                  setForm((current) => ({ ...current, startTime }))
                 }
-                searchable
-                clearable
               />
-              <Select
+              <TimeInput
                 label="Ora di fine"
-                placeholder="Non indicata"
-                data={TIME_OPTIONS}
-                value={form.endTime || null}
-                onChange={(value) =>
-                  setForm((current) => ({ ...current, endTime: value ?? "" }))
+                value={form.endTime}
+                onChange={(endTime) =>
+                  setForm((current) => ({ ...current, endTime }))
                 }
-                searchable
-                clearable
               />
-              <Select
+              <TimeInput
                 label="Ora di ritrovo"
-                placeholder="Non indicata"
-                data={TIME_OPTIONS}
-                value={form.meetingTime || null}
-                onChange={(value) =>
-                  setForm((current) => ({
-                    ...current,
-                    meetingTime: value ?? "",
-                  }))
+                value={form.meetingTime}
+                onChange={(meetingTime) =>
+                  setForm((current) => ({ ...current, meetingTime }))
                 }
-                searchable
-                clearable
               />
             </SimpleGrid>
             {form.repeatWeekly && (

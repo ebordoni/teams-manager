@@ -101,6 +101,8 @@ export const api = {
     apiClient.get<import("../types").LiveCommunication | null>("/communications/live"),
   refreshLiveCommunication: () =>
     apiClient.post<import("../types").LiveCommunication>("/communications/live/refresh"),
+  recreateLiveCommunication: () =>
+    apiClient.post<import("../types").LiveCommunication>("/communications/live/recreate"),
   exportToGoogleCalendar: (eventIds: number[]) =>
     apiClient.post<{ exported: number }>("/google/calendar/export", { eventIds }),
   verifyGoogleCalendar: (calendarId: string) =>

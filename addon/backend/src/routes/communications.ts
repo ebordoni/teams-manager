@@ -64,6 +64,21 @@ router.post("/live/refresh", async (_req: Request, res: Response) => {
   }
 });
 
+// POST /api/communications/live/recreate — crea esplicitamente un nuovo
+// documento quando quello collegato è stato eliminato o non è più utilizzabile.
+router.post("/live/recreate", async (_req: Request, res: Response) => {
+  try {
+    const result = await refreshLiveCommunication({ recreate: true });
+    res.status(201).json(result);
+  } catch (err) {
+    sendServiceError(
+      res,
+      err,
+      "Impossibile ricreare il documento Google. Riprova più tardi.",
+    );
+  }
+});
+
 // POST /api/communications — compatibilità con la precedente azione dal Calendario.
 router.post("/", async (req: Request, res: Response) => {
   const parse = GenerateSchema.safeParse(req.body);

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.21.10] — 2026-09-30
+
+### Added
+
+- Manual recreation of the Google appointments document from the Communications page.
+- Manual event-time inputs with a numeric mobile keyboard and automatic focus from hours to minutes.
+
+### Changed
+
+- Google document refreshes are serialized and always rebuild the body from scratch, preventing duplicate appointments.
+- A refresh automatically creates a replacement when the linked document was deleted.
+
 ## [0.21.9] — 2026-09-29
 
 ### Added

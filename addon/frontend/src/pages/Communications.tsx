@@ -9,7 +9,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { IconExternalLink, IconRefresh, IconTrash } from "@tabler/icons-react";
+import { IconExternalLink, IconFilePlus, IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { Communication, LiveCommunication } from "../types";
@@ -20,6 +20,7 @@ export default function Communications() {
   const [items, setItems] = useState<Communication[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [recreating, setRecreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -51,6 +52,23 @@ export default function Communications() {
       );
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  async function handleRecreate() {
+    if (!window.confirm("Ricreare il documento appuntamenti? Verrà generato un nuovo link da condividere.")) return;
+    setError(null);
+    setRecreating(true);
+    try {
+      const response = await api.recreateLiveCommunication();
+      setLive(response.data);
+    } catch (err) {
+      setError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error ?? "Impossibile ricreare il documento",
+      );
+    } finally {
+      setRecreating(false);
     }
   }
 
@@ -100,6 +118,11 @@ export default function Communications() {
                   <Button onClick={handleRefresh} loading={refreshing} leftSection={<IconRefresh size={16} />}>
                     {live ? "Aggiorna ora" : "Crea documento"}
                   </Button>
+                  {live && (
+                    <Button color="orange" variant="light" onClick={handleRecreate} loading={recreating} leftSection={<IconFilePlus size={16} />}>
+                      Ricrea documento
+                    </Button>
+                  )}
                 </Group>
               </Group>
               <Text size="sm" c="dimmed">

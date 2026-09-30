@@ -7,6 +7,18 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.10] — 2026-09-30
+
+### Aggiunto
+
+- Possibilità di ricreare manualmente il documento Google degli appuntamenti dalla pagina Comunicazioni.
+- Inserimento manuale degli orari nella creazione evento, con tastierino numerico e passaggio automatico da ore a minuti su mobile.
+
+### Modificato
+
+- Gli aggiornamenti del documento Google sono serializzati e ne riscrivono sempre il contenuto da zero, evitando appuntamenti duplicati.
+- Se il documento collegato è stato eliminato, l'aggiornamento ne crea automaticamente uno nuovo.
+
 ## [0.21.9] — 2026-09-29
 
 ### Aggiunto

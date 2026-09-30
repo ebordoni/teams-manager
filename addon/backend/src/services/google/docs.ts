@@ -39,18 +39,30 @@ export async function replaceStyledDocument(
   const docs = google.docs({ version: "v1", auth });
   const document = await docs.documents.get({ documentId });
   const content = document.data.body?.content ?? [];
-  const endIndex = content.at(-1)?.endIndex ?? 1;
-  const requests = [
-    ...(endIndex > 1
-      ? [{ deleteContentRange: { range: { startIndex: 1, endIndex: endIndex - 1 } } }]
-      : []),
-    ...builder.build(),
-  ];
+  const endIndex = Math.max(
+    1,
+    ...content.map((element) => element.endIndex ?? 1),
+  );
 
-  if (requests.length > 0) {
+  // La cancellazione e il nuovo inserimento restano volutamente in due
+  // richieste API. In questo modo gli indici del builder vengono calcolati
+  // sempre sul body ormai vuoto, anche per documenti svuotati manualmente.
+  if (endIndex > 1) {
     await docs.documents.batchUpdate({
       documentId,
-      requestBody: { requests },
+      requestBody: {
+        requests: [
+          {
+            deleteContentRange: {
+              range: { startIndex: 1, endIndex: endIndex - 1 },
+            },
+          },
+        ],
+      },
     });
   }
+
+  const requests = builder.build();
+  if (requests.length === 0) return;
+  await docs.documents.batchUpdate({ documentId, requestBody: { requests } });
 }
