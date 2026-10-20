@@ -8,6 +8,7 @@ import {
   Divider,
   Group,
   Stack,
+  Tabs,
   Text,
   TextInput,
   Title,
@@ -20,6 +21,7 @@ import {
   EventTypeIconPicker,
 } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
+import PageHeader from "../components/PageHeader";
 import type { EventTypeDef, GoogleStatus } from "../types";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -261,7 +263,15 @@ export default function Settings() {
 
   return (
     <Stack gap="xl">
-      <Title order={4}>Impostazioni</Title>
+      <PageHeader title="Impostazioni" description="Configura squadra, integrazioni e tipi di evento." />
+
+      <Tabs defaultValue="general" className="app-detail-tabs">
+        <Tabs.List mb="md">
+          <Tabs.Tab value="general">Generale</Tabs.Tab>
+          <Tabs.Tab value="integrations">Integrazioni</Tabs.Tab>
+          <Tabs.Tab value="event-types">Tipi di evento</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="general"><Stack gap="md">
 
       <Card withBorder padding="md" radius="md">
         <Stack gap="sm">
@@ -296,6 +306,9 @@ export default function Settings() {
           <Button variant="light" onClick={handleExportData} loading={exportingData} style={{ alignSelf: "flex-start" }}>Esporta dati JSON</Button>
         </Stack>
       </Card>
+        </Stack></Tabs.Panel>
+
+        <Tabs.Panel value="integrations"><Stack gap="md">
 
       <Card withBorder padding="md" radius="md">
         <Stack gap="sm">
@@ -393,6 +406,9 @@ export default function Settings() {
           />
         </Stack>
       </Card>
+        </Stack></Tabs.Panel>
+
+        <Tabs.Panel value="event-types">
 
       <Card withBorder padding="md" radius="md">
         <Stack gap="sm">
@@ -412,7 +428,7 @@ export default function Settings() {
 
           <Stack gap="xs">
             {eventTypes.map((type) => (
-              <Group key={type.id} justify="space-between" wrap="nowrap">
+              <Group key={type.id} className="app-type-row" justify="space-between" wrap="wrap" gap="xs">
                 <Text>
                   <EventTypeIcon name={type.icon} /> {type.label}{" "}
                   <Text span c="dimmed" size="sm">
@@ -563,6 +579,8 @@ export default function Settings() {
           </form>
         </Stack>
       </Card>
+        </Tabs.Panel>
+      </Tabs>
     </Stack>
   );
 }

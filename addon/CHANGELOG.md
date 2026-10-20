@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.0] — 2026-10-20
+
+### Changed
+
+- Redesigned the Event detail page with a concise overview and separate tabs for details, match management, and attendance; the edit form is grouped by topic.
+- Standardized page headers, content width, spacing, and card surfaces across the app, with improved mobile layouts.
+- Grouped Settings into General, Integrations, and Event Types tabs, and clarified filters in the attendance register.
+
 ## [0.21.11] — 2026-09-30
 
 ### Added

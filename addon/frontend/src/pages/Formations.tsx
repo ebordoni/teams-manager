@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import FormationPitch, { formationSlots, type FormationAssignments, type FormationSlot } from "../components/FormationPitch";
 import PageLoader from "../components/PageLoader";
+import PageHeader from "../components/PageHeader";
 import type { Formation, Player } from "../types";
 
 type Assignments = FormationAssignments;
@@ -42,7 +43,7 @@ export default function Formations() {
   const remove = async (formation: Formation) => { if (!window.confirm(`Eliminare la formazione “${formation.name}”? Gli eventi collegati resteranno disponibili senza formazione.`)) return; await api.deleteFormation(formation.id); if (editingId === formation.id) reset(); await load(); };
   if (loading) return <PageLoader />;
   return <Stack gap="lg">
-    <div><Title order={3}>Formazioni</Title><Text c="dimmed" size="sm">Prepara gli schieramenti 7vs7 nello schema 2-3-1 e riutilizzali nella partita.</Text></div>
+    <PageHeader title="Formazioni" description="Prepara gli schieramenti 7 contro 7 nello schema 2-3-1." />
     <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
       <Card withBorder padding="lg"><form onSubmit={save}><Stack gap="md">
         <Group justify="space-between"><Title order={4}>{editingId ? "Modifica formazione" : "Nuova formazione"}</Title><Badge color={isValid ? "green" : "gray"} variant="light">{selectedPlayerIds.length}/7 ruoli</Badge></Group>

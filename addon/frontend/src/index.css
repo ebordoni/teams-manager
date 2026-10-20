@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap");
 
 body {
@@ -14,4 +13,95 @@ body {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+}
+
+.app-shell .mantine-AppShell-main {
+  background: var(--mantine-color-default-hover);
+  min-height: 100vh;
+}
+
+.app-shell .mantine-AppShell-header,
+.app-shell .mantine-AppShell-navbar {
+  background: var(--mantine-color-body);
+}
+
+.app-navbar .mantine-NavLink-root {
+  margin-bottom: 4px;
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.03em;
+}
+
+.app-page {
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding-bottom: 48px;
+}
+
+.app-page-header {
+  padding: 8px 0 6px;
+}
+
+.app-page-title {
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.app-page-eyebrow {
+  color: var(--mantine-primary-color-filled);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.app-page .mantine-Card-root {
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: var(--mantine-shadow-xs);
+}
+
+.app-page .mantine-Card-root .mantine-Title-root {
+  letter-spacing: -0.02em;
+}
+
+.app-detail-summary {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-lg);
+  background: var(--mantine-color-body);
+  padding: var(--mantine-spacing-lg);
+}
+
+.app-detail-tabs .mantine-Tabs-list {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.app-detail-tabs .mantine-Tabs-tab {
+  white-space: nowrap;
+}
+
+.app-type-row {
+  padding: var(--mantine-spacing-sm) 0;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.app-type-row:last-child {
+  border-bottom: 0;
+}
+
+@media (min-width: 48em) {
+  .app-dashboard-team {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 48em) {
+  .app-detail-summary {
+    padding: var(--mantine-spacing-md);
+  }
 }

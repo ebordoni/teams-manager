@@ -38,7 +38,8 @@ export default function Layout() {
     <AppShell
       header={{ height: 56 }}
       navbar={{ width: 230, breakpoint: "sm", collapsed: { mobile: !opened } }}
-      padding="md"
+      padding={{ base: "sm", sm: "lg" }}
+      className="app-shell"
       styles={{ main: { minWidth: 0 } }}
     >
       <AppShell.Header>
@@ -50,13 +51,13 @@ export default function Layout() {
               hiddenFrom="sm"
               size="sm"
             />
-            <Title order={3} fz={{ base: "h4", sm: "h3" }}>
+            <Title order={3} fz={{ base: "h4", sm: "h3" }} className="app-brand">
               <IconPlayFootball /> Teams Manager
             </Title>
           </Group>
         </Group>
       </AppShell.Header>
-      <AppShell.Navbar p="md">
+      <AppShell.Navbar p="md" className="app-navbar">
         {navItems.map((item) => (
           <MantineNavLink
             key={item.to}
@@ -72,7 +73,7 @@ export default function Layout() {
         ))}
       </AppShell.Navbar>
       <AppShell.Main>
-        <Outlet />
+        <div className="app-page"><Outlet /></div>
       </AppShell.Main>
     </AppShell>
   );

@@ -1,8 +1,9 @@
-import { Alert, Badge, Button, Card, Group, Loader, Select, Stack, Table, Text, Title } from "@mantine/core";
+import { Alert, Badge, Button, Card, Group, Loader, Select, Stack, Table, Text } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import type { AttendanceReport, EventTypeDef } from "../types";
 import { formatDisplayDate } from "../utils/date";
 
@@ -32,13 +33,13 @@ export default function AttendanceRegister() {
   const typeLabel = (key: string) => types.find((item) => item.key === key)?.label ?? key;
 
   return <Stack gap="lg">
-    <div><Title order={3}>Registro presenze</Title><Text c="dimmed">Consulta esclusivamente gli eventi con presenze confermate.</Text></div>
-    <Card withBorder padding="md"><Group align="flex-end" wrap="wrap">
+    <PageHeader title="Registro presenze" description="Consulta gli eventi con presenze confermate." />
+    <Card withBorder padding="lg"><Stack gap="md"><div><Text fw={700}>Filtri</Text><Text size="sm" c="dimmed">Seleziona l'intervallo e il tipo di evento.</Text></div><Group align="flex-end" wrap="wrap">
       <DateInput label="Dal" value={from} onChange={(value) => setFrom(value ? new Date(value) : null)} valueFormat="DD-MM-YYYY" clearable />
       <DateInput label="Al" value={to} onChange={(value) => setTo(value ? new Date(value) : null)} valueFormat="DD-MM-YYYY" clearable />
       <Select label="Tipo evento" placeholder="Tutti" clearable data={types.map((item) => ({ value: item.key, label: item.label }))} value={type} onChange={setType} />
       <Button onClick={() => void load()} loading={loading}>Applica filtri</Button>
-    </Group></Card>
+    </Group></Stack></Card>
     {error && <Alert color="red" title="Errore">{error}</Alert>}
     {loading ? <Loader /> : !report || report.events.length === 0 ? <Text c="dimmed">Nessun registro confermato per i filtri selezionati.</Text> : <>
       <Card withBorder padding="md"><Text fw={600}>{report.events.length} eventi confermati · {report.players.length} giocatori</Text></Card>

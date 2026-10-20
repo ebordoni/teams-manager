@@ -7,11 +7,11 @@ import {
   Loader,
   Stack,
   Text,
-  Title,
 } from "@mantine/core";
 import { IconExternalLink, IconFilePlus, IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import type { Communication, LiveCommunication } from "../types";
 import { formatDisplayDateTime } from "../utils/date";
 
@@ -92,7 +92,7 @@ export default function Communications() {
 
   return (
     <Stack gap="md">
-      <Title order={4}>Comunicazioni</Title>
+      <PageHeader title="Comunicazioni" description="Pubblica e aggiorna il documento degli appuntamenti della squadra." />
 
       {error && <Alert color="red" title="Errore">{error}</Alert>}
 

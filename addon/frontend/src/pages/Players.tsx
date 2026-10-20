@@ -23,6 +23,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconChartBar, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import type { AttendanceHistoryItem, Player, PlayerStatistics, PreferredFoot } from "../types";
 import { formatDisplayDate } from "../utils/date";
 
@@ -285,12 +286,11 @@ export default function Players() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between">
-        <Title order={4}>Giocatori</Title>
+      <PageHeader title="Giocatori" description="Gestisci la rosa e consulta le statistiche individuali." action={
         <Button onClick={toggleForm}>
           {showForm ? "Annulla" : "+ Nuovo giocatore"}
         </Button>
-      </Group>
+      } />
       {editing && (
         <Card
           withBorder

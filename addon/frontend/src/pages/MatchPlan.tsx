@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import FormationPitch, { formationSlots, type FormationAssignments, type FormationSlot } from "../components/FormationPitch";
 import PageLoader from "../components/PageLoader";
+import PageHeader from "../components/PageHeader";
 import type { GeneratedMatchPlanExport, MatchPeriod, MatchPlan as MatchPlanType, Player, RolePolicy, TeamEvent } from "../types";
 import { formatDatesInText, formatDisplayDate } from "../utils/date";
 
@@ -52,7 +53,7 @@ export default function MatchPlan() {
   const editorAssignments = useMemo(() => Object.fromEntries(formationSlots.map(([slot]) => [slot, assignmentFor(slot)?.playerId ?? null])) as FormationAssignments, [currentPeriod]);
   if (loading) return <PageLoader />;
   return <Stack gap="lg">
-    <Group justify="space-between"><div><Title order={3}>Piano partita</Title><Text c="dimmed">{formatDisplayDate(event?.date)}{event?.opponent ? ` · ${teamName} vs ${event.opponent}` : ""}</Text></div><Button component={Link} to={`/events/${eventId}`} variant="subtle">Torna all’evento</Button></Group>
+    <PageHeader eyebrow="Evento / Partita" title="Piano partita" description={`${formatDisplayDate(event?.date)}${event?.opponent ? ` · ${teamName} vs ${event.opponent}` : ""}`} action={<Button component={Link} to={`/events/${eventId}`} variant="subtle">Torna all’evento</Button>} />
     {error && <Alert color="red" title="Errore">{error}</Alert>}
     <Card withBorder padding="lg"><Stack><Group><IconPencilPlus /><Title order={4}>Crea piano partita</Title></Group><Text size="sm" c="dimmed">Crea una bozza da compilare sul campo oppure chiedi all’AI una proposta bilanciata per minutaggi, ruoli, piede preferito e caratteristiche tecniche.</Text><PlanFields form={form} setForm={setForm} /><Group><Button variant="light" leftSection={<IconPencilPlus size={18} />} onClick={() => void createPlan("manual")} loading={creatingManual} disabled={players.length < form.playersOnField}>Crea manualmente</Button><Button leftSection={<IconRobot size={18} />} onClick={() => void createPlan("ai")} loading={generating} disabled={players.length < form.playersOnField}>Genera con AI</Button></Group></Stack></Card>
     {plans.length > 0 && <Group align="flex-start" wrap="wrap"><Stack gap="xs" w={{ base: "100%", md: 250 }}>{plans.map((plan) => <Card key={plan.id} withBorder onClick={() => selectPlan(plan)} style={{ cursor: "pointer", borderColor: selected?.id === plan.id ? "var(--mantine-primary-color-filled)" : undefined }}><Group justify="space-between" wrap="nowrap"><div><Text fw={600}>{formatDatesInText(plan.name)}</Text><Group gap={4}><Badge size="xs" color={plan.source === "ai" ? "green" : plan.source === "manual" ? "blue" : "yellow"}>{plan.source}</Badge><Badge size="xs" variant="light">{plan.status}</Badge></Group></div><ActionIcon color="red" variant="subtle" onClick={(clickEvent) => { clickEvent.stopPropagation(); void remove(plan); }} aria-label="Elimina piano"><IconTrash size={16} /></ActionIcon></Group></Card>)}</Stack>

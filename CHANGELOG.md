@@ -7,6 +7,14 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.22.0] — 2026-10-20
+
+### Modificato
+
+- Ridisegnata la pagina di dettaglio Evento con un riepilogo immediato e schede separate per dettagli, partita e presenze; il modulo di modifica è organizzato per argomento.
+- Uniformate le intestazioni, la larghezza del contenuto, le spaziature e le superfici in tutte le pagine, con una disposizione più leggibile anche su mobile.
+- Raggruppate le Impostazioni in schede Generale, Integrazioni e Tipi di evento; chiarita la sezione dei filtri nel Registro presenze.
+
 ## [0.21.11] — 2026-09-30
 
 ### Aggiunto

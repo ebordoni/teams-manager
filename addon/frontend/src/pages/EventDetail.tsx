@@ -5,23 +5,24 @@ import {
   Button,
   Card,
   Checkbox,
-  Collapse,
   Divider,
   Group,
   Paper,
   Select,
   SimpleGrid,
   Stack,
+  Tabs,
   Text,
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconChevronDown, IconChevronUp, IconMinus, IconPlus, IconRobot, IconTrash } from "@tabler/icons-react";
+import { IconArrowLeft, IconCalendarEvent, IconClock, IconMapPin, IconMinus, IconPlus, IconRobot, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
+import PageHeader from "../components/PageHeader";
 import { formatDisplayDate, formatDisplayDateTime } from "../utils/date";
 import type {
   Attendance,
@@ -61,7 +62,6 @@ export default function EventDetail() {
   const [resultDraft, setResultDraft] = useState({ teamScore: 0, opponentScore: 0, venue: "home" as MatchResult["venue"], scorers: [] as MatchScorer[], notes: "" });
   const [savingResult, setSavingResult] = useState(false);
   const [resultError, setResultError] = useState<string | null>(null);
-  const [attendanceOpened, setAttendanceOpened] = useState(false);
   const [teamName, setTeamName] = useState("La squadra");
   const [statusDraft, setStatusDraft] = useState<EventStatus>("scheduled");
   const [notesDraft, setNotesDraft] = useState("");
@@ -270,42 +270,60 @@ export default function EventDetail() {
     (record) => record.status === "present",
   ).length;
   const supportsResult = Boolean(type?.hasOpponent);
+  const venue = result?.venue ?? event.venue;
   const supportsOpponentDraft = Boolean(eventTypes.find((item) => item.key === typeDraft)?.hasOpponent);
   const scorerPlayerOptions = attendance.filter((record) => record.status === "present").map((record) => ({ value: String(record.playerId), label: record.playerName }));
   const assignedScorerGoals = scorerGoals(resultDraft.scorers);
 
   return (
     <Stack gap="lg">
-      <Card withBorder padding="md" radius="md">
+      <PageHeader
+        eyebrow="Calendario / Evento"
+        title={type?.label ?? event.type}
+        description="Consulta l'appuntamento e gestisci i dettagli operativi."
+        action={<>
+          <Button component={Link} to="/calendar" variant="subtle" leftSection={<IconArrowLeft size={17} />}>Calendario</Button>
+          <Button color="red" variant="subtle" onClick={handleDelete} leftSection={<IconTrash size={17} />}>Elimina evento</Button>
+        </>}
+      />
+
+      <div className="app-detail-summary">
         <Stack gap="sm">
-          <Group justify="space-between" wrap="nowrap">
+          <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
             <Group gap="xs" wrap="nowrap">
-              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} />
-              <div><Title order={4}>{type?.label ?? event.type}</Title>{supportsResult && <Text size="sm" fw={600} c="dimmed">{teamName} – {event.opponent ?? "Squadra avversaria da indicare"}</Text>}</div>
+              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={26} />
+              <div>
+                <Title order={3}>{supportsResult ? `${venue === "away" ? event.opponent ?? "Avversario" : teamName} – ${venue === "away" ? teamName : event.opponent ?? "Avversario da indicare"}` : type?.label ?? event.type}</Title>
+                <Text size="sm" c="dimmed">{supportsResult ? (venue === "away" ? "In trasferta" : venue === "neutral" ? "Campo neutro" : "In casa") : "Appuntamento di squadra"}</Text>
+              </div>
             </Group>
-            <Group gap="xs" wrap="nowrap">
-              <Badge color={STATUS_COLOR[event.status]}>
+            <Badge color={STATUS_COLOR[event.status]} variant="light" size="lg">
                 {EVENT_STATUS_LABEL[event.status]}
-              </Badge>
-              <ActionIcon
-                color="red"
-                variant="subtle"
-                onClick={handleDelete}
-                aria-label="Elimina evento"
-              >
-                <IconTrash size={18} />
-              </ActionIcon>
-            </Group>
+            </Badge>
           </Group>
-          <Text size="sm" c="dimmed">
-            {formatDisplayDate(event.date)} {event.startTime ?? ""}
-            {event.location ? ` · ${event.location}` : ""}
-          </Text>
+          <Group gap="lg" c="dimmed" wrap="wrap">
+            <Group gap={6}><IconCalendarEvent size={16} /><Text size="sm">{formatDisplayDate(event.date)}</Text></Group>
+            {event.startTime && <Group gap={6}><IconClock size={16} /><Text size="sm">{event.startTime}{event.endTime ? `–${event.endTime}` : ""}</Text></Group>}
+            {event.location && <Group gap={6}><IconMapPin size={16} /><Text size="sm">{event.location}</Text></Group>}
+          </Group>
+        </Stack>
+      </div>
+
+      <Tabs defaultValue="details" className="app-detail-tabs" keepMounted={false}>
+        <Tabs.List mb="md">
+          <Tabs.Tab value="details">Dettagli</Tabs.Tab>
+          {supportsResult && <Tabs.Tab value="match">Partita</Tabs.Tab>}
+          <Tabs.Tab value="attendance" rightSection={<Badge size="xs" variant="light">{presentAttendance}/{attendance.length}</Badge>}>Presenze</Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="details">
+          <Card withBorder padding="lg" radius="md">
+            <Stack gap="lg">
+              <div><Title order={4}>Modifica evento</Title><Text size="sm" c="dimmed">Tipo, data, orari e informazioni condivise.</Text></div>
+              <Divider label="Appuntamento" labelPosition="left" />
 
           <SimpleGrid
             cols={{ base: 1, sm: 2, lg: 3 }}
-            pt="sm"
-            style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}
           >
             <Select
               label="Tipo"
@@ -341,6 +359,9 @@ export default function EventDetail() {
               value={meetingTimeDraft}
               onChange={(e) => setMeetingTimeDraft(e.currentTarget.value)}
             />
+          </SimpleGrid>
+          <Divider label="Luogo e squadra" labelPosition="left" />
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
             <TextInput
               label="Luogo"
               value={locationDraft}
@@ -368,6 +389,9 @@ export default function EventDetail() {
               value={formationDraft}
               onChange={setFormationDraft}
             />
+          </SimpleGrid>
+          <Divider label="Stato e note" labelPosition="left" />
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <Select
               label="Stato evento"
               data={[
@@ -401,10 +425,11 @@ export default function EventDetail() {
           >
             Salva modifiche
           </Button>
-        </Stack>
-      </Card>
+            </Stack>
+          </Card>
+        </Tabs.Panel>
 
-      {supportsResult && (
+        {supportsResult && <Tabs.Panel value="match"><Stack gap="md">
         <Card withBorder padding="lg" radius="md">
           <Stack gap="lg">
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="xs">
@@ -483,7 +508,6 @@ export default function EventDetail() {
           </Stack>
         </Stack>
         </Card>
-      )}
 
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between">
@@ -511,6 +535,9 @@ export default function EventDetail() {
         </Card>
       )}
 
+        </Stack></Tabs.Panel>}
+
+        <Tabs.Panel value="attendance">
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between" mb="xs">
           <Group gap="xs">
@@ -527,11 +554,7 @@ export default function EventDetail() {
               </Badge>
             )}
           </Group>
-          <Button variant="subtle" size="sm" onClick={() => setAttendanceOpened((opened) => !opened)} rightSection={attendanceOpened ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}>
-            {attendanceOpened ? "Nascondi" : "Apri"}
-          </Button>
         </Group>
-        <Collapse expanded={attendanceOpened}>
           <Stack gap="sm" mt="md">
             {attendanceFinalizedAt ? <Button onClick={handleReopenAttendance} loading={savingAttendance} size="sm" style={{ alignSelf: "flex-start" }}>Riapri registro</Button> : <Group gap="xs"><Button
               onClick={handleSaveAttendance}
@@ -567,8 +590,9 @@ export default function EventDetail() {
               </Stack>
             )}
           </Stack>
-        </Collapse>
       </Card>
+        </Tabs.Panel>
+      </Tabs>
     </Stack>
   );
 }

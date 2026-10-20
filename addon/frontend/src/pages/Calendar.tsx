@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import EventCreationModal from "../components/EventCreationModal";
+import PageHeader from "../components/PageHeader";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import type {
   EventTypeDef,
@@ -427,9 +428,8 @@ export default function Calendar() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" wrap="wrap">
-        <Title order={4}>Calendario</Title>
-        <Group gap="xs" wrap="wrap">
+      <PageHeader title="Calendario" description="Organizza eventi, partite e allenamenti." action={
+        <>
           <SegmentedControl
             aria-label="Vista del calendario"
             size="sm"
@@ -448,8 +448,8 @@ export default function Calendar() {
             📄 Aggiorna Google Doc
           </Button>
           <Button onClick={handleOpenForm}>+ Nuovo evento</Button>
-        </Group>
-      </Group>
+        </>
+      } />
 
       <EventCreationModal
         opened={showForm}

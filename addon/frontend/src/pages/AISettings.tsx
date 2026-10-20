@@ -1,9 +1,10 @@
 import { Alert, Badge, Button, Card, Group, MultiSelect, NumberInput, Select, SimpleGrid, Stack, Text, TextInput, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconPlugConnected, IconRobot } from "@tabler/icons-react";
+import { IconPlugConnected } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import PageLoader from "../components/PageLoader";
+import PageHeader from "../components/PageHeader";
 import type { AIConfig, AIProvider, RolePolicy } from "../types";
 
 const PROVIDERS: Array<{ value: AIProvider; label: string }> = [
@@ -37,7 +38,7 @@ export default function AISettings() {
   };
 
   return <Stack gap="lg">
-    <div><Group gap="xs"><IconRobot /><Title order={3}>Intelligenza artificiale</Title></Group><Text c="dimmed">Configura il servizio che prepara le rotazioni dei giocatori per le partite.</Text></div>
+    <PageHeader title="Intelligenza artificiale" description="Configura il servizio che prepara le rotazioni per le partite." />
     <Alert color="blue" title="Privacy dei giocatori">Al provider vengono inviati soltanto pseudonimi e ruoli. Nomi e altre informazioni dei bambini rimangono nell’add-on.</Alert>
     {error && <Alert color="red" title="Errore">{error}</Alert>}
     <Card withBorder padding="lg"><Stack>

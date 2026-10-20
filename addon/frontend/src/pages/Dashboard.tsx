@@ -26,6 +26,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
+import PageHeader from "../components/PageHeader";
 import type { EventTypeDef, Player, TeamEvent, TeamSummary } from "../types";
 import { formatDisplayDate } from "../utils/date";
 
@@ -137,21 +138,18 @@ export default function Dashboard() {
 
   return (
     <Stack gap="lg">
-      <div>
-        <Title order={2} c="red.7">Dashboard</Title>
-        <Text c="dimmed">Una panoramica chiara di squadra, appuntamenti e risultati.</Text>
-      </div>
+      <PageHeader title="Dashboard" description="Una panoramica di squadra, appuntamenti e risultati." />
 
       {error && <Alert color="red" title="Caricamento non riuscito">{error}</Alert>}
 
       <Card withBorder padding={0} radius="md" style={{ overflow: "hidden" }}>
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={0}>
-          <div style={{ minHeight: 190, display: "grid", placeItems: "center", background: "linear-gradient(135deg, var(--mantine-color-red-7), var(--mantine-color-orange-6))" }}>
-            <ThemeIcon size={88} radius="xl" variant="white" color="red">
+          <div style={{ minHeight: 190, display: "grid", placeItems: "center", background: "linear-gradient(135deg, var(--mantine-primary-color-7), var(--mantine-color-cyan-6))" }}>
+            <ThemeIcon size={88} radius="xl" variant="white" color="blue">
               <IconBallFootball size={52} />
             </ThemeIcon>
           </div>
-          <Stack gap="md" p="lg" style={{ gridColumn: "span 2" }}>
+          <Stack gap="md" p="lg" className="app-dashboard-team">
             <div>
               <Title order={3}>{teamName.toUpperCase()}</Title>
               <Text c="dimmed">Calcio · Gestione squadra</Text>
