@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.22.1] — 2026-10-20
+
+### Changed
+
+- The Calendar list uses event cards on phones instead of a horizontally scrolling table, while retaining bulk selection and deletion.
+- Event creation opens full-screen on mobile and shares its guided numeric time inputs with event editing.
+- Attendance can be toggled by tapping the whole player row, with unsaved changes clearly marked.
+- The Dashboard prioritizes the next event and links directly to its attendance tab.
+- Enlarged touch controls and kept event-form save actions within reach on mobile.
+
 ## [0.22.0] — 2026-10-20
 
 ### Changed

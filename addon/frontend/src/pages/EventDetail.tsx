@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Card,
-  Checkbox,
   Divider,
   Group,
   Paper,
@@ -18,11 +17,12 @@ import {
 } from "@mantine/core";
 import { IconArrowLeft, IconCalendarEvent, IconClock, IconMapPin, IconMinus, IconPlus, IconRobot, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
 import PageHeader from "../components/PageHeader";
+import EventTimeInput from "../components/EventTimeInput";
 import { formatDisplayDate, formatDisplayDateTime } from "../utils/date";
 import type {
   Attendance,
@@ -49,11 +49,13 @@ const STATUS_COLOR: Record<EventStatus, string> = {
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const eventId = Number(id);
   const [event, setEvent] = useState<TeamEvent | null>(null);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
   const [formations, setFormations] = useState<Formation[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
+  const [savedAttendance, setSavedAttendance] = useState<Record<number, Attendance["status"]>>({});
   const [loading, setLoading] = useState(true);
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [attendanceFinalizedAt, setAttendanceFinalizedAt] = useState<string | null>(null);
@@ -91,6 +93,7 @@ export default function EventDetail() {
         async ([eventRes, attendanceRes, attendanceStatusRes, typesRes, formationsRes, settingsRes]) => {
           setEvent(eventRes.data);
           setAttendance(attendanceRes.data);
+          setSavedAttendance(Object.fromEntries(attendanceRes.data.map((item) => [item.playerId, item.status])));
           setAttendanceFinalizedAt(attendanceStatusRes.data.finalizedAt);
           setEventTypes(typesRes.data);
           setFormations(formationsRes.data);
@@ -141,6 +144,7 @@ export default function EventDetail() {
         attendance.map((a) => ({ playerId: a.playerId, status: a.status })),
       );
       setAttendance((prev) => prev.map((a) => ({ ...a, recorded: true })));
+      setSavedAttendance(Object.fromEntries(attendance.map((item) => [item.playerId, item.status])));
     } catch (err) {
       setAttendanceError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Errore durante il salvataggio delle presenze");
     } finally {
@@ -154,6 +158,7 @@ export default function EventDetail() {
       const response = await api.finalizeAttendance(eventId, attendance.map((a) => ({ playerId: a.playerId, status: a.status })));
       setAttendanceFinalizedAt(response.data.finalizedAt);
       setAttendance((prev) => prev.map((a) => ({ ...a, recorded: true })));
+      setSavedAttendance(Object.fromEntries(attendance.map((item) => [item.playerId, item.status])));
     } catch (err) {
       setAttendanceError((err as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Errore durante la chiusura del registro");
     } finally { setSavingAttendance(false); }
@@ -269,6 +274,7 @@ export default function EventDetail() {
   const presentAttendance = attendance.filter(
     (record) => record.status === "present",
   ).length;
+  const attendanceDirty = attendance.some((record) => savedAttendance[record.playerId] !== record.status);
   const supportsResult = Boolean(type?.hasOpponent);
   const venue = result?.venue ?? event.venue;
   const supportsOpponentDraft = Boolean(eventTypes.find((item) => item.key === typeDraft)?.hasOpponent);
@@ -309,7 +315,7 @@ export default function EventDetail() {
         </Stack>
       </div>
 
-      <Tabs defaultValue="details" className="app-detail-tabs" keepMounted={false}>
+      <Tabs defaultValue={searchParams.get("tab") === "attendance" ? "attendance" : "details"} className="app-detail-tabs" keepMounted={false}>
         <Tabs.List mb="md">
           <Tabs.Tab value="details">Dettagli</Tabs.Tab>
           {supportsResult && <Tabs.Tab value="match">Partita</Tabs.Tab>}
@@ -341,23 +347,20 @@ export default function EventDetail() {
               value={dateDraft}
               onChange={(e) => setDateDraft(e.currentTarget.value)}
             />
-            <TextInput
+            <EventTimeInput
               label="Inizio"
-              type="time"
               value={startTimeDraft}
-              onChange={(e) => setStartTimeDraft(e.currentTarget.value)}
+              onChange={setStartTimeDraft}
             />
-            <TextInput
+            <EventTimeInput
               label="Fine"
-              type="time"
               value={endTimeDraft}
-              onChange={(e) => setEndTimeDraft(e.currentTarget.value)}
+              onChange={setEndTimeDraft}
             />
-            <TextInput
+            <EventTimeInput
               label="Ritrovo"
-              type="time"
               value={meetingTimeDraft}
-              onChange={(e) => setMeetingTimeDraft(e.currentTarget.value)}
+              onChange={setMeetingTimeDraft}
             />
           </SimpleGrid>
           <Divider label="Luogo e squadra" labelPosition="left" />
@@ -418,15 +421,13 @@ export default function EventDetail() {
               {statusError}
             </Alert>
           )}
-          <Button
-            onClick={handleSaveStatus}
-            loading={savingStatus}
-            style={{ alignSelf: "flex-start" }}
-          >
-            Salva modifiche
-          </Button>
             </Stack>
           </Card>
+          <Group className="mobile-form-actions" mt="md">
+            <Button onClick={handleSaveStatus} loading={savingStatus}>
+              Salva modifiche
+            </Button>
+          </Group>
         </Tabs.Panel>
 
         {supportsResult && <Tabs.Panel value="match"><Stack gap="md">
@@ -543,6 +544,7 @@ export default function EventDetail() {
           <Group gap="xs">
             <Title order={5}>Presenze</Title>
             {attendanceFinalizedAt && <Badge color="green">Registro chiuso</Badge>}
+            {!attendanceFinalizedAt && attendanceDirty && <Badge color="orange">Modifiche da salvare</Badge>}
             {attendance.length > 0 && (
               <Badge
                 variant="light"
@@ -573,17 +575,24 @@ export default function EventDetail() {
             ) : (
               <Stack gap="xs">
                 {attendance.map((a) => (
-                  <Card key={a.playerId} withBorder padding="sm" radius="md">
-                    <Group justify="space-between">
-                      <Text>{a.playerName}</Text>
-                      <Checkbox
-                        label="Presente"
-                        checked={a.status === "present"}
-                        disabled={Boolean(attendanceFinalizedAt)}
-                        onChange={(event) =>
-                          setPlayerPresent(a.playerId, event.currentTarget.checked)
-                        }
-                      />
+                  <Card
+                    key={a.playerId}
+                    component="button"
+                    type="button"
+                    withBorder
+                    padding="sm"
+                    radius="md"
+                    disabled={Boolean(attendanceFinalizedAt)}
+                    aria-label={`${a.playerName}: ${a.status === "present" ? "presente" : a.status === "excused" ? "giustificato" : "assente"}${attendanceFinalizedAt ? "" : ". Tocca per cambiare"}`}
+                    aria-pressed={a.status === "present"}
+                    onClick={() => setPlayerPresent(a.playerId, a.status !== "present")}
+                    className="attendance-row"
+                  >
+                    <Group justify="space-between" wrap="nowrap">
+                      <Text fw={600}>{a.playerName}</Text>
+                      <Badge color={a.status === "present" ? "green" : a.status === "excused" ? "yellow" : "gray"} variant="light" size="lg">
+                        {a.status === "present" ? "Presente" : a.status === "excused" ? "Giustificato" : "Assente"}
+                      </Badge>
                     </Group>
                   </Card>
                 ))}

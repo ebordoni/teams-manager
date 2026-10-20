@@ -129,9 +129,12 @@ export default function Dashboard() {
             <Text size="sm">{event.location}</Text>
           </Group>
         )}
-        <Button component={Link} to={`/events/${event.id}`} variant="subtle" size="compact-sm" rightSection={<IconChevronRight size={15} />} style={{ alignSelf: "flex-end" }}>
-          Vedi l'evento
-        </Button>
+        <Group justify="flex-end" gap="xs">
+          {variant === "next" && <Button component={Link} to={`/events/${event.id}?tab=attendance`} variant="light" size="sm">Apri presenze</Button>}
+          <Button component={Link} to={`/events/${event.id}`} variant="subtle" size="sm" rightSection={<IconChevronRight size={15} />}>
+            Vedi l'evento
+          </Button>
+        </Group>
       </Stack>
     );
   }
@@ -141,6 +144,25 @@ export default function Dashboard() {
       <PageHeader title="Dashboard" description="Una panoramica di squadra, appuntamenti e risultati." />
 
       {error && <Alert color="red" title="Caricamento non riuscito">{error}</Alert>}
+
+      <SimpleGrid cols={{ base: 1, md: 2 }}>
+        <Card withBorder padding="lg" radius="md">
+          <Title order={4} mb="md">Prossimo evento</Title>
+          {nextEvent ? renderEventOverview(nextEvent, "next") : (
+            <Stack align="center" justify="center" py="xl" gap="xs" c="dimmed">
+              <IconCalendarEvent size={30} />
+              <Text>Nessun evento futuro</Text>
+              <Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Vedi il calendario</Button>
+            </Stack>
+          )}
+        </Card>
+        <Card withBorder padding="lg" radius="md">
+          <Title order={4} mb="md">Ultimo evento</Title>
+          {lastEvent ? renderEventOverview(lastEvent, "last") : (
+            <Text c="dimmed">Nessun evento passato da mostrare.</Text>
+          )}
+        </Card>
+      </SimpleGrid>
 
       <Card withBorder padding={0} radius="md" style={{ overflow: "hidden" }}>
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={0}>
@@ -164,25 +186,6 @@ export default function Dashboard() {
           </Stack>
         </SimpleGrid>
       </Card>
-
-      <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <Card withBorder padding="lg" radius="md">
-          <Title order={4} mb="md">Ultimo evento</Title>
-          {lastEvent ? renderEventOverview(lastEvent, "last") : (
-            <Text c="dimmed">Nessun evento passato da mostrare.</Text>
-          )}
-        </Card>
-        <Card withBorder padding="lg" radius="md">
-          <Title order={4} mb="md">Prossimo evento</Title>
-          {nextEvent ? renderEventOverview(nextEvent, "next") : (
-            <Stack align="center" justify="center" py="xl" gap="xs" c="dimmed">
-              <IconCalendarEvent size={30} />
-              <Text>Nessun evento futuro</Text>
-              <Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Vedi il calendario</Button>
-            </Stack>
-          )}
-        </Card>
-      </SimpleGrid>
 
       <SimpleGrid cols={{ base: 1, lg: 2 }}>
         <Card withBorder padding="lg" radius="md">

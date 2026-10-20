@@ -12,10 +12,12 @@ import {
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import dayjs from "dayjs";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useMediaQuery } from "@mantine/hooks";
 import { api } from "../api/client";
 import type { EventTypeDef } from "../types";
 import { EventTypeIcon } from "./EventTypeIcon";
+import EventTimeInput from "./EventTimeInput";
 
 interface FormState {
   type: string;
@@ -54,88 +56,6 @@ interface EventCreationModalProps {
 }
 
 /**
- * Input manuale ottimizzato per tastiere mobile: due cifre per le ore, poi il
- * focus passa ai minuti. Il valore viene propagato solo quando è un HH:mm
- * valido, evitando che un campo in modifica azzeri gli altri orari.
- */
-function TimeInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const [hours, setHours] = useState("");
-  const [minutes, setMinutes] = useState("");
-  const minutesRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const match = value.match(/^(\d{2}):(\d{2})$/);
-    setHours(match?.[1] ?? "");
-    setMinutes(match?.[2] ?? "");
-  }, [value]);
-
-  const publish = (nextHours: string, nextMinutes: string) => {
-    if (nextHours.length === 2 && nextMinutes.length === 2) {
-      onChange(`${nextHours}:${nextMinutes}`);
-    }
-  };
-  const digits = (input: string) => input.replace(/\D/g, "").slice(0, 2);
-
-  return (
-    <Stack gap={4}>
-      <Text size="sm" fw={500}>{label}</Text>
-      <Group gap={4} wrap="nowrap">
-        <TextInput
-          aria-label={`${label}, ore`}
-          placeholder="HH"
-          value={hours}
-          onChange={(event) => {
-            const next = digits(event.currentTarget.value);
-            if (next.length === 2 && Number(next) > 23) return;
-            setHours(next);
-            if (!next) {
-              setMinutes("");
-              onChange("");
-              return;
-            }
-            publish(next, minutes);
-            if (next.length === 2) minutesRef.current?.focus();
-          }}
-          inputMode="numeric"
-          pattern="[0-9]*"
-          maxLength={2}
-          w={60}
-        />
-        <Text fw={700}>:</Text>
-        <TextInput
-          ref={minutesRef}
-          aria-label={`${label}, minuti`}
-          placeholder="MM"
-          value={minutes}
-          onChange={(event) => {
-            const next = digits(event.currentTarget.value);
-            if (next.length === 2 && Number(next) > 59) return;
-            setMinutes(next);
-            if (!next) {
-              onChange("");
-              return;
-            }
-            publish(hours, next);
-          }}
-          inputMode="numeric"
-          pattern="[0-9]*"
-          maxLength={2}
-          w={60}
-        />
-      </Group>
-    </Stack>
-  );
-}
-
-/**
  * Stato e rendering del form restano isolati dal calendario mensile: digitare
  * in un input non deve ridisegnare le celle, l'agenda e le sue anteprime.
  */
@@ -148,6 +68,7 @@ export default function EventCreationModal({
 }: EventCreationModalProps) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const mobile = useMediaQuery("(max-width: 48em)") ?? false;
 
   useEffect(() => {
     if (!opened) return;
@@ -222,6 +143,7 @@ export default function EventCreationModal({
       title="Crea evento"
       size="lg"
       centered
+      fullScreen={mobile}
     >
       <form onSubmit={handleSubmit}>
         <Stack gap="lg">
@@ -323,21 +245,21 @@ export default function EventCreationModal({
                 }
                 valueFormat="DD-MM-YYYY"
               />
-              <TimeInput
+              <EventTimeInput
                 label="Ora di inizio"
                 value={form.startTime}
                 onChange={(startTime) =>
                   setForm((current) => ({ ...current, startTime }))
                 }
               />
-              <TimeInput
+              <EventTimeInput
                 label="Ora di fine"
                 value={form.endTime}
                 onChange={(endTime) =>
                   setForm((current) => ({ ...current, endTime }))
                 }
               />
-              <TimeInput
+              <EventTimeInput
                 label="Ora di ritrovo"
                 value={form.meetingTime}
                 onChange={(meetingTime) =>
@@ -411,7 +333,7 @@ export default function EventCreationModal({
             />
           </Stack>
 
-          <Group justify="flex-end" wrap="wrap-reverse">
+          <Group justify="flex-end" wrap="wrap-reverse" className="mobile-form-actions">
             <Button type="button" variant="default" onClick={onClose}>
               Annulla
             </Button>

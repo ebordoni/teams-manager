@@ -274,6 +274,7 @@ export default function Calendar() {
       <Card key={event.id} withBorder padding="sm" radius="md">
         <Group wrap="nowrap" gap="sm">
           <Checkbox
+            size="lg"
             checked={selectedIds.has(event.id)}
             onChange={() => toggleSelected(event.id)}
             aria-label={`Seleziona ${type?.label ?? event.type}`}
@@ -423,6 +424,46 @@ export default function Calendar() {
           </ActionIcon>
         </Table.Td>
       </Table.Tr>
+    );
+  }
+
+  function renderMobileEventRow(event: TeamEvent) {
+    const type = typeOf(event.type);
+    const label = type?.label ?? event.type;
+    const isPast = event.date < today;
+    const isToday = event.date === today;
+    return (
+      <Card key={event.id} withBorder padding="sm" radius="md" className={isPast ? "mobile-event-card is-past" : "mobile-event-card"}>
+        <Group wrap="nowrap" align="flex-start" gap="sm">
+          <Checkbox
+            checked={selectedIds.has(event.id)}
+            onChange={() => toggleSelected(event.id)}
+            aria-label={`Seleziona ${label} del ${formatDisplayDate(event.date)}`}
+            mt={8}
+          />
+          <Link to={`/events/${event.id}`} className="mobile-event-link">
+            <Group gap="xs" wrap="nowrap">
+              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={20} />
+              <Text fw={isToday ? 800 : 600} truncate>{label}</Text>
+              {event.result && <Badge size="sm" variant="light">{event.result.teamScore}–{event.result.opponentScore}</Badge>}
+            </Group>
+            <Text size="sm" fw={isToday ? 700 : 500} mt={4}>
+              {formatDisplayDate(event.date)}{event.startTime ? ` alle ${event.startTime}` : ""}
+            </Text>
+            {event.opponent && <Text size="sm" c="dimmed" truncate>vs {event.opponent}</Text>}
+            {event.status !== "scheduled" && <Badge mt={4} size="sm" color={STATUS_COLOR[event.status]} variant="light">{event.status === "cancelled" ? "Annullato" : "Modificato"}</Badge>}
+          </Link>
+          <ActionIcon
+            color="red"
+            variant="subtle"
+            size={44}
+            onClick={() => handleDelete(event)}
+            aria-label={`Elimina ${label} del ${formatDisplayDate(event.date)}`}
+          >
+            <IconTrash size={20} />
+          </ActionIcon>
+        </Group>
+      </Card>
     );
   }
 
@@ -676,7 +717,19 @@ export default function Calendar() {
                 {eventsByDate.size === 0 ? (
                   <Text c="dimmed">Nessun evento in questo mese.</Text>
                 ) : (
-                  <Table.ScrollContainer minWidth={compactDays ? 390 : 600}>
+                  compactDays ? (
+                    <Stack gap="xs">
+                      <Checkbox
+                        size="lg"
+                        checked={allVisibleEventsSelected}
+                        indeterminate={someVisibleEventsSelected && !allVisibleEventsSelected}
+                        onChange={toggleAllVisibleEvents}
+                        label="Seleziona tutti gli eventi del mese"
+                      />
+                      {events.map(renderMobileEventRow)}
+                    </Stack>
+                  ) : (
+                  <Table.ScrollContainer minWidth={600}>
                     <Table
                       highlightOnHover
                       horizontalSpacing="sm"
@@ -705,6 +758,7 @@ export default function Calendar() {
                       <Table.Tbody>{events.map(renderEventListRow)}</Table.Tbody>
                     </Table>
                   </Table.ScrollContainer>
+                  )
                 )}
               </Stack>
             </Card>

@@ -94,6 +94,35 @@ a {
   border-bottom: 0;
 }
 
+.mobile-event-link {
+  color: inherit;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.mobile-event-card.is-past {
+  color: var(--mantine-color-dimmed);
+  opacity: 0.72;
+}
+
+.attendance-row {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+}
+
+.attendance-row[aria-pressed="true"] {
+  border-color: var(--mantine-color-green-6);
+}
+
+.attendance-row:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
 @media (min-width: 48em) {
   .app-dashboard-team {
     grid-column: span 2;
@@ -103,5 +132,30 @@ a {
 @media (max-width: 48em) {
   .app-detail-summary {
     padding: var(--mantine-spacing-md);
+  }
+
+  .app-page .mantine-Button-root,
+  .app-page .mantine-ActionIcon-root,
+  .mantine-Modal-content .mantine-Button-root {
+    min-height: 44px;
+  }
+
+  .app-page .mantine-ActionIcon-root {
+    min-width: 44px;
+  }
+
+  .mobile-form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--mantine-color-body);
+    padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--mantine-color-default-border);
+  }
+
+  .mantine-Modal-body .mobile-form-actions {
+    margin: 0 calc(-1 * var(--mantine-spacing-md)) calc(-1 * var(--mantine-spacing-md));
+    padding-right: var(--mantine-spacing-md);
+    padding-left: var(--mantine-spacing-md);
   }
 }

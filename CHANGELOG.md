@@ -7,6 +7,16 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.22.1] — 2026-10-20
+
+### Modificato
+
+- La vista elenco del Calendario usa schede su smartphone, senza scorrimento orizzontale; restano disponibili selezione multipla ed eliminazione.
+- La creazione evento occupa l'intero schermo su mobile e condivide con la modifica evento l'inserimento numerico guidato degli orari.
+- Le presenze si modificano toccando l'intera riga e le modifiche non salvate sono evidenziate.
+- La Dashboard mostra per primo il prossimo evento e consente di aprirne direttamente le presenze.
+- Ampliati i controlli touch e mantenute raggiungibili le azioni di salvataggio nei form evento.
+
 ## [0.22.0] — 2026-10-20
 
 ### Modificato
