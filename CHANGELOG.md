@@ -7,6 +7,24 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.23.0] — 2026-10-22
+
+### Aggiunto
+
+- Pubblicazione degli appuntamenti su una pagina Notion esistente, configurabile da Impostazioni → Integrazioni con token interno, verifica accesso e link pubblico separato.
+- Aggiornamento della stessa pagina Notion dopo le modifiche agli eventi e ogni giorno alle 03:05, attivato dopo la prima pubblicazione manuale riuscita.
+- Aggiornamento forzato per ripristinare una pagina svuotata e segnalazione degli errori di accesso, senza creare automaticamente pagine duplicate.
+
+### Modificato
+
+- La composizione degli appuntamenti è condivisa fra Google Docs e Notion e conserva filtri, convocazioni, formattazione e un solo evento passato grigio e barrato.
+- Gli aggiornamenti automatici Notion evitano scritture quando il contenuto non cambia; quelli manuali sostituiscono sempre il contenuto della pagina.
+- Il Google Doc precedente rimane disponibile come alternativa, mentre Google Calendar ed esportazione dei piani partita continuano a funzionare.
+
+### Corretto
+
+- La selezione dell'ultimo evento passato considera prima il flag di inclusione nella pagina appuntamenti.
+
 ## [0.22.1] — 2026-10-20
 
 ### Modificato

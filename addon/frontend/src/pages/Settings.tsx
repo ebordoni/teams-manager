@@ -22,6 +22,7 @@ import {
 } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
 import PageHeader from "../components/PageHeader";
+import NotionSettings from "../components/NotionSettings";
 import type { EventTypeDef, GoogleStatus } from "../types";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -310,12 +311,13 @@ export default function Settings() {
 
         <Tabs.Panel value="integrations"><Stack gap="md">
 
+      <NotionSettings />
+
       <Card withBorder padding="md" radius="md">
         <Stack gap="sm">
           <Title order={5}>Google (Docs, Drive e Calendar)</Title>
           <Text size="sm" c="dimmed">
-            Collega il tuo account Google per generare automaticamente il
-            documento delle comunicazioni ai genitori.
+            Collega Google per Calendar e per esportare i piani partita. Il documento appuntamenti resta disponibile come alternativa a Notion.
           </Text>
 
           {!status?.configured && (
@@ -399,7 +401,7 @@ export default function Settings() {
           <Title order={5}>Convocazioni</Title>
           <Checkbox
             label="Mostra le convocazioni per le partite"
-            description="Quando attivo, il documento Google include l'elenco dei giocatori per gli eventi partita."
+            description="Quando attivo, la pagina appuntamenti include l'elenco dei giocatori per gli eventi partita."
             checked={matchCallupsEnabled}
             disabled={savingMatchCallups}
             onChange={(event) => handleMatchCallupsChange(event.currentTarget.checked)}
@@ -502,7 +504,7 @@ export default function Settings() {
                       }
                     />
                     <Checkbox
-                      label="Includi in documento Google"
+                      label="Includi nella pagina appuntamenti"
                       mb={8}
                       checked={editingType.includeInGoogleDoc}
                       onChange={(e) =>
@@ -564,7 +566,7 @@ export default function Settings() {
                 }
               />
               <Checkbox
-                label="Includi in documento Google"
+                label="Includi nella pagina appuntamenti"
                 mb={8}
                 checked={newType.includeInGoogleDoc}
                 onChange={(e) =>

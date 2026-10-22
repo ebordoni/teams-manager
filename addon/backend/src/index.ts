@@ -17,6 +17,7 @@ import matchPlansRouter from "./routes/match-plans";
 import playersRouter from "./routes/players";
 import reportsRouter from "./routes/reports";
 import settingsRouter from "./routes/settings";
+import notionRouter from "./routes/notion";
 import { startLiveCommunicationScheduler } from "./services/live-communication-scheduler.service";
 
 function resolveVersion(): string {
@@ -61,6 +62,7 @@ export function createApp() {
   app.use("/api/communications", communicationsRouter);
   app.use("/api/data", dataExportRouter);
   app.use("/api/settings", settingsRouter);
+  app.use("/api/notion", notionRouter);
   app.use("/api/ai", aiRouter);
   app.use("/api/reports", reportsRouter);
 

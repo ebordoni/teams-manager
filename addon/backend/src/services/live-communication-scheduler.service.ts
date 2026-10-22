@@ -1,4 +1,5 @@
 import { getLiveCommunication, refreshLiveCommunication } from "./communication.service";
+import { isNotionActive, notionStatus } from "./notion.service";
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 let dailyTimer: ReturnType<typeof setTimeout> | undefined;
@@ -7,6 +8,7 @@ function refreshInBackground(reason: string): void {
   // Il primo documento è una scelta esplicita dell'utente; da quel momento
   // tutti gli aggiornamenti successivi sono automatici.
   if (!getLiveCommunication()) return;
+  if (isNotionActive() && !notionStatus().autoSync) return;
   void refreshLiveCommunication().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`[communications] Aggiornamento automatico (${reason}) non riuscito: ${message}`);

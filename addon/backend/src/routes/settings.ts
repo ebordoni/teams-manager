@@ -30,6 +30,7 @@ router.put("/", (req: Request, res: Response) => {
   const { teamName } = parse.data;
   if (teamName !== undefined) {
     setSetting(SETTINGS_KEYS.teamName, teamName);
+    queueLiveCommunicationRefresh();
   }
   if (parse.data.googleCalendarId !== undefined) {
     setSetting(

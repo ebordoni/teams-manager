@@ -56,6 +56,24 @@ configurato o non risponde, viene usato automaticamente il motore locale.
 
 ### Comunicazioni
 
+#### Pagina Notion (alternativa al Google Doc)
+
+In **Impostazioni → Integrazioni → Notion** puoi collegare una pagina esistente:
+
+1. Crea una connessione interna dal [portale Notion](https://www.notion.so/profile/integrations), con capacità di lettura e aggiornamento contenuti.
+2. Crea una pagina dedicata agli appuntamenti e aggiungi la connessione dal menu della pagina **••• → Connessioni**.
+3. Nell'app inserisci il token e il link della pagina del workspace, attiva **Usa Notion per gli appuntamenti** e salva. Il token resta nel backend, non viene restituito al browser né incluso nell'export JSON.
+4. Usa **Verifica accesso**, poi **Comunicazioni → Aggiorna ora**. L'aggiornamento sostituisce tutto il contenuto della pagina: eventuali note manuali devono restare fuori da questa pagina.
+5. Per i genitori, pubblica la pagina da **Condividi → Pubblica** in Notion e salva il relativo link pubblico nell'app. La pubblicazione e le autorizzazioni dei lettori si gestiscono da Notion.
+
+Dopo il primo aggiornamento riuscito, la pagina viene aggiornata dopo le modifiche agli eventi e ogni giorno alle 03:05 (Europe/Rome). Gli aggiornamenti automatici saltano le scritture se il contenuto non cambia; **Aggiorna ora** riscrive sempre la pagina e può ripristinarla dopo uno svuotamento manuale. Restano un evento passato in grigio e barrato e gli eventi da oggi in avanti, rispettando i flag dei tipi evento e delle convocazioni.
+
+Se la pagina non è accessibile, controlla link, token e connessione: l'app non crea automaticamente altre pagine, perché Notion non distingue sempre una pagina eliminata da una non autorizzata. Per sostituirla, crea una nuova pagina, collegala e pubblicala, quindi aggiorna i link nelle impostazioni.
+
+Attivando Notion, il precedente Google Doc smette di aggiornarsi ma non viene eliminato. Google Calendar e l'esportazione dei piani partita continuano a funzionare. Disattivando Notion si torna al Google Doc precedente.
+
+#### Google Docs
+
 La pagina **Comunicazioni** crea un unico Google Document nella cartella Drive
 "Teams Manager/Comunicazioni". Lo stesso link viene aggiornato dopo ogni modifica agli eventi e
 ogni giorno alle 03:05; puoi anche forzare l'aggiornamento con il pulsante dedicato. Nel documento

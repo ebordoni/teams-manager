@@ -14,6 +14,7 @@ import { api } from "../api/client";
 import PageHeader from "../components/PageHeader";
 import type { Communication, LiveCommunication } from "../types";
 import { formatDisplayDateTime } from "../utils/date";
+import { Link } from "react-router-dom";
 
 export default function Communications() {
   const [live, setLive] = useState<LiveCommunication | null>(null);
@@ -79,7 +80,7 @@ export default function Communications() {
     try {
       await api.deleteCommunication(item.id);
       setItems((previous) => previous.filter((current) => current.id !== item.id));
-      if (item.googleDocId === live?.googleDocId) setLive(null);
+      if (live?.provider === "google" && item.googleDocId === live.documentId) setLive(null);
     } catch (err) {
       setError(
         (err as { response?: { data?: { error?: string } } })?.response?.data
@@ -92,9 +93,10 @@ export default function Communications() {
 
   return (
     <Stack gap="md">
-      <PageHeader title="Comunicazioni" description="Pubblica e aggiorna il documento degli appuntamenti della squadra." />
+      <PageHeader title="Comunicazioni" description="Pubblica e aggiorna gli appuntamenti della squadra." action={<Button component={Link} to="/settings" variant="light">Configura integrazioni</Button>} />
 
       {error && <Alert color="red" title="Errore">{error}</Alert>}
+      {live?.lastError && !error && <Alert color="red" title="Ultimo aggiornamento non riuscito">{live.lastError}</Alert>}
 
       {loading ? <Loader /> : (
         <>
@@ -102,23 +104,24 @@ export default function Communications() {
             <Stack gap="sm">
               <Group justify="space-between" wrap="wrap">
                 <div>
-                  <Text fw={600}>Documento appuntamenti</Text>
+                  <Text fw={600}>{live?.provider === "notion" ? "Pagina Notion · Appuntamenti" : "Documento appuntamenti"}</Text>
                   <Text size="sm" c="dimmed">
-                    {live
+                    {live?.updatedAt
                       ? `Ultimo aggiornamento: ${formatDisplayDateTime(live.updatedAt)}`
-                      : "Crea il documento unico da condividere con la squadra."}
+                      : live?.provider === "notion" ? "Pagina collegata. Pubblica gli appuntamenti con Aggiorna ora." : "Crea il documento unico da condividere con la squadra."}
                   </Text>
                 </div>
                 <Group gap="xs">
                   {live && (
-                    <Button component="a" href={live.googleDocUrl} target="_blank" rel="noopener noreferrer" variant="light" leftSection={<IconExternalLink size={16} />}>
-                      Apri documento
+                    <Button component="a" href={live.url} target="_blank" rel="noopener noreferrer" variant="light" leftSection={<IconExternalLink size={16} />}>
+                      {live.provider === "notion" ? "Apri in Notion" : "Apri documento"}
                     </Button>
                   )}
+                  {live?.provider === "notion" && live.publicUrl && <Button component="a" href={live.publicUrl} target="_blank" rel="noopener noreferrer" variant="light">Apri pagina pubblica</Button>}
                   <Button onClick={handleRefresh} loading={refreshing} leftSection={<IconRefresh size={16} />}>
                     {live ? "Aggiorna ora" : "Crea documento"}
                   </Button>
-                  {live && (
+                  {live?.provider === "google" && (
                     <Button color="orange" variant="light" onClick={handleRecreate} loading={recreating} leftSection={<IconFilePlus size={16} />}>
                       Ricrea documento
                     </Button>
@@ -128,13 +131,15 @@ export default function Communications() {
               <Text size="sm" c="dimmed">
                 Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. Il documento conserva soltanto l'ultimo appuntamento passato, in grigio e barrato, e quelli da oggi in avanti.
               </Text>
+              {live?.provider === "notion" && <Alert color="blue">Aggiorna ora sostituisce l'intero contenuto della pagina collegata e ripristina anche una pagina svuotata. Le modifiche manuali nella pagina vengono sovrascritte. Dopo il primo aggiornamento riuscito si attiva la sincronizzazione automatica. Per cambiare pagina, collega un nuovo link nelle Impostazioni.</Alert>}
+              {live?.provider === "notion" && !live.publicUrl && <Text size="sm" c="dimmed">Per condividere con i genitori, pubblica la pagina da Notion e salva il link pubblico nelle Impostazioni.</Text>}
             </Stack>
           </Card>
 
           {items.length > 0 && (
             <Stack gap="xs">
               <Text size="sm" fw={600}>Documenti precedenti</Text>
-              {items.filter((item) => item.googleDocId !== live?.googleDocId).map((item) => (
+              {items.filter((item) => live?.provider !== "google" || item.googleDocId !== live.documentId).map((item) => (
                 <Card key={item.id} withBorder padding="sm" radius="md">
                   <Group justify="space-between" wrap="nowrap">
                     <div>

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.23.0] — 2026-10-22
+
+### Added
+
+- Appointment publishing to an existing Notion page, configured under Settings → Integrations with an internal token, access verification, and a separate public link.
+- Updates to the same Notion page after event changes and daily at 03:05, enabled after the first successful manual publication.
+- Forced refresh to restore an emptied page and actionable access errors without automatically creating duplicate pages.
+
+### Changed
+
+- Google Docs and Notion share appointment composition, preserving filters, call-ups, formatting, and one gray, struck-through past event.
+- Automatic Notion updates skip unchanged content; manual refreshes always replace the page content.
+- The previous Google Doc remains available as an alternative; Google Calendar and match-plan exports continue to work.
+
+### Fixed
+
+- The most recent past appointment is selected after applying the publication inclusion flag.
+
 ## [0.22.1] — 2026-10-20
 
 ### Changed

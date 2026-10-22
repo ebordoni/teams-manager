@@ -83,9 +83,23 @@ export interface GeneratedCommunication {
 
 export interface LiveCommunication {
   title: string;
-  googleDocId: string;
-  googleDocUrl: string;
+  provider: "google" | "notion";
+  documentId: string;
+  url: string;
+  publicUrl?: string;
+  lastError?: string | null;
   updatedAt: string;
+}
+
+export interface NotionStatus {
+  active: boolean;
+  configured: boolean;
+  pageId: string;
+  pageUrl: string;
+  publicUrl: string;
+  updatedAt: string;
+  lastError: string | null;
+  autoSync: boolean;
 }
 
 export interface GeneratedMatchPlanExport {

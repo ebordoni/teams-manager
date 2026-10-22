@@ -1,291 +1,56 @@
-import { rowToEvent, rowToEventTypeDef } from "../db/helpers";
 import { getDb } from "../db/schema";
-import type {
-  CommunicationRow,
-  Event,
-  EventRow,
-  EventTypeDef,
-  EventTypeDefRow,
-  FormationRow,
-} from "../types";
+import type { CommunicationRow } from "../types";
 import { GoogleAuthRequiredError, withGoogleAuth } from "./google/auth";
 import { createStyledDocument, replaceStyledDocument } from "./google/docs";
 import { documentStyles } from "./google/document-styles";
 import { DocumentBuilder } from "./google/DocumentBuilder";
-import {
-  deleteFile,
-  ensureCommunicationsFolder,
-  makeShareableAndGetLink,
-  moveFileToFolder,
-} from "./google/drive";
-import { areMatchCallupsEnabled, getSetting, getTeamName, SETTINGS_KEYS } from "./settings.service";
+import { deleteFile, ensureCommunicationsFolder, makeShareableAndGetLink, moveFileToFolder } from "./google/drive";
+import { getSetting, getTeamName, SETTINGS_KEYS } from "./settings.service";
+import { buildCommunicationContent, loadEventTypes, loadLiveEvents } from "./communication-content";
+import { isNotionActive, notionStatus, publishNotion, NotionError, saveNotionSettings } from "./notion.service";
 
-const FORMATION_SLOTS: Array<[string, string]> = [
-  ["portiere", "Portiere"],
-  ["difensoreSinistro", "Difensore sinistro"],
-  ["difensoreDestro", "Difensore destro"],
-  ["centrale", "Centrocampista"],
-  ["fasciaSinistra", "Fascia sinistra"],
-  ["fasciaDestra", "Fascia destra"],
-  ["attaccante", "Attaccante"],
-];
-
-function loadEventTypes(): Map<string, EventTypeDef> {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT * FROM event_types")
-    .all() as unknown as EventTypeDefRow[];
-  return new Map(rows.map((r) => [r.key, rowToEventTypeDef(r)]));
-}
-
-const WEEKDAYS = [
-  "Domenica",
-  "Lunedì",
-  "Martedì",
-  "Mercoledì",
-  "Giovedì",
-  "Venerdì",
-  "Sabato",
-];
-const MONTHS = [
-  "gennaio",
-  "febbraio",
-  "marzo",
-  "aprile",
-  "maggio",
-  "giugno",
-  "luglio",
-  "agosto",
-  "settembre",
-  "ottobre",
-  "novembre",
-  "dicembre",
-];
-
-function formatDateIt(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  return `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
-}
-
-function getTeamPlayerNames(): string[] {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT name FROM players ORDER BY name ASC")
-    .all() as unknown as { name: string }[];
-  return rows.map((r) => r.name);
-}
-
-function getFormationLines(event: Event): string[] {
-  if (!event.formationId) return [];
-  const db = getDb();
-  const formation = db
-    .prepare("SELECT * FROM formations WHERE id = ?")
-    .get(event.formationId) as FormationRow | undefined;
-  if (!formation) return [];
-  const assignments = JSON.parse(formation.assignments) as Record<
-    string,
-    number | null
-  >;
-  const playerIds = Object.values(assignments).filter(
-    (id): id is number => id !== null,
-  );
-  if (playerIds.length === 0) return [];
-  const players = db
-    .prepare(
-      `SELECT id, name FROM players WHERE id IN (${playerIds.map(() => "?").join(", ")})`,
-    )
-    .all(...playerIds) as Array<{ id: number; name: string }>;
-  const playerNames = new Map(
-    players.map((player) => [player.id, player.name]),
-  );
-  const lineup = FORMATION_SLOTS.flatMap(([slot, label]) => {
-    const name = assignments[slot]
-      ? playerNames.get(assignments[slot]!)
-      : undefined;
-    return name ? [`${label}: ${name}`] : [];
-  });
-  return lineup.length
-    ? [`FORMAZIONE · ${formation.name}`, ...lineup.map((item) => `- ${item}`)]
-    : [];
-}
-
-// Google Docs non può usare le icone Tabler dell'interfaccia: le traduciamo
-// quindi in emoji equivalenti, mantenendo distinguibili i tipi configurati.
-const GOOGLE_DOCUMENT_EVENT_ICONS: Record<string, string> = {
-  IconBallFootball: "⚽",
-  IconRun: "🏃",
-  IconTrophy: "🏆",
-  IconMedal: "🏅",
-  IconAward: "🏆",
-  IconFlag: "🚩",
-  IconPennant: "🚩",
-  IconBuildingStadium: "🏟️",
-  IconShirtSport: "👕",
-  IconTargetArrow: "🎯",
-  IconSwords: "⚔️",
-  IconCalendarEvent: "📅",
-  IconClock: "🕒",
-  IconClipboardCheck: "✅",
-  IconUsersGroup: "👥",
-  IconHeartHandshake: "🤝",
-  IconMessageCircle: "💬",
-  IconBell: "🔔",
-  IconSpeakerphone: "📣",
-  IconMapPin: "📍",
-  IconBus: "🚌",
-  IconCar: "🚗",
-  IconHome: "🏠",
-  IconSchool: "🏫",
-  IconSun: "☀️",
-  IconCloudRain: "🌧️",
-  IconFirstAidKit: "🩹",
-  IconStethoscope: "🩺",
-  IconBottle: "🧴",
-  IconMoodSmile: "😊",
-  IconCamera: "📷",
-  IconVideo: "🎥",
-  IconBallBasketball: "🏀",
-};
-
-function eventIcon(icon?: string): string {
-  return GOOGLE_DOCUMENT_EVENT_ICONS[icon ?? ""] ?? "📅";
-}
-
-/** Costruisce il documento automatico con una gerarchia leggibile su mobile. */
-function buildStyledDocument(
-  events: Event[],
-  eventTypes: Map<string, EventTypeDef>,
-): { title: string; builder: DocumentBuilder } {
-  const sorted = events
-    .filter((event) => eventTypes.get(event.type)?.includeInGoogleDoc ?? true)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  const teamName = getTeamName();
-  const today = todayIso();
-  const title = `${teamName} – Appuntamenti`;
-  const builder = new DocumentBuilder()
-    .addParagraph(teamName.toLocaleUpperCase("it-IT"), documentStyles.title)
-    .addParagraph(
-      "Appuntamenti di squadra",
-      documentStyles.subtitle,
-    );
-
-  for (const event of sorted) {
-    const typeDef = eventTypes.get(event.type);
-    const eventLabel = (typeDef?.label ?? event.type).toUpperCase();
-    const eventTitle = typeDef?.hasOpponent
-      ? `${eventLabel} ${
-          event.venue === "away"
-            ? "IN TRASFERTA"
-            : event.venue === "neutral"
-              ? "IN CAMPO NEUTRO"
-              : "IN CASA"
-        }`
-      : eventLabel;
-    const style = <T extends { textStyle?: object }>(base: T): T =>
-      event.date < today
-        ? {
-            ...base,
-            textStyle: {
-              ...base.textStyle,
-              foregroundColor: {
-                color: { rgbColor: { red: 0.48, green: 0.48, blue: 0.48 } },
-              },
-              strikethrough: true,
-            },
-          }
-        : base;
-
-    builder
-      .addParagraph(formatDateIt(event.date), style(documentStyles.date))
-      .addParagraph(
-        `${eventIcon(typeDef?.icon)} ${eventTitle}`,
-        style(documentStyles.event),
-      );
-
-    if (event.status !== "scheduled") {
-      const status = event.status === "cancelled" ? "ANNULLATO" : "MODIFICATO";
-      builder.addParagraph(
-        `⚠️ ${status}${event.notes ? `: ${event.notes}` : ""}`,
-        style(documentStyles.note),
-      );
-    }
-
-    if (typeDef?.hasOpponent && event.opponent) {
-      const homeTeam = event.venue === "away" ? event.opponent : teamName;
-      const awayTeam = event.venue === "away" ? teamName : event.opponent;
-      builder.addParagraph(
-        `${homeTeam.toLocaleUpperCase("it-IT")} VS ${awayTeam.toLocaleUpperCase("it-IT")}`,
-        style(documentStyles.match),
-      );
-    }
-    if (event.location)
-      builder.addParagraph(`📍 ${event.location}`, style(documentStyles.normal));
-    if (event.meetingTime)
-      builder.addParagraph(
-        `⏰ Ritrovo: ${event.meetingTime}`,
-        style(documentStyles.normal),
-      );
-    if (event.startTime) {
-      builder.addParagraph(
-        `⏰ Inizio: ${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}`,
-        style(documentStyles.normal),
-      );
-    }
-    if (event.notes && event.status === "scheduled") {
-      builder.addParagraph(event.notes, style(documentStyles.note));
-    }
-
-    if (typeDef?.hasOpponent && areMatchCallupsEnabled()) {
-      const teamPlayers = getTeamPlayerNames();
-      if (teamPlayers.length > 0) {
-        builder
-          .addParagraph("Convocati", style(documentStyles.match))
-          .addParagraph(teamPlayers.join(" · "), style(documentStyles.normal));
-      }
-    }
-
-    const formation = getFormationLines(event);
-    if (formation.length > 0) {
-      builder.addParagraph(formation[0], style(documentStyles.match));
-      builder.addParagraph(
-        formation.slice(1).join(" · "),
-        style(documentStyles.normal),
-      );
-    }
-    builder.addEmptyLine();
+function buildStyledDocument(events: Parameters<typeof buildCommunicationContent>[0], eventTypes: Parameters<typeof buildCommunicationContent>[1]) {
+  const content = buildCommunicationContent(events, eventTypes);
+  const builder = new DocumentBuilder();
+  for (const paragraph of content.paragraphs) {
+    const base = documentStyles[paragraph.kind];
+    builder.addParagraph(paragraph.text, paragraph.past ? {
+      ...base, textStyle: { ...base.textStyle, strikethrough: true,
+        foregroundColor: { color: { rgbColor: { red: 0.48, green: 0.48, blue: 0.48 } } } },
+    } : base);
   }
-
-  return { title, builder };
-}
-
-function todayIso(): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Rome",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const value = (type: string) => parts.find((part) => part.type === type)?.value;
-  return `${value("year")}-${value("month")}-${value("day")}`;
+  return { title: content.title, builder };
 }
 
 export interface LiveCommunication {
   title: string;
-  googleDocId: string;
-  googleDocUrl: string;
+  provider: "google" | "notion";
+  documentId: string;
+  url: string;
+  publicUrl?: string;
+  lastError?: string | null;
+  googleDocId?: string;
+  googleDocUrl?: string;
   updatedAt: string;
 }
 
 export interface RefreshLiveCommunicationOptions {
   /** Crea intenzionalmente un nuovo documento e aggiorna il link salvato. */
   recreate?: boolean;
+  force?: boolean;
 }
 
 // Gli aggiornamenti possono arrivare dal pulsante, dal salvataggio di un
 // evento e dal job giornaliero. Serializzarli evita che due sostituzioni del
 // body leggano lo stesso contenuto e lo inseriscano entrambe.
 let liveRefreshQueue: Promise<void> = Promise.resolve();
+
+/** Evita di cambiare pagina o token mentre una pubblicazione è in corso. */
+export function configureNotion(input: Parameters<typeof saveNotionSettings>[0]) {
+  const save = liveRefreshQueue.then(() => saveNotionSettings(input));
+  liveRefreshQueue = save.then(() => undefined, () => undefined);
+  return save;
+}
 
 /** La richiesta non è valida: nessun evento selezionato o id inesistenti. */
 export class CommunicationRequestError extends Error {
@@ -321,21 +86,6 @@ function isGoogleNotFoundError(error: unknown): boolean {
   );
 }
 
-function loadLiveEvents(): Event[] {
-  const db = getDb();
-  const today = todayIso();
-  const recentPast = db
-    .prepare(
-      "SELECT * FROM events WHERE date < ? ORDER BY date DESC, start_time DESC LIMIT 1",
-    )
-    .all(today) as unknown as EventRow[];
-  const currentAndFuture = db
-    .prepare(
-      "SELECT * FROM events WHERE date >= ? ORDER BY date ASC, start_time ASC",
-    )
-    .all(today) as unknown as EventRow[];
-  return [...recentPast.reverse(), ...currentAndFuture].map(rowToEvent);
-}
 
 function savedLiveCommunication(): LiveCommunication | null {
   const googleDocId = getSetting(SETTINGS_KEYS.googleLiveDocId);
@@ -343,6 +93,9 @@ function savedLiveCommunication(): LiveCommunication | null {
   if (!googleDocId || !googleDocUrl) return null;
   return {
     title: getSetting(SETTINGS_KEYS.googleLiveDocTitle) ?? `${getTeamName()} – Appuntamenti`,
+    provider: "google",
+    documentId: googleDocId,
+    url: googleDocUrl,
     googleDocId,
     googleDocUrl,
     updatedAt: getSetting(SETTINGS_KEYS.googleLiveDocUpdatedAt) ?? "",
@@ -351,6 +104,13 @@ function savedLiveCommunication(): LiveCommunication | null {
 
 /** Restituisce il documento unico, se è già stato creato o adottato. */
 export function getLiveCommunication(): LiveCommunication | null {
+  if (isNotionActive()) {
+    const status = notionStatus();
+    return status.configured ? {
+      title: `${getTeamName()} – Appuntamenti`, provider: "notion", documentId: status.pageId,
+      url: status.pageUrl, publicUrl: status.publicUrl, updatedAt: status.updatedAt, lastError: status.lastError,
+    } : null;
+  }
   return savedLiveCommunication();
 }
 
@@ -371,11 +131,16 @@ export function refreshLiveCommunication(
 }
 
 async function refreshLiveCommunicationNow(
-  { recreate = false }: RefreshLiveCommunicationOptions,
+  { recreate = false, force = false }: RefreshLiveCommunicationOptions,
 ): Promise<LiveCommunication> {
   const db = getDb();
   const events = loadLiveEvents();
   const eventTypes = loadEventTypes();
+  if (isNotionActive()) {
+    if (recreate) throw new NotionError("Per cambiare pagina collega una nuova pagina Notion nelle Impostazioni, quindi pubblicala e aggiorna il link pubblico.");
+    await publishNotion(buildCommunicationContent(events, eventTypes), force);
+    return getLiveCommunication()!;
+  }
   const built = buildStyledDocument(events, eventTypes);
   let existing = recreate ? null : savedLiveCommunication();
 
@@ -388,6 +153,9 @@ async function refreshLiveCommunicationNow(
     if (latest) {
       existing = {
         title: latest.title,
+        provider: "google",
+        documentId: latest.google_doc_id,
+        url: latest.google_doc_url,
         googleDocId: latest.google_doc_id,
         googleDocUrl: latest.google_doc_url,
         updatedAt: latest.created_at,
@@ -410,10 +178,14 @@ async function refreshLiveCommunicationNow(
       const folderId = await ensureCommunicationsFolder(auth);
       await moveFileToFolder(auth, documentId, folderId);
     }
+    const url = await makeShareableAndGetLink(auth, documentId);
     return {
       title: built.title,
+      provider: "google" as const,
+      documentId: documentId,
+      url,
       googleDocId: documentId,
-      googleDocUrl: await makeShareableAndGetLink(auth, documentId),
+      googleDocUrl: url,
       updatedAt: new Date().toISOString(),
     };
   });
@@ -429,11 +201,11 @@ function setLiveCommunication(live: LiveCommunication): void {
     db.prepare(
       `INSERT INTO app_settings (key, value) VALUES (?, ?)
        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-    ).run(SETTINGS_KEYS.googleLiveDocId, live.googleDocId);
+    ).run(SETTINGS_KEYS.googleLiveDocId, live.documentId);
     db.prepare(
       `INSERT INTO app_settings (key, value) VALUES (?, ?)
        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-    ).run(SETTINGS_KEYS.googleLiveDocUrl, live.googleDocUrl);
+    ).run(SETTINGS_KEYS.googleLiveDocUrl, live.url);
     db.prepare(
       `INSERT INTO app_settings (key, value) VALUES (?, ?)
        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,

@@ -1,0 +1,44 @@
+import { Alert, Button, Card, Checkbox, Group, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { useEffect, useState } from "react";
+import { api } from "../api/client";
+import type { NotionStatus } from "../types";
+
+export default function NotionSettings() {
+  const [status, setStatus] = useState<NotionStatus | null>(null);
+  const [form, setForm] = useState({ token: "", page: "", publicUrl: "", active: true });
+  const [busy, setBusy] = useState<"save" | "verify" | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [message, setMessage] = useState<{ color: "red" | "green"; text: string } | null>(null);
+  const report = (error: unknown) => setMessage({ color: "red", text: (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? "Operazione Notion non riuscita." });
+  useEffect(() => {
+    api.getNotionSettings().then(({ data }) => {
+      setStatus(data);
+      setForm({ token: "", page: data.pageUrl, publicUrl: data.publicUrl, active: data.configured ? data.active : true });
+    }).catch(report);
+  }, []);
+  function change(next: Partial<typeof form>) { setForm((current) => ({ ...current, ...next })); setDirty(true); setMessage(null); }
+  async function save() {
+    setBusy("save"); setMessage(null);
+    try {
+      const { data } = await api.saveNotionSettings({ ...form, token: form.token || undefined });
+      setStatus(data); setForm({ token: "", page: data.pageUrl, publicUrl: data.publicUrl, active: data.active }); setDirty(false);
+      setMessage({ color: "green", text: "Configurazione salvata. Verifica l'accesso, poi usa Aggiorna ora in Comunicazioni per pubblicare gli appuntamenti." });
+    } catch (error) { report(error); } finally { setBusy(null); }
+  }
+  async function verify() {
+    setBusy("verify"); setMessage(null);
+    try { const { data } = await api.verifyNotion(); setMessage({ color: "green", text: data.message }); }
+    catch (error) { report(error); } finally { setBusy(null); }
+  }
+  return <Card withBorder padding="md" radius="md"><Stack gap="sm">
+    <Title order={5}>Notion · Appuntamenti</Title>
+    <Text size="sm" c="dimmed">Crea una connessione interna Notion con permessi di lettura e aggiornamento, poi aggiungila alla pagina dal menu Connessioni. Usa una pagina dedicata: il contenuto viene sostituito a ogni pubblicazione.</Text>
+    <Text component="a" href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener noreferrer" size="sm">Gestisci le connessioni Notion</Text>
+    <PasswordInput label="Token della connessione interna" placeholder={status?.configured ? "Token salvato · lascia vuoto per mantenerlo" : "Inserisci il token Notion"} value={form.token} onChange={(event) => change({ token: event.currentTarget.value })} autoComplete="off" />
+    <TextInput label="Pagina Notion" description="Incolla il link della pagina nel workspace oppure il suo ID." value={form.page} onChange={(event) => change({ page: event.currentTarget.value })} />
+    <TextInput label="Link pubblico da condividere" description="Facoltativo. Copialo da Notion dopo Condividi → Pubblica: è diverso dal link del workspace." value={form.publicUrl} onChange={(event) => change({ publicUrl: event.currentTarget.value })} />
+    <Checkbox label="Usa Notion per gli appuntamenti" description="Sostituisce l'aggiornamento del Google Doc. Google Calendar e i piani partita restano disponibili." checked={form.active} onChange={(event) => change({ active: event.currentTarget.checked })} />
+    <Group><Button onClick={save} loading={busy === "save"} disabled={!status || busy === "verify" || !form.page.trim()}>Salva</Button><Button variant="light" onClick={verify} loading={busy === "verify"} disabled={!status?.configured || dirty || busy === "save"}>Verifica accesso</Button></Group>
+    {message && <Alert color={message.color}>{message.text}</Alert>}
+  </Stack></Card>;
+}

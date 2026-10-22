@@ -11,6 +11,7 @@ import {
   refreshLiveCommunication,
 } from "../services/communication.service";
 import { GoogleAuthRequiredError } from "../services/google/auth";
+import { NotionError } from "../services/notion.service";
 
 const router = Router();
 
@@ -19,6 +20,10 @@ const router = Router();
  * richiesta non è valida, 502 se Google ha risposto male.
  */
 function sendServiceError(res: Response, err: unknown, fallback: string): void {
+  if (err instanceof NotionError) {
+    res.status(502).json({ error: err.message });
+    return;
+  }
   if (err instanceof GoogleAuthRequiredError) {
     res.status(403).json({ error: err.message });
     return;
@@ -53,13 +58,13 @@ router.get("/live", (_req: Request, res: Response) => {
 // POST /api/communications/live/refresh — aggiornamento manuale del documento unico.
 router.post("/live/refresh", async (_req: Request, res: Response) => {
   try {
-    const result = await refreshLiveCommunication();
+    const result = await refreshLiveCommunication({ force: true });
     res.json(result);
   } catch (err) {
     sendServiceError(
       res,
       err,
-      "Impossibile aggiornare il documento Google. Riprova più tardi.",
+      "Impossibile aggiornare la pagina degli appuntamenti. Riprova più tardi.",
     );
   }
 });

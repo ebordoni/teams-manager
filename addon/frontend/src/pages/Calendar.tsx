@@ -486,7 +486,7 @@ export default function Calendar() {
             onClick={handleGenerateCommunication}
             loading={generating}
           >
-            📄 Aggiorna Google Doc
+            📄 Aggiorna appuntamenti
           </Button>
           <Button onClick={handleOpenForm}>+ Nuovo evento</Button>
         </>
@@ -548,7 +548,7 @@ export default function Calendar() {
             <Text fw={600}>✅ Documento aggiornato</Text>
             <Text
               component="a"
-              href={generated.googleDocUrl}
+              href={generated.publicUrl || generated.url}
               target="_blank"
               rel="noopener noreferrer"
               c="blue"

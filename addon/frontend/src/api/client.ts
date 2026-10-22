@@ -91,6 +91,10 @@ export const api = {
   disconnectGoogle: () => apiClient.post("/google/disconnect"),
 
   // ── Comunicazioni ──────────────────────────────────────────────────────
+  getNotionSettings: () => apiClient.get<import("../types").NotionStatus>("/notion"),
+  saveNotionSettings: (settings: { token?: string; page: string; publicUrl: string; active: boolean }) =>
+    apiClient.put<import("../types").NotionStatus>("/notion", settings),
+  verifyNotion: () => apiClient.post<{ message: string }>("/notion/verify"),
   generateCommunication: (eventIds: number[]) =>
     apiClient.post<GeneratedCommunication>("/communications", { eventIds }),
   getCommunications: () =>
