@@ -1,22 +1,16 @@
 import { createServer } from "node:http";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createHash } from "node:crypto";
+import { attachSiteAssets } from "../../addon/backend/src/services/public-site/assets.mjs";
 import { buildDemo } from "./render.mjs";
-import { CloudflareClient, configuration, mime, securityHeaders } from "./cloudflare.mjs";
+import { CloudflareClient, configuration, mime } from "./cloudflare.mjs";
 
 const sourceDir = path.dirname(fileURLToPath(import.meta.url));
 const output = path.resolve(sourceDir, "../../dist/public-site-prototype");
 
 export async function bundle() {
-  const files = buildDemo();
-  for (const name of ["style.css", "site.js"]) files.set(`/${name}`, await readFile(path.resolve(sourceDir, "../../addon/backend/public-site-assets", name), "utf8"));
-  files.set("/_headers", securityHeaders);
-  const manifest = JSON.parse(files.get("/manifest.json"));
-  manifest.revision = createHash("sha256").update([...files].filter(([name]) => name !== "/manifest.json").map(([name, value]) => `${name}\n${value}`).join("\n")).digest("hex");
-  files.set("/manifest.json", JSON.stringify(manifest));
-  return files;
+  return attachSiteAssets(buildDemo());
 }
 
 async function main() {

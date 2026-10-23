@@ -7,6 +7,18 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.1] — 2026-10-23
+
+### Modificato
+
+- Sito pubblico con font Poppins ospitato localmente, logo G.I.P.S. Salizzole e tema blu, rosso e bianco ispirato ai colori della squadra.
+- Intestazione e introduzione compatte su smartphone e desktop: il primo appuntamento precede gli avvisi ed è subito in evidenza. Menu hamburger accessibile su tutte le schermate, funzionante anche nell'anteprima senza JavaScript.
+
+### Corretto
+
+- Logo e font inclusi come asset binari nel prototipo e nell'add-on, con licenza del font, tipi MIME e intestazioni di sicurezza aggiornati; l'anteprima incorpora le risorse senza richieste ai percorsi Home Assistant.
+- Gli aggiornamenti automatici rilevano anche modifiche a logo e font, preservando i byte originali durante hash e pubblicazione.
+
 ## [1.0.0] — 2026-10-23
 
 ### Aggiunto

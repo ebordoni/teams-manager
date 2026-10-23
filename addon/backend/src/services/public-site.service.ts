@@ -86,19 +86,23 @@ export function publicSiteModel() {
 
 export async function renderPublicSite(now = new Date(), model = publicSiteModel()) {
   const { buildSite } = await import("./public-site/render.mjs");
-  const { securityHeaders } = await import("./public-site/cloudflare.mjs");
-  const files: Map<string, string> = buildSite(model, now);
-  for (const filename of ["style.css", "site.js"]) files.set(`/${filename}`, await readFile(path.resolve(__dirname, "../../public-site-assets", filename), "utf8"));
-  files.set("/_headers", securityHeaders);
-  const revision = createHash("sha256").update([...files].filter(([name]) => name !== "/manifest.json").map(([name, content]) => `${name}\n${content}`).join("\n")).digest("hex");
-  files.set("/manifest.json", JSON.stringify({ prototype: false, revision, generatedAt: now.toISOString() }));
-  return files;
+  const { attachSiteAssets } = await import("./public-site/assets.mjs");
+  return attachSiteAssets(buildSite(model, now));
 }
 
 export async function previewWebsite() {
   const files = await renderPublicSite();
-  return { html: files.get("/index.html")!
-    .replace('<link rel="stylesheet" href="/style.css">', `<style>${files.get("/style.css")}</style>`)
+  // srcDoc è isolato senza script o same-origin: incorpora solo gli asset
+  // necessari, evitando richieste verso i percorsi dell'Ingress di HA.
+  let css = files.get("/style.css")!.toString();
+  for (const weight of [400, 500, 600, 700]) {
+    const font = files.get(`/fonts/poppins-latin-${weight}.woff2`)!;
+    css = css.replace(`/fonts/poppins-latin-${weight}.woff2`, `data:font/woff2;base64,${Buffer.from(font).toString("base64")}`);
+  }
+  return { html: files.get("/index.html")!.toString()
+    .replace('<link rel="stylesheet" href="/style.css">', () => `<style>${css}</style>`)
+    .replaceAll('src="/logo.png"', `src="data:image/png;base64,${Buffer.from(files.get("/logo.png")!).toString("base64")}"`)
+    .replace(/<link[^>]+rel="(?:icon|preload)"[^>]*>/g, "")
     .replace('<script src="/site.js" defer></script>', "") };
 }
 
@@ -107,7 +111,8 @@ export async function publishWebsite(force = false, confirmPublic = false) {
   if (!settings.published && !confirmPublic) throw new PublicSiteError("Conferma la prima pubblicazione: gli appuntamenti saranno visibili pubblicamente.");
   try {
     // Hash significativo senza timestamp: niente deploy automatici a dati invariati.
-    const assets = await Promise.all(["style.css", "site.js"].map((name) => readFile(path.resolve(__dirname, "../../public-site-assets", name), "utf8")));
+    const { readSiteAssets, hashSiteFiles } = await import("./public-site/assets.mjs");
+    const assets = hashSiteFiles(await readSiteAssets());
     const model = publicSiteModel();
     const renderer = await readFile(path.resolve(__dirname, "public-site/render.mjs"), "utf8");
     const hash = createHash("sha256").update(JSON.stringify({ model, assets, renderer })).digest("hex");

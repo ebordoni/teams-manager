@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.1] — 2026-10-23
+
+### Changed
+
+- Public website now uses self-hosted Poppins, the supplied G.I.P.S. Salizzole logo and a team-inspired blue, red and white theme.
+- Compact header and introduction on mobile and desktop, with the next appointment above notices. Accessible hamburger navigation on every page also works in the script-free preview.
+
+### Fixed
+
+- Bundle binary logo and font assets in both the prototype and add-on, including font licensing, MIME types and security headers; embed preview resources without Home Assistant path requests.
+- Include logo and font changes in automatic publication hashes while preserving original binary bytes throughout deployment.
+
 ## [1.0.0] — 2026-10-23
 
 ### Added

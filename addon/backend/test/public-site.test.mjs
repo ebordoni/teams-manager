@@ -67,6 +67,11 @@ test("public model includes selected appointments only, never player data or pri
   assert.equal(preview.status, 200);
   assert.match(preview.data.html, /<style>/);
   assert.doesNotMatch(preview.data.html, /<script/);
+  assert.match(preview.data.html, /src="data:image\/png;base64,/);
+  assert.equal(preview.data.html.split("data:font/woff2;base64,").length - 1, 4);
+  assert.doesNotMatch(preview.data.html, /(?:src|href)="\/(?:logo|fonts|style)|url\("\/fonts|rel="preload"/);
+  assert.match(preview.data.html, /<details class="menu"><summary/);
+  assert.equal(files.get("/logo.png").subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
   assert.equal(files.get("/index.html").split('id="evento-').length - 1, 3);
   assert.equal(JSON.parse(files.get("/manifest.json")).prototype, false);
 });
