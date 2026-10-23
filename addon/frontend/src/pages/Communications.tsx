@@ -104,7 +104,7 @@ export default function Communications() {
             <Stack gap="sm">
               <Group justify="space-between" wrap="wrap">
                 <div>
-                  <Text fw={600}>{live?.provider === "notion" ? "Pagina Notion · Appuntamenti" : "Documento appuntamenti"}</Text>
+                  <Text fw={600}>{live?.provider === "notion" ? live.notionMode === "database" ? "Calendario Notion · Appuntamenti" : "Pagina Notion · Appuntamenti" : "Documento appuntamenti"}</Text>
                   <Text size="sm" c="dimmed">
                     {live?.updatedAt
                       ? `Ultimo aggiornamento: ${formatDisplayDateTime(live.updatedAt)}`
@@ -131,7 +131,7 @@ export default function Communications() {
               <Text size="sm" c="dimmed">
                 Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. Il documento conserva soltanto l'ultimo appuntamento passato, in grigio e barrato, e quelli da oggi in avanti.
               </Text>
-              {live?.provider === "notion" && <Alert color="blue">Aggiorna ora sostituisce l'intero contenuto della pagina collegata e ripristina anche una pagina svuotata. Le modifiche manuali nella pagina vengono sovrascritte. Dopo il primo aggiornamento riuscito si attiva la sincronizzazione automatica. Per cambiare pagina, collega un nuovo link nelle Impostazioni.</Alert>}
+              {live?.provider === "notion" && <Alert color="blue">{live.notionMode === "database" ? "Ogni appuntamento viene aggiornato nella sua scheda, mantenendo lo stesso collegamento. Le schede gestite dall'app vengono sovrascritte; quelle create manualmente non vengono rimosse. Gli eventi esclusi, eliminati e quelli passati oltre l'ultimo vengono archiviati. Dopo la prima sincronizzazione riuscita si attivano gli aggiornamenti automatici." : "Aggiorna ora sostituisce l'intero contenuto della pagina collegata e ripristina anche una pagina svuotata. Le modifiche manuali nella pagina vengono sovrascritte. Dopo il primo aggiornamento riuscito si attiva la sincronizzazione automatica. Per cambiare pagina, collega un nuovo link nelle Impostazioni."}</Alert>}
               {live?.provider === "notion" && !live.publicUrl && <Text size="sm" c="dimmed">Per condividere con i genitori, pubblica la pagina da Notion e salva il link pubblico nelle Impostazioni.</Text>}
             </Stack>
           </Card>

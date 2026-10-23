@@ -7,6 +7,21 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.24.0] — 2026-10-23
+
+### Aggiunto
+
+- Modalità Notion Calendario ed elenco, con una scheda per evento in un database esistente e collegamenti stabili durante gli aggiornamenti.
+- Configurazione della modalità e verifica in sola lettura del database; alla prima sincronizzazione vengono aggiunte le proprietà mancanti, riutilizzando titolo e data esistenti.
+- Schede evento con orari Europe/Rome, tipo, stato, luogo, ritrovo e dettagli, rispettando i flag di inclusione e convocazione.
+
+### Modificato
+
+- La sincronizzazione aggiorna le schede cambiate e archivia solo le voci gestite dall'app relative agli eventi eliminati, esclusi o passati oltre l'ultimo; le voci manuali restano intatte.
+- Gli aggiornamenti manuali proseguono in background con richieste di stato brevi, evitando timeout HTTP durante le sincronizzazioni lunghe.
+- Le richieste Notion sono cadenzate; gli eventi vengono riconosciuti tramite chiavi persistenti anche dopo la perdita di una risposta di creazione.
+- Mantenuta la modalità Pagina unica per le configurazioni esistenti; documentata la configurazione delle viste Elenco e Calendario sullo stesso database.
+
 ## [0.23.1] — 2026-10-23
 
 ### Corretto

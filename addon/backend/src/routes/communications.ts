@@ -14,6 +14,7 @@ import { GoogleAuthRequiredError } from "../services/google/auth";
 import { NotionError, notionErrorResponse } from "../services/notion.service";
 
 const router = Router();
+let refreshJob: { running: boolean; result?: Awaited<ReturnType<typeof refreshLiveCommunication>>; error?: string; errorStatus?: number } = { running: false };
 
 /**
  * Traduce gli errori del servizio: 403 se serve (ri)collegare Google, 400 se la
@@ -56,7 +57,20 @@ router.get("/live", (_req: Request, res: Response) => {
 });
 
 // POST /api/communications/live/refresh — aggiornamento manuale del documento unico.
-router.post("/live/refresh", async (_req: Request, res: Response) => {
+router.get("/live/status", (_req, res) => { res.json(refreshJob); });
+
+router.post("/live/refresh", async (req: Request, res: Response) => {
+  if (req.query.background === "1") {
+    if (!refreshJob.running) {
+      refreshJob = { running: true };
+      void refreshLiveCommunication({ force: true }).then(
+        (result) => { refreshJob = { running: false, result }; },
+        (error: unknown) => { refreshJob = { running: false, error: error instanceof Error ? error.message : "Aggiornamento non riuscito.", errorStatus: error instanceof GoogleAuthRequiredError ? 403 : 502 }; },
+      );
+    }
+    res.status(202).json({ running: true });
+    return;
+  }
   try {
     const result = await refreshLiveCommunication({ force: true });
     res.json(result);

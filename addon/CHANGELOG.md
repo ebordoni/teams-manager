@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.24.0] — 2026-10-23
+
+### Added
+
+- Notion Calendar and List mode, with one page per event in an existing database and stable links across updates.
+- Mode configuration and read-only database verification; the first sync adds missing properties and reuses the existing title and date properties.
+- Event pages with Europe/Rome dates and times, type, status, location, meeting time, and details, respecting inclusion and call-up settings.
+
+### Changed
+
+- Sync updates changed event pages and archives only app-managed entries for deleted, excluded, or older past events; manually created entries remain untouched.
+- Manual refreshes run in the background with short status requests to avoid HTTP timeouts during long syncs.
+- Notion requests are paced; persistent event keys allow recovery when a page-creation response is lost.
+- Existing configurations retain Single Page mode; documentation explains how to configure List and Calendar views on the same database.
+
 ## [0.23.1] — 2026-10-23
 
 ### Fixed

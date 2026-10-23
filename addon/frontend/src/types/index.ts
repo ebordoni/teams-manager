@@ -84,6 +84,7 @@ export interface GeneratedCommunication {
 export interface LiveCommunication {
   title: string;
   provider: "google" | "notion";
+  notionMode?: "page" | "database";
   documentId: string;
   url: string;
   publicUrl?: string;
@@ -92,6 +93,7 @@ export interface LiveCommunication {
 }
 
 export interface NotionStatus {
+  mode: "page" | "database";
   active: boolean;
   configured: boolean;
   pageId: string;

@@ -14,9 +14,11 @@ export function notionErrorResponse(error: NotionError) {
   return { error: error.message, upstream: "notion", upstreamStatus: error.upstreamStatus, notionCode: error.notionCode, requestId: error.requestId };
 }
 export const isNotionActive = () => getSetting("communication_provider") === "notion";
+export const notionMode = (): "page" | "database" => getSetting(key("mode")) === "database" ? "database" : "page";
 export function notionStatus() {
   return {
     active: isNotionActive(),
+    mode: notionMode(),
     configured: Boolean(getSetting(key("token")) && getSetting(key("page_id"))),
     pageId: getSetting(key("page_id")) ?? "",
     pageUrl: getSetting(key("page_url")) ?? "",
@@ -41,7 +43,7 @@ export function parseNotionPage(input: string): string {
   return match[1].replace(/-/g, "").toLowerCase();
 }
 
-export function saveNotionSettings(input: { token?: string; page: string; publicUrl: string; active: boolean }) {
+export function saveNotionSettings(input: { token?: string; page: string; publicUrl: string; active: boolean; mode?: "page" | "database" }) {
   const pageId = parseNotionPage(input.page);
   if (!input.token?.trim() && !getSetting(key("token"))) throw new NotionError("Inserisci il token della connessione interna Notion.");
   if (input.publicUrl) {
@@ -49,23 +51,46 @@ export function saveNotionSettings(input: { token?: string; page: string; public
     if (url.protocol !== "https:" || !/(^|\.)(notion\.so|notion\.com|notion\.site)$/.test(url.hostname)) throw new NotionError("Il link pubblico deve essere un URL HTTPS di Notion.");
   }
   if (input.token?.trim()) setSetting(key("token"), input.token.trim());
-  if (pageId !== getSetting(key("page_id"))) {
+  if (pageId !== getSetting(key("page_id")) || (input.mode !== undefined && input.mode !== notionMode())) {
     for (const name of ["hash", "updated_at", "synced_page_id", "last_error"]) setSetting(key(name), null);
   }
   setSetting(key("page_id"), pageId);
+  if (input.mode) setSetting(key("mode"), input.mode);
   setSetting(key("page_url"), `https://www.notion.so/${pageId}`);
   setSetting(key("public_url"), input.publicUrl || null);
   setSetting("communication_provider", input.active ? "notion" : "google");
   return notionStatus();
 }
 
-interface NotionResponse { object?: string; archived?: boolean; in_trash?: boolean; warnings?: unknown[] }
-async function notionRequest(path: string, method = "GET", body?: object): Promise<NotionResponse> {
+export interface NotionProperty {
+  type?: string;
+  title?: Array<{ plain_text?: string; text?: { content: string } }>;
+  rich_text?: Array<{ plain_text?: string; text?: { content: string } }>;
+}
+export interface NotionResponse {
+  object?: string; id?: string; archived?: boolean; in_trash?: boolean; warnings?: unknown[];
+  data_sources?: Array<{ id: string }>;
+  properties?: Record<string, NotionProperty>;
+  results?: NotionResponse[]; has_more?: boolean; next_cursor?: string | null;
+}
+let requestQueue: Promise<void> = Promise.resolve();
+let nextRequestAt = 0;
+async function paceNotionRequests() {
+  const turn = requestQueue.then(async () => {
+    const delay = nextRequestAt - Date.now();
+    if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+    nextRequestAt = Date.now() + 350;
+  });
+  requestQueue = turn.catch(() => undefined);
+  await turn;
+}
+export async function notionRequest(path: string, method = "GET", body?: object): Promise<NotionResponse> {
   const token = getSetting(key("token"));
   if (!token) throw new NotionError("Configura la connessione Notion nelle Impostazioni.");
   for (let attempt = 0; attempt < 3; attempt++) {
     let response: globalThis.Response;
     try {
+      await paceNotionRequests();
       response = await fetch(`https://api.notion.com/v1/${path}`, {
         method,
         headers: { Authorization: `Bearer ${token}`, "Notion-Version": "2026-03-11", "Content-Type": "application/json" },
@@ -103,6 +128,10 @@ async function notionRequest(path: string, method = "GET", body?: object): Promi
 export async function verifyNotion() {
   const id = getSetting(key("page_id"));
   if (!id) throw new NotionError("Configura la pagina Notion nelle Impostazioni.");
+  if (notionMode() === "database") {
+    const { verifyNotionDatabase } = await import("./notion-calendar.service.js");
+    return verifyNotionDatabase();
+  }
   const page = await notionRequest(`pages/${id}`);
   if (page.archived || page.in_trash) throw new NotionError("La pagina Notion è nel cestino. Ripristinala oppure collega un'altra pagina.");
   if (page.object !== "page") throw new NotionError("Il link deve indicare una pagina Notion.");

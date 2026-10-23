@@ -58,6 +58,25 @@ configurato o non risponde, viene usato automaticamente il motore locale.
 
 #### Pagina Notion (alternativa al Google Doc)
 
+##### Calendario ed elenco (database)
+
+Per mostrare gli eventi su un calendario, crea in Notion un **database dedicato**, condividilo con la connessione interna e scegli **Calendario ed elenco (database)** in **Impostazioni → Integrazioni → Notion**. Incolla il link del database, non quello di una sua singola scheda. La connessione deve poter leggere, inserire e aggiornare contenuti. Il database deve avere una sola origine dati; puoi aggiungere più viste della stessa origine.
+
+**Verifica accesso** controlla il database senza modificarlo. Il primo **Aggiorna ora** aggiunge, se mancanti, le proprietà Tipo, Stato, Luogo, Ritrovo e quelle tecniche `TM Evento ID` e `TM Impronta`. Il titolo e la prima proprietà data esistente sono riutilizzati; se non c'è una data viene creata `Data`. Eventuali proprietà con nomi riservati e tipi incompatibili producono un errore, senza convertirle o cancellarle.
+
+In Notion configura due viste dello stesso database:
+
+- **Prossimi appuntamenti**, di tipo Elenco, ordinata per la proprietà data crescente; consigliata come prima vista per smartphone.
+- **Calendario**, basata sulla stessa proprietà data, mensile o settimanale. Puoi mostrare Tipo, Stato, Luogo e Ritrovo nelle schede e nascondere le proprietà tecniche.
+
+Ogni evento ha una scheda stabile, con data/orari Europe/Rome e dettagli, note, formazione e convocazioni secondo le impostazioni dell'app. Gli aggiornamenti riscrivono solo le schede cambiate; il pulsante manuale forza il ripristino anche del contenuto modificato o svuotato in Notion. La sincronizzazione manuale prosegue in background con richieste di stato brevi, per evitare timeout durante l'aggiornamento di molti eventi.
+
+Restano gli eventi da oggi in avanti e l'ultimo passato incluso, con stato Passato e dettagli grigi e barrati. Le schede gestite dall'app relative a eventi eliminati, esclusi o più vecchi vengono spostate nel cestino di Notion dopo l'aggiornamento delle altre. Le voci create manualmente non vengono toccate. Non modificare le proprietà tecniche `TM Evento ID` e `TM Impronta`: servono a riconoscere gli eventi ed evitare duplicazioni. Le modifiche alle schede gestite dall'app devono essere effettuate nell'app, che rimane la fonte dei dati.
+
+Pubblica il database da Notion e salva il link pubblico da condividere. Le viste non sono autorizzazioni separate: pubblica soltanto informazioni destinate ai lettori. Una pagina Notion già collegata mantiene la modalità Pagina unica finché non scegli esplicitamente Database; cambiare modalità o destinazione richiede un nuovo aggiornamento manuale prima di riattivare l'automatismo e non elimina il contenuto precedente.
+
+##### Pagina unica
+
 In **Impostazioni → Integrazioni → Notion** puoi collegare una pagina esistente:
 
 1. Crea una connessione interna dal [portale Notion](https://www.notion.so/profile/integrations), con capacità di lettura e aggiornamento contenuti.

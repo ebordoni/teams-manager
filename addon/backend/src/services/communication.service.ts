@@ -7,7 +7,8 @@ import { DocumentBuilder } from "./google/DocumentBuilder";
 import { deleteFile, ensureCommunicationsFolder, makeShareableAndGetLink, moveFileToFolder } from "./google/drive";
 import { getSetting, getTeamName, SETTINGS_KEYS } from "./settings.service";
 import { buildCommunicationContent, loadEventTypes, loadLiveEvents } from "./communication-content";
-import { isNotionActive, notionStatus, publishNotion, NotionError, saveNotionSettings } from "./notion.service";
+import { isNotionActive, notionMode, notionStatus, publishNotion, NotionError, saveNotionSettings } from "./notion.service";
+import { publishNotionCalendar } from "./notion-calendar.service";
 
 function buildStyledDocument(events: Parameters<typeof buildCommunicationContent>[0], eventTypes: Parameters<typeof buildCommunicationContent>[1]) {
   const content = buildCommunicationContent(events, eventTypes);
@@ -25,6 +26,7 @@ function buildStyledDocument(events: Parameters<typeof buildCommunicationContent
 export interface LiveCommunication {
   title: string;
   provider: "google" | "notion";
+  notionMode?: "page" | "database";
   documentId: string;
   url: string;
   publicUrl?: string;
@@ -107,7 +109,7 @@ export function getLiveCommunication(): LiveCommunication | null {
   if (isNotionActive()) {
     const status = notionStatus();
     return status.configured ? {
-      title: `${getTeamName()} – Appuntamenti`, provider: "notion", documentId: status.pageId,
+      title: `${getTeamName()} – Appuntamenti`, provider: "notion", notionMode: status.mode, documentId: status.pageId,
       url: status.pageUrl, publicUrl: status.publicUrl, updatedAt: status.updatedAt, lastError: status.lastError,
     } : null;
   }
@@ -138,7 +140,8 @@ async function refreshLiveCommunicationNow(
   const eventTypes = loadEventTypes();
   if (isNotionActive()) {
     if (recreate) throw new NotionError("Per cambiare pagina collega una nuova pagina Notion nelle Impostazioni, quindi pubblicala e aggiorna il link pubblico.");
-    await publishNotion(buildCommunicationContent(events, eventTypes), force);
+    if (notionMode() === "database") await publishNotionCalendar(events, eventTypes, force);
+    else await publishNotion(buildCommunicationContent(events, eventTypes), force);
     return getLiveCommunication()!;
   }
   const built = buildStyledDocument(events, eventTypes);

@@ -92,7 +92,7 @@ export const api = {
 
   // ── Comunicazioni ──────────────────────────────────────────────────────
   getNotionSettings: () => apiClient.get<import("../types").NotionStatus>("/notion"),
-  saveNotionSettings: (settings: { token?: string; page: string; publicUrl: string; active: boolean }) =>
+  saveNotionSettings: (settings: { token?: string; page: string; publicUrl: string; active: boolean; mode?: "page" | "database" }) =>
     apiClient.put<import("../types").NotionStatus>("/notion", settings),
   verifyNotion: () => apiClient.post<{ message: string }>("/notion/verify"),
   generateCommunication: (eventIds: number[]) =>
@@ -103,8 +103,18 @@ export const api = {
     apiClient.delete(`/communications/${id}`),
   getLiveCommunication: () =>
     apiClient.get<import("../types").LiveCommunication | null>("/communications/live"),
-  refreshLiveCommunication: () =>
-    apiClient.post<import("../types").LiveCommunication>("/communications/live/refresh"),
+  refreshLiveCommunication: async () => {
+    await apiClient.post("/communications/live/refresh?background=1");
+    // Richieste brevi evitano timeout Ingress/Cloudflare durante sincronizzazioni lunghe.
+    for (let attempt = 0; attempt < 600; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const { data } = await apiClient.get<{ running: boolean; result?: import("../types").LiveCommunication; error?: string; errorStatus?: number }>("/communications/live/status");
+      if (data.running) continue;
+      if (data.error || !data.result) throw { response: { status: data.errorStatus, data: { error: data.error ?? "Aggiornamento interrotto. Riprova." } } };
+      return { data: data.result };
+    }
+    throw { response: { data: { error: "La sincronizzazione sta impiegando più tempo del previsto. Controlla lo stato in Comunicazioni prima di riprovare." } } };
+  },
   recreateLiveCommunication: () =>
     apiClient.post<import("../types").LiveCommunication>("/communications/live/recreate"),
   exportToGoogleCalendar: (eventIds: number[]) =>
