@@ -12,6 +12,7 @@ import {
 } from "../services/communication.service";
 import { GoogleAuthRequiredError } from "../services/google/auth";
 import { NotionError, notionErrorResponse } from "../services/notion.service";
+import { PublicSiteError } from "../services/public-site.service";
 
 const router = Router();
 let refreshJob: { running: boolean; result?: Awaited<ReturnType<typeof refreshLiveCommunication>>; error?: string; errorStatus?: number } = { running: false };
@@ -21,6 +22,7 @@ let refreshJob: { running: boolean; result?: Awaited<ReturnType<typeof refreshLi
  * richiesta non è valida, 502 se Google ha risposto male.
  */
 function sendServiceError(res: Response, err: unknown, fallback: string): void {
+  if (err instanceof PublicSiteError) { res.status(502).json({ error: err.message }); return; }
   if (err instanceof NotionError) {
     res.status(502).json(notionErrorResponse(err));
     return;
@@ -63,7 +65,7 @@ router.post("/live/refresh", async (req: Request, res: Response) => {
   if (req.query.background === "1") {
     if (!refreshJob.running) {
       refreshJob = { running: true };
-      void refreshLiveCommunication({ force: true }).then(
+      void refreshLiveCommunication({ force: true, confirmPublic: req.body?.confirmPublic === true }).then(
         (result) => { refreshJob = { running: false, result }; },
         (error: unknown) => { refreshJob = { running: false, error: error instanceof Error ? error.message : "Aggiornamento non riuscito.", errorStatus: error instanceof GoogleAuthRequiredError ? 403 : 502 }; },
       );
@@ -72,7 +74,7 @@ router.post("/live/refresh", async (req: Request, res: Response) => {
     return;
   }
   try {
-    const result = await refreshLiveCommunication({ force: true });
+    const result = await refreshLiveCommunication({ force: true, confirmPublic: req.body?.confirmPublic === true });
     res.json(result);
   } catch (err) {
     sendServiceError(

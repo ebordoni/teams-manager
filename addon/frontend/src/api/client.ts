@@ -91,6 +91,10 @@ export const api = {
   disconnectGoogle: () => apiClient.post("/google/disconnect"),
 
   // ── Comunicazioni ──────────────────────────────────────────────────────
+  getWebsiteSettings: () => apiClient.get<import("../types").WebsiteStatus>("/public-site"),
+  saveWebsiteSettings: (settings: import("../types").WebsiteInput) => apiClient.put<import("../types").WebsiteStatus>("/public-site", settings),
+  verifyWebsite: () => apiClient.post<{ message: string; url: string }>("/public-site/verify"),
+  previewWebsite: () => apiClient.get<{ html: string }>("/public-site/preview"),
   getNotionSettings: () => apiClient.get<import("../types").NotionStatus>("/notion"),
   saveNotionSettings: (settings: { token?: string; page: string; publicUrl: string; active: boolean }) =>
     apiClient.put<import("../types").NotionStatus>("/notion", settings),
@@ -103,11 +107,11 @@ export const api = {
     apiClient.delete(`/communications/${id}`),
   getLiveCommunication: () =>
     apiClient.get<import("../types").LiveCommunication | null>("/communications/live"),
-  refreshLiveCommunication: async () => {
-    await apiClient.post("/communications/live/refresh?background=1");
+  refreshLiveCommunication: async (confirmPublic = false) => {
+    await apiClient.post("/communications/live/refresh?background=1", { confirmPublic });
     // Richieste brevi evitano timeout Ingress/Cloudflare durante sincronizzazioni lunghe.
     for (let attempt = 0; attempt < 600; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, Math.min(1000 + attempt * 500, 5000)));
       const { data } = await apiClient.get<{ running: boolean; result?: import("../types").LiveCommunication; error?: string; errorStatus?: number }>("/communications/live/status");
       if (data.running) continue;
       if (data.error || !data.result) throw { response: { status: data.errorStatus, data: { error: data.error ?? "Aggiornamento interrotto. Riprova." } } };

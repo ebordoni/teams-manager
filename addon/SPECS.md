@@ -1,8 +1,10 @@
 # Teams Manager — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v0.25.0)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
+> Stato attuale: **MVP operativo (v1.0.0)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
 > Fonte: documento di progettazione iniziale (2026-08-26).
+
+Estensione sito pubblico: [specifica e piano di evoluzione](docs/PUBLIC_WEBSITE_SPEC.md), con confronto hosting gratuiti e architettura. La prima integrazione Cloudflare è disponibile dalla 1.0.0; configurazione e limiti effettivi sono descritti nella [documentazione dell'add-on](DOCS.md).
 
 ---
 

@@ -56,6 +56,23 @@ configurato o non risponde, viene usato automaticamente il motore locale.
 
 ### Comunicazioni
 
+#### Sito pubblico Cloudflare
+
+In **Impostazioni → Integrazioni → Sito pubblico · Cloudflare** inserisci Account ID, nome Worker e token API con permesso Workers Scripts Edit sul tuo account. Per il prototipo già pubblicato usa `teams-manager`: l'app riconosce il relativo tag e aggiorna lo stesso sito. Worker esistenti non riconosciuti vengono rifiutati senza sovrascriverli. Non servono modifiche ai DNS o esposizione pubblica di Home Assistant.
+
+1. Attiva **Usa il sito per gli appuntamenti** e salva. Il token resta nel backend, viene mantenuto se lasciato vuoto e non compare nelle risposte API o nell'export JSON. I backup completi dell'add-on contengono invece le credenziali: proteggili.
+2. Usa **Verifica accesso**: controlla la destinazione senza pubblicare. **Anteprima home** mostra il contenuto salvato, in una cornice isolata e senza script, quindi i filtri non sono interattivi nell'anteprima.
+3. Apri **Comunicazioni → Pubblica sito** e conferma che gli appuntamenti saranno pubblici. La prima pubblicazione sostituisce il prototipo con i dati della squadra. Se cambi destinazione o token viene richiesta una nuova pubblicazione esplicita.
+4. Dopo il primo invio riuscito, **Aggiorna automaticamente** abilita pubblicazioni raggruppate dopo le modifiche agli eventi, controllo al riavvio e pulizia giornaliera alle 03:05 Europe/Rome. Se il contenuto non cambia non viene creato un nuovo deploy; **Aggiorna ora** forza il ripristino. Disabilita l'opzione per pubblicare soltanto manualmente.
+
+Il sito include bacheca appuntamenti, Avvisi e Informazioni. I relativi testi pubblici si modificano nelle impostazioni; il nome della squadra viene dalle impostazioni generali. Sono rispettati i tipi evento inclusi nella pubblicazione e viene conservato un solo passato, in fondo, grigio e barrato. Nomi dei giocatori, presenze e formazioni non vengono pubblicati in questa prima integrazione. Le note degli eventi sono escluse: puoi abilitarle con l'opzione dedicata solo dopo averne controllato il contenuto. Avvisi e Informazioni accettano testo semplice, non HTML.
+
+Una sola destinazione automatica è attiva: attivare il sito sospende gli aggiornamenti di Notion e del Google Doc senza eliminarli. Puoi tornare a Notion attivandolo nelle impostazioni; disattivare la destinazione attiva torna a Google Docs. Google Calendar e piani partita restano indipendenti.
+
+Il sito contiene una copia pubblica dei dati: un link non costituisce un controllo degli accessi, e `noindex` non impedisce la lettura. Con Home Assistant spento resta consultabile l'ultima versione, ma non riceve nuove modifiche o pulizie finché l'add-on non torna online. Le pagine già aperte richiedono un ricaricamento per ricevere una nuova pubblicazione. Gli aggiornamenti sostituiscono tutte le pagine gestite dall'app, comprese eventuali modifiche manuali su Cloudflare. Per ritirare il sito e gestire vecchie versioni o rollback usa il pannello Cloudflare.
+
+Client, renderer e asset sono condivisi fra prototipo e add-on. Questa prima integrazione non comprende ancora editor di pagine aggiuntive, logo e temi configurabili, area riservata, notifiche o recupero automatico di un rollback remoto: la [specifica di evoluzione](docs/PUBLIC_WEBSITE_SPEC.md) mantiene il piano completo.
+
 #### Agenda Notion (alternativa al Google Doc)
 
 Gli appuntamenti vengono pubblicati su una **pagina normale**, in un'agenda verticale a una sola colonna pensata per smartphone. Il prossimo evento non annullato è in evidenza in un riquadro; seguono gli altri appuntamenti in ordine cronologico. Date, tipo di evento, avversario, luogo, orari, note, formazione ed eventuali convocazioni sono leggibili direttamente, senza aprire schede o sezioni nascoste. In fondo rimane soltanto l'ultimo evento passato, in grigio e barrato. Non servono database, viste calendario o template esterni.

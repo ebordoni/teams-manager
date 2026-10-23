@@ -7,6 +7,29 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.0] — 2026-10-23
+
+### Aggiunto
+
+- Integrazione del sito pubblico Cloudflare nell'add-on: configurazione protetta, verifica in sola lettura, anteprima home isolata e pubblicazione sullo stesso Worker del prototipo.
+- Bacheca con appuntamenti reali e pagine Avvisi e Informazioni, modificabili nelle impostazioni. Nomi dei giocatori, presenze e formazioni restano esclusi; le note degli eventi richiedono un'abilitazione esplicita.
+- Conferma della prima pubblicazione pubblica e riattivazione manuale dopo cambio di token o destinazione; aggiornamenti automatici opzionali dopo il primo invio riuscito.
+
+### Modificato
+
+- Il sito usa la coda delle comunicazioni, raggruppa modifiche vicine e salta i deploy automatici a contenuto invariato. Rimangono disponibili Notion, Google Docs, Calendar ed esportazioni dei piani partita.
+- Client Cloudflare, renderer e asset condivisi fra prototipo locale e add-on, inclusi nell'immagine Home Assistant; test del bundle completo con file `_headers` e protezione delle risorse estranee.
+- Richieste di stato del browser progressivamente distanziate durante la pubblicazione.
+
+### Corretto
+
+- Il salvataggio di Notion inattivo non disattiva più la destinazione sito attiva.
+- La pulizia giornaliera mantiene le 03:05 di Europe/Rome anche durante i cambi dell'ora legale.
+
+### Problemi noti
+
+- L'audit delle dipendenze segnala una vulnerabilità critica preesistente in `proxy-addr`, non risolta con questo rilascio.
+
 ## [0.25.0] — 2026-10-23
 
 ### Aggiunto

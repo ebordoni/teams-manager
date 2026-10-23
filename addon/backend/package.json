@@ -1,6 +1,6 @@
 {
       "name": "teams-manager-backend",
-      "version": "0.25.0",
+      "version": "1.0.0",
       "private": true,
       "scripts": {
             "dev": "tsx watch src/index.ts",

@@ -4,5 +4,6 @@ data/
 *.db
 *.db-journal
 .env
+.env.cloudflare.local
 .DS_Store
 *.log

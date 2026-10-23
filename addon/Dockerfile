@@ -26,7 +26,7 @@ LABEL \
   io.hass.description="Gestionale squadra calcio: calendario, giocatori, presenze e comunicazioni" \
   io.hass.arch="aarch64|amd64" \
   io.hass.type="addon" \
-  io.hass.version="0.25.0"
+  io.hass.version="1.0.0"
 
 WORKDIR /app
 
@@ -37,6 +37,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Copy compiled backend and built frontend
 COPY --from=backend-build /build/dist ./dist
 COPY --from=backend-build /build/package.json ./package.json
+COPY backend/public-site-assets ./public-site-assets
 COPY --from=frontend-build /build/dist ./public
 
 ENV NODE_ENV=production \

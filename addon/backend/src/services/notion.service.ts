@@ -71,7 +71,8 @@ export function saveNotionSettings(input: { token?: string; page: string; public
   setSetting(key("mode"), null);
   setSetting(key("page_url"), `https://www.notion.so/${pageId}`);
   setSetting(key("public_url"), input.publicUrl || null);
-  setSetting("communication_provider", input.active ? "notion" : "google");
+  if (input.active) setSetting("communication_provider", "notion");
+  else if (isNotionActive()) setSetting("communication_provider", "google");
   return notionStatus();
 }
 

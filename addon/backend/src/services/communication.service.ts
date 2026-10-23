@@ -8,6 +8,7 @@ import { deleteFile, ensureCommunicationsFolder, makeShareableAndGetLink, moveFi
 import { getSetting, getTeamName, SETTINGS_KEYS } from "./settings.service";
 import { buildCommunicationContent, loadEventTypes, loadLiveEvents } from "./communication-content";
 import { isNotionActive, notionStatus, publishNotion, NotionError, saveNotionSettings } from "./notion.service";
+import { isWebsiteActive, websiteSettings, publishWebsite, saveWebsiteSettings } from "./public-site.service";
 
 function buildStyledDocument(events: Parameters<typeof buildCommunicationContent>[0], eventTypes: Parameters<typeof buildCommunicationContent>[1]) {
   const content = buildCommunicationContent(events, eventTypes);
@@ -24,7 +25,9 @@ function buildStyledDocument(events: Parameters<typeof buildCommunicationContent
 
 export interface LiveCommunication {
   title: string;
-  provider: "google" | "notion";
+  provider: "google" | "notion" | "website";
+  published?: boolean;
+  autoSync?: boolean;
   requiresPageSetup?: boolean;
   documentId: string;
   url: string;
@@ -39,6 +42,7 @@ export interface RefreshLiveCommunicationOptions {
   /** Crea intenzionalmente un nuovo documento e aggiorna il link salvato. */
   recreate?: boolean;
   force?: boolean;
+  confirmPublic?: boolean;
 }
 
 // Gli aggiornamenti possono arrivare dal pulsante, dal salvataggio di un
@@ -49,6 +53,12 @@ let liveRefreshQueue: Promise<void> = Promise.resolve();
 /** Evita di cambiare pagina o token mentre una pubblicazione è in corso. */
 export function configureNotion(input: Parameters<typeof saveNotionSettings>[0]) {
   const save = liveRefreshQueue.then(() => saveNotionSettings(input));
+  liveRefreshQueue = save.then(() => undefined, () => undefined);
+  return save;
+}
+
+export function configureWebsite(input: Parameters<typeof saveWebsiteSettings>[0]) {
+  const save = liveRefreshQueue.then(() => saveWebsiteSettings(input));
   liveRefreshQueue = save.then(() => undefined, () => undefined);
   return save;
 }
@@ -105,6 +115,11 @@ function savedLiveCommunication(): LiveCommunication | null {
 
 /** Restituisce il documento unico, se è già stato creato o adottato. */
 export function getLiveCommunication(): LiveCommunication | null {
+  if (isWebsiteActive()) {
+    const status = websiteSettings();
+    return { title: `${getTeamName()} – Sito pubblico`, provider: "website", documentId: status.workerName,
+      url: status.url, updatedAt: status.updatedAt, lastError: status.lastError, published: status.published, autoSync: status.autoSync };
+  }
   if (isNotionActive()) {
     const status = notionStatus();
     return status.configured ? {
@@ -132,11 +147,16 @@ export function refreshLiveCommunication(
 }
 
 async function refreshLiveCommunicationNow(
-  { recreate = false, force = false }: RefreshLiveCommunicationOptions,
+  { recreate = false, force = false, confirmPublic = false }: RefreshLiveCommunicationOptions,
 ): Promise<LiveCommunication> {
   const db = getDb();
   const events = loadLiveEvents();
   const eventTypes = loadEventTypes();
+  if (isWebsiteActive()) {
+    if (recreate) throw new CommunicationRequestError("Per cambiare sito modifica la destinazione nelle Impostazioni.");
+    await publishWebsite(force, confirmPublic);
+    return getLiveCommunication()!;
+  }
   if (isNotionActive()) {
     if (recreate) throw new NotionError("Per cambiare pagina collega una nuova pagina Notion nelle Impostazioni, quindi pubblicala e aggiorna il link pubblico.");
     await publishNotion(buildCommunicationContent(events, eventTypes), force);

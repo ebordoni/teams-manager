@@ -23,6 +23,7 @@ import {
 import PageLoader from "../components/PageLoader";
 import PageHeader from "../components/PageHeader";
 import NotionSettings from "../components/NotionSettings";
+import WebsiteSettings from "../components/WebsiteSettings";
 import type { EventTypeDef, GoogleStatus } from "../types";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -311,6 +312,7 @@ export default function Settings() {
 
         <Tabs.Panel value="integrations"><Stack gap="md">
 
+      <WebsiteSettings />
       <NotionSettings />
 
       <Card withBorder padding="md" radius="md">

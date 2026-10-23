@@ -41,10 +41,12 @@ export default function Communications() {
   }, []);
 
   async function handleRefresh() {
+    const confirmPublic = live?.provider === "website" && !live.published;
+    if (confirmPublic && !window.confirm("Pubblicare gli appuntamenti reali sul sito pubblico? Sostituirà il prototipo. Controlla l'anteprima e le note eventualmente abilitate nelle Impostazioni prima di continuare.")) return;
     setError(null);
     setRefreshing(true);
     try {
-      const response = await api.refreshLiveCommunication();
+      const response = await api.refreshLiveCommunication(confirmPublic);
       setLive(response.data);
     } catch (err) {
       setError(
@@ -105,22 +107,22 @@ export default function Communications() {
             <Stack gap="sm">
               <Group justify="space-between" wrap="wrap">
                 <div>
-                  <Text fw={600}>{live?.provider === "notion" ? "Agenda Notion · Appuntamenti" : "Documento appuntamenti"}</Text>
+                  <Text fw={600}>{live?.provider === "website" ? "Sito pubblico · Appuntamenti" : live?.provider === "notion" ? "Agenda Notion · Appuntamenti" : "Documento appuntamenti"}</Text>
                   <Text size="sm" c="dimmed">
                     {live?.requiresPageSetup ? "Aggiornamenti sospesi: collega una pagina Notion nelle Impostazioni." : live?.updatedAt
                       ? `Ultimo aggiornamento: ${formatDisplayDateTime(live.updatedAt)}`
-                      : live?.provider === "notion" ? "Pagina collegata. Pubblica gli appuntamenti con Aggiorna ora." : "Crea il documento unico da condividere con la squadra."}
+                      : live?.provider === "website" ? "Configurazione salvata. Verifica l'anteprima nelle Impostazioni, poi pubblica." : live?.provider === "notion" ? "Pagina collegata. Pubblica gli appuntamenti con Aggiorna ora." : "Crea il documento unico da condividere con la squadra."}
                   </Text>
                 </div>
                 <Group gap="xs">
-                  {live && (
+                  {live?.url && (
                     <Button component="a" href={live.url} target="_blank" rel="noopener noreferrer" variant="light" leftSection={<IconExternalLink size={16} />}>
-                      {live.provider === "notion" ? "Apri in Notion" : "Apri documento"}
+                      {live.provider === "website" ? "Apri sito" : live.provider === "notion" ? "Apri in Notion" : "Apri documento"}
                     </Button>
                   )}
                   {live?.provider === "notion" && !live.requiresPageSetup && live.publicUrl && <Button component="a" href={live.publicUrl} target="_blank" rel="noopener noreferrer" variant="light">Apri pagina pubblica</Button>}
                   <Button onClick={handleRefresh} loading={refreshing} disabled={live?.requiresPageSetup} leftSection={<IconRefresh size={16} />}>
-                    {live ? "Aggiorna ora" : "Crea documento"}
+                    {live?.provider === "website" && !live.published ? "Pubblica sito" : live ? "Aggiorna ora" : "Crea documento"}
                   </Button>
                   {live?.provider === "google" && (
                     <Button color="orange" variant="light" onClick={handleRecreate} loading={recreating} leftSection={<IconFilePlus size={16} />}>
@@ -130,10 +132,11 @@ export default function Communications() {
                 </Group>
               </Group>
               <Text size="sm" c="dimmed">
-                Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. Restano gli appuntamenti da oggi in avanti e soltanto l'ultimo passato, in grigio e barrato{live?.provider === "notion" ? " in fondo all'agenda" : ""}.
+                {live?.provider === "website" ? live.autoSync ? "Aggiornamenti automatici attivi dopo le modifiche agli eventi e ogni giorno alle 03:05. " : "Gli aggiornamenti automatici si attivano dopo la prima pubblicazione, se abilitati nelle Impostazioni. " : "Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. "}Restano gli appuntamenti da oggi in avanti e soltanto l'ultimo passato, in grigio e barrato{live?.provider !== "google" ? " in fondo all'agenda" : ""}.
               </Text>
               {live?.provider === "notion" && !live.requiresPageSetup && <Alert color="blue">Il prossimo appuntamento è in evidenza e tutti i dettagli sono visibili nell'elenco, senza aprire schede. Aggiorna ora sostituisce l'intero contenuto della pagina e ripristina anche una pagina svuotata: le modifiche manuali vengono sovrascritte. Dopo la prima pubblicazione riuscita si attivano gli aggiornamenti automatici.</Alert>}
               {live?.provider === "notion" && !live.requiresPageSetup && !live.publicUrl && <Text size="sm" c="dimmed">Per condividere con i genitori, pubblica la pagina da Notion e salva il link pubblico nelle Impostazioni.</Text>}
+              {live?.provider === "website" && <Alert color="blue">Il sito usa il Worker Cloudflare configurato e mantiene lo stesso link. Aggiorna ora sostituisce tutte le pagine gestite dall'app; le modifiche effettuate direttamente su Cloudflare vengono sovrascritte. Nomi dei giocatori e presenze non sono pubblicati. Per controllare i contenuti apri Anteprima home in Impostazioni → Integrazioni.</Alert>}
             </Stack>
           </Card>
 

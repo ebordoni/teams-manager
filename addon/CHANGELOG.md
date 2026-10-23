@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.0.0] — 2026-10-23
+
+### Added
+
+- Cloudflare public website integration in the add-on: protected settings, read-only verification, isolated home preview, and publishing to the existing prototype Worker.
+- Real appointment board and editable Notices and Information pages. Player names, attendance, and lineups remain excluded; event notes require explicit opt-in.
+- Confirmation for the first public publication and after a token or destination change; optional automatic updates after the first successful publish.
+
+### Changed
+
+- Website publishing uses the communications queue, groups nearby changes, and skips automatic deployments when content is unchanged. Notion, Google Docs, Calendar, and match-plan exports remain available.
+- Cloudflare client, renderer, and assets are shared by the local prototype and add-on and packaged in the Home Assistant image; tests cover the full bundle including `_headers` and protection of unrelated Workers.
+- Browser status polling uses progressively longer intervals during publishing.
+
+### Fixed
+
+- Saving inactive Notion settings no longer disables the active website destination.
+- Daily cleanup stays at 03:05 Europe/Rome across daylight saving transitions.
+
+### Known issues
+
+- Dependency auditing reports a pre-existing critical vulnerability in `proxy-addr`, not addressed by this release.
+
 ## [0.25.0] — 2026-10-23
 
 ### Added

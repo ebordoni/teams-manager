@@ -83,7 +83,9 @@ export interface GeneratedCommunication {
 
 export interface LiveCommunication {
   title: string;
-  provider: "google" | "notion";
+  provider: "google" | "notion" | "website";
+  published?: boolean;
+  autoSync?: boolean;
   requiresPageSetup?: boolean;
   documentId: string;
   url: string;
@@ -102,6 +104,14 @@ export interface NotionStatus {
   updatedAt: string;
   lastError: string | null;
   autoSync: boolean;
+}
+
+export interface WebsiteInput {
+  accountId: string; workerName: string; token?: string; active: boolean;
+  includeNotes: boolean; autoPublish: boolean; introduction: string; notice: string; information: string;
+}
+export interface WebsiteStatus extends Omit<WebsiteInput, "token"> {
+  configured: boolean; url: string; updatedAt: string; lastError: string | null; autoSync: boolean; published: boolean;
 }
 
 export interface GeneratedMatchPlanExport {

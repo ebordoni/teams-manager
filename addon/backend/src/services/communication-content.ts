@@ -149,7 +149,7 @@ const COMMUNICATION_EVENT_ICONS: Record<string, string> = {
   IconBallBasketball: "🏀",
 };
 
-function eventIcon(icon?: string): string {
+export function eventIcon(icon?: string): string {
   return COMMUNICATION_EVENT_ICONS[icon ?? ""] ?? "📅";
 }
 

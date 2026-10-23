@@ -24,6 +24,9 @@ export default function NotionSettings() {
       setStatus(data);
       setForm(formFromStatus(data));
     }).catch(report);
+    const refresh = () => { api.getNotionSettings().then(({ data }) => { setStatus(data); setForm((current) => ({ ...current, active: data.active })); }).catch(report); };
+    window.addEventListener("communication-provider-changed", refresh);
+    return () => window.removeEventListener("communication-provider-changed", refresh);
   }, []);
   function change(next: Partial<typeof form>) { setForm((current) => ({ ...current, ...next })); setDirty(true); setMessage(null); }
   async function save() {
@@ -35,9 +38,10 @@ export default function NotionSettings() {
         page: form.page.trim() || (!form.active && status?.requiresPageSetup ? status.pageUrl : ""),
       });
       setStatus(data); setForm(formFromStatus(data)); setDirty(false);
+      window.dispatchEvent(new Event("communication-provider-changed"));
       setMessage({ color: "green", text: data.active
         ? "Configurazione salvata. Verifica l'accesso, poi usa Aggiorna ora in Comunicazioni per pubblicare l'agenda."
-        : "Notion disattivato. Gli appuntamenti tornano a essere pubblicati sul Google Doc." });
+        : "Configurazione salvata. Notion non è la destinazione attiva." });
     } catch (error) { report(error); } finally { setBusy(null); }
   }
   async function verify() {
