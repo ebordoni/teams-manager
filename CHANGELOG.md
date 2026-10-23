@@ -7,6 +7,13 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.24.1] — 2026-10-23
+
+### Corretto
+
+- La sincronizzazione del calendario Notion conserva la proprietà `Stato` esistente quando non è di tipo select, incluso lo status nativo di Notion, e usa una proprietà select separata `Stato evento` senza convertire o cancellare dati.
+- Le configurazioni con `Stato` già di tipo select continuano a usare quella proprietà; documentato il campo da mostrare nelle viste del calendario.
+
 ## [0.24.0] — 2026-10-23
 
 ### Aggiunto

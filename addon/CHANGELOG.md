@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.1] — 2026-10-23
+
+### Fixed
+
+- Notion calendar sync preserves an existing `Stato` property when its type is not select, including Notion's native status type, and uses a separate `Stato evento` select property without converting or deleting data.
+- Existing select-based `Stato` configurations keep using that property; documentation clarifies which field to display in calendar views.
+
 ## [0.24.0] — 2026-10-23
 
 ### Added

@@ -24,12 +24,15 @@ function schemaNames(source: NotionResponse) {
   const entries = Object.entries(source.properties!);
   const title = entries.find(([, value]) => value.type === "title")![0];
   const date = source.properties?.Data?.type === "date" ? "Data" : entries.find(([, value]) => value.type === "date")?.[0] ?? "Data";
-  return { title, date };
+  // Lo status nativo di Notion può avere gruppi/opzioni personali: non convertirlo
+  // e non assegnare ai nostri eventi stati arbitrari del workflow dell'utente.
+  const status = source.properties?.Stato && source.properties.Stato.type !== "select" ? "Stato evento" : "Stato";
+  return { title, date, status };
 }
 
 async function prepareSchema(source: NotionResponse) {
   const names = schemaNames(source);
-  const required: Record<string, string> = { [names.date]: "date", Tipo: "select", Stato: "select", Luogo: "rich_text", Ritrovo: "rich_text", [ID_PROPERTY]: "rich_text", [HASH_PROPERTY]: "rich_text" };
+  const required: Record<string, string> = { [names.date]: "date", Tipo: "select", [names.status]: "select", Luogo: "rich_text", Ritrovo: "rich_text", [ID_PROPERTY]: "rich_text", [HASH_PROPERTY]: "rich_text" };
   const missing: Record<string, object> = {};
   for (const [name, type] of Object.entries(required)) {
     const existing = source.properties![name];
@@ -102,7 +105,7 @@ export async function publishNotionCalendar(events: Event[], eventTypes: Map<str
         [names.title]: { title: text(title).map((part) => ({ ...part, annotations: { strikethrough: past, color: past ? "gray" : "default" } })) },
         [names.date]: { date: eventDate(event) },
         Tipo: { select: { name: (eventTypes.get(event.type)?.label ?? event.type).slice(0, 100) } },
-        Stato: { select: { name: event.status === "cancelled" ? "Annullato" : past ? "Passato" : event.status === "modified" ? "Modificato" : "Programmato" } },
+        [names.status]: { select: { name: event.status === "cancelled" ? "Annullato" : past ? "Passato" : event.status === "modified" ? "Modificato" : "Programmato" } },
         Luogo: { rich_text: text([event.location, event.address].filter(Boolean).join(" · ")) },
         Ritrovo: { rich_text: text(event.meetingTime ?? "") },
         [ID_PROPERTY]: { rich_text: text(eventKey) },

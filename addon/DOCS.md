@@ -64,6 +64,8 @@ Per mostrare gli eventi su un calendario, crea in Notion un **database dedicato*
 
 **Verifica accesso** controlla il database senza modificarlo. Il primo **Aggiorna ora** aggiunge, se mancanti, le proprietà Tipo, Stato, Luogo, Ritrovo e quelle tecniche `TM Evento ID` e `TM Impronta`. Il titolo e la prima proprietà data esistente sono riutilizzati; se non c'è una data viene creata `Data`. Eventuali proprietà con nomi riservati e tipi incompatibili producono un errore, senza convertirle o cancellarle.
 
+Se esiste già una proprietà `Stato` di tipo status nativo (o di un altro tipo diverso da select), l'app la conserva e usa automaticamente una proprietà select separata `Stato evento`. Usa quest'ultima nelle viste per visualizzare Programmato, Modificato, Annullato e Passato. Le installazioni con `Stato` già di tipo select continuano a usare quella proprietà.
+
 In Notion configura due viste dello stesso database:
 
 - **Prossimi appuntamenti**, di tipo Elenco, ordinata per la proprietà data crescente; consigliata come prima vista per smartphone.

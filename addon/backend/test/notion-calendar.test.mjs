@@ -99,6 +99,7 @@ test("calendar sync recovers a lost creation response, updates stable entries an
   assert.equal(row.properties.Quando.date.start, "2099-10-25T23:30:00");
   assert.equal(row.properties.Quando.date.end, "2099-10-26T00:30:00");
   assert.equal(row.properties.Quando.date.time_zone, "Europe/Rome");
+  assert.equal(row.properties.Stato.select.name, "Programmato");
   assert.equal(notionStatus().autoSync, true);
   const savedWrites = writes;
   await publishNotionCalendar([event], types);
@@ -131,4 +132,29 @@ test("calendar sync recovers a lost creation response, updates stable entries an
   assert.equal(row.in_trash, true);
   assert.equal(rows.get("manual").in_trash, undefined);
   assert.ok(writes > beforeJob);
+});
+
+test("native Notion status is preserved and event states use a dedicated select property", async () => {
+  const nativeStatus = { type: "status", status: { options: [{ id: "todo", name: "Da fare" }], groups: [{ id: "todo-group", name: "Da fare", option_ids: ["todo"] }] } };
+  schema.Stato = nativeStatus;
+  const event = { id: 43, type: "training", date: "2099-10-25", startTime: "17:00", status: "scheduled", venue: "home" };
+  const types = new Map([["training", { key: "training", label: "Allenamento", icon: "IconRun", hasOpponent: false, includeInGoogleDoc: true }]]);
+  await publishNotionCalendar([event], types);
+  assert.deepEqual(schema.Stato, nativeStatus);
+  assert.equal(schema["Stato evento"].type, "select");
+  const row = rows.get(`event-${creates}`);
+  assert.equal(row.properties.Stato, undefined);
+  assert.equal(row.properties["Stato evento"].select.name, "Programmato");
+  const count = creates;
+  event.status = "cancelled";
+  await publishNotionCalendar([event], types);
+  assert.equal(creates, count);
+  assert.equal(row.properties["Stato evento"].select.name, "Annullato");
+  assert.deepEqual(schema.Stato, nativeStatus);
+  assert.equal(rows.get("manual").in_trash, undefined);
+
+  schema["Stato evento"] = { type: "rich_text" };
+  const before = writes;
+  await assert.rejects(publishNotionCalendar([event], types), /"Stato evento" deve essere di tipo select/);
+  assert.equal(writes, before, "an incompatible fallback is not converted or overwritten");
 });
