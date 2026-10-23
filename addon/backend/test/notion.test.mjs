@@ -10,9 +10,9 @@ process.env.NODE_ENV = "test";
 const { initDb, getDb, closeDb } = await import("../dist/db/schema.js");
 const notion = await import("../dist/services/notion.service.js");
 const { buildCommunicationContent, loadLiveEvents, loadEventTypes } = await import("../dist/services/communication-content.js");
-const { refreshLiveCommunication, configureNotion } = await import("../dist/services/communication.service.js");
+const { refreshLiveCommunication, configureNotion, getLiveCommunication } = await import("../dist/services/communication.service.js");
 const { app } = await import("../dist/index.js");
-const { setSetting } = await import("../dist/services/settings.service.js");
+const { getSetting, setSetting } = await import("../dist/services/settings.service.js");
 const originalFetch = globalThis.fetch;
 const id = "11111111222243338444555555555555";
 let server;
@@ -39,6 +39,8 @@ test("Notion settings validate page URLs and never expose the token", async () =
   assert.equal((await saved.json()).autoSync, false);
   const status = await (await originalFetch(`${base}/api/notion`)).json();
   assert.equal(status.configured, true);
+  assert.equal(status.requiresPageSetup, false);
+  assert.equal(status.mode, undefined);
   assert.equal(JSON.stringify(status).includes("secret-notion-token"), false);
   const exported = await (await originalFetch(`${base}/api/data/export`)).text();
   assert.equal(exported.includes("secret-notion-token"), false);
@@ -60,12 +62,28 @@ test("shared content selects one included past event and preserves Notion format
   assert.match(markdown, /ULTIMO VS GIPS SALIZZOLE/);
   assert.match(markdown, /~~.*~~ \{color="gray"\}/);
   assert.match(markdown, /\\<private\\>/);
+  assert.ok(markdown.indexOf("FUTURO") < markdown.indexOf("ULTIMO VS"));
   assert.doesNotMatch(markdown, /Presenze/);
   db.prepare("INSERT INTO players (name) VALUES (?)").run("Convocato prova");
   setSetting("match_callups_enabled", "false");
   assert.doesNotMatch(notion.renderNotionMarkdown(buildCommunicationContent(events, loadEventTypes())), /Convocati|Convocato prova/);
   setSetting("match_callups_enabled", "true");
   assert.match(notion.renderNotionMarkdown(buildCommunicationContent(events, loadEventTypes())), /Convocato prova/);
+});
+
+test("shared content orders same-day events by start time and carries status metadata", () => {
+  const types = new Map([["training", { label: "Allenamento", icon: "IconRun", hasOpponent: false, includeInGoogleDoc: true }]]);
+  const content = buildCommunicationContent([
+    { id: 2, type: "training", date: "2099-02-01", startTime: "18:00", status: "scheduled" },
+    { id: 1, type: "training", date: "2099-02-01", startTime: "09:00", status: "cancelled" },
+  ], types);
+  assert.deepEqual(content.paragraphs.filter((paragraph) => paragraph.kind === "date").map((paragraph) => paragraph.event), [
+    { id: 1, date: "2099-02-01", status: "cancelled" },
+    { id: 2, date: "2099-02-01", status: "scheduled" },
+  ]);
+  const card = notion.renderNotionMarkdown(content).match(/<callout[^>]+>([\s\S]+?)<\/callout>/)[1];
+  assert.match(card, /18:00/);
+  assert.doesNotMatch(card, /09:00|ANNULLATO/);
 });
 
 test("Notion replaces a stable page, skips unchanged background writes, forces repair and records errors", async () => {
@@ -146,4 +164,107 @@ test("verify preserves upstream validation details without exposing credentials 
     assert.match(fallback.error, /Verifica accesso/);
     assert.doesNotMatch(fallback.error, /<html>|sottopagine/);
   } finally { globalThis.fetch = originalFetch; }
+});
+
+test("legacy database configuration pauses sync, preserves credentials and requires an explicit page migration", async () => {
+  const databaseId = "aaaaaaaa111141118111111111111111";
+  const pageId = "bbbbbbbb222242228222222222222222";
+  setSetting("notion_mode", "database");
+  setSetting("notion_page_id", databaseId);
+  setSetting("notion_page_url", `https://www.notion.so/${databaseId}`);
+  setSetting("notion_synced_page_id", databaseId);
+  setSetting("notion_hash", "old-database-hash");
+  setSetting("notion_updated_at", "2026-01-01T10:00:00.000Z");
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url: String(url), method: options.method });
+    assert.equal(options.headers.Authorization, "Bearer secret-notion-token");
+    assert.ok(String(url).startsWith(`https://api.notion.com/v1/pages/${pageId}`), "must never contact or modify the previous database");
+    return Response.json({ object: "page", id: pageId });
+  };
+  try {
+    assert.equal(notion.notionStatus().requiresPageSetup, true);
+    assert.equal(notion.notionStatus().autoSync, false);
+    assert.equal(getLiveCommunication().requiresPageSetup, true);
+    await assert.rejects(notion.verifyNotion(), /pagina Notion normale/);
+    await assert.rejects(refreshLiveCommunication({ force: true }), /pagina Notion normale/);
+    await assert.rejects(configureNotion({ token: "must-not-replace-token", page: databaseId, publicUrl: "", active: true }), /non il database precedente/);
+    assert.equal(getSetting("notion_token"), "secret-notion-token");
+    assert.equal(getSetting("notion_hash"), "old-database-hash");
+    assert.equal(requests.length, 0);
+
+    // Anche prima del passaggio è possibile tornare a Google senza toccare Notion.
+    const disabled = await configureNotion({ page: databaseId, publicUrl: "", active: false });
+    assert.equal(disabled.active, false);
+    assert.equal(disabled.requiresPageSetup, true);
+    assert.equal(requests.length, 0);
+
+    const saved = await originalFetch(`${base}/api/notion`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ page: pageId, publicUrl: "https://squadra.notion.site/agenda", active: true }) });
+    assert.equal(saved.status, 200);
+    const status = await saved.json();
+    assert.equal(status.requiresPageSetup, false);
+    assert.equal(status.autoSync, false);
+    assert.equal(status.updatedAt, "");
+    assert.equal(status.lastError, null);
+    assert.equal(status.publicUrl, "https://squadra.notion.site/agenda");
+    assert.equal(requests.length, 0, "saving settings must not write content or enable automatic publication");
+    assert.equal(getSetting("notion_mode"), null);
+    const published = await refreshLiveCommunication();
+    assert.equal(published.documentId, pageId);
+    assert.equal(published.requiresPageSetup, false);
+    assert.equal(notion.notionStatus().autoSync, true);
+    assert.deepEqual(requests.map((request) => request.method), ["GET", "PATCH"]);
+    assert.equal(requests[1].url, `https://api.notion.com/v1/pages/${pageId}/markdown`);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("background publication uses one content write; status polling and repeated clicks do not contact Notion", async () => {
+  let calls = 0;
+  let releaseWrite;
+  let signalWrite;
+  const writeGate = new Promise((resolve) => { releaseWrite = resolve; });
+  const writeStarted = new Promise((resolve) => { signalWrite = resolve; });
+  async function waitForJob() {
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const response = await originalFetch(`${base}/api/communications/live/status`);
+      const state = await response.json();
+      if (!state.running) return state;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    assert.fail("background publication did not finish");
+  }
+  globalThis.fetch = async (_url, options) => {
+    calls++;
+    if (options.method === "PATCH") {
+      assert.equal(JSON.parse(options.body).type, "replace_content");
+      signalWrite();
+      await writeGate;
+    }
+    return Response.json({ object: "page" });
+  };
+  try {
+    const job = await originalFetch(`${base}/api/communications/live/refresh?background=1`, { method: "POST" });
+    assert.equal(job.status, 202);
+    await writeStarted;
+    assert.equal(calls, 2);
+    const repeated = await originalFetch(`${base}/api/communications/live/refresh?background=1`, { method: "POST" });
+    assert.equal(repeated.status, 202);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      assert.equal((await (await originalFetch(`${base}/api/communications/live/status`)).json()).running, true);
+    }
+    assert.equal(calls, 2, "polling and repeated clicks must not trigger any extra upstream requests");
+    releaseWrite();
+    const state = await waitForJob();
+    assert.equal(state.result.provider, "notion");
+    assert.equal(state.result.requiresPageSetup, false);
+    assert.equal(state.error, undefined);
+    assert.equal(calls, 2);
+
+    globalThis.fetch = async () => Response.json({}, { status: 401 });
+    await originalFetch(`${base}/api/communications/live/refresh?background=1`, { method: "POST" });
+    const failed = await waitForJob();
+    assert.equal(failed.errorStatus, 502);
+    assert.match(failed.error, /Token Notion non valido/);
+    assert.equal(failed.result, undefined, "an error must not return a stale successful result");
+  } finally { releaseWrite(); globalThis.fetch = originalFetch; }
 });

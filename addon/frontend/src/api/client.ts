@@ -92,7 +92,7 @@ export const api = {
 
   // ── Comunicazioni ──────────────────────────────────────────────────────
   getNotionSettings: () => apiClient.get<import("../types").NotionStatus>("/notion"),
-  saveNotionSettings: (settings: { token?: string; page: string; publicUrl: string; active: boolean; mode?: "page" | "database" }) =>
+  saveNotionSettings: (settings: { token?: string; page: string; publicUrl: string; active: boolean }) =>
     apiClient.put<import("../types").NotionStatus>("/notion", settings),
   verifyNotion: () => apiClient.post<{ message: string }>("/notion/verify"),
   generateCommunication: (eventIds: number[]) =>

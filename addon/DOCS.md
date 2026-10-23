@@ -4,7 +4,7 @@
 
 **Teams Manager** è un addon per Home Assistant che permette di gestire il calendario, l'anagrafica
 dei giocatori e le presenze della squadra, con generazione automatica di comunicazioni per i
-genitori (Google Docs + WhatsApp). Interfaccia realizzata con Mantine UI.
+genitori (Notion oppure Google Docs + WhatsApp). Interfaccia realizzata con Mantine UI.
 
 ## Funzionalità
 
@@ -56,38 +56,23 @@ configurato o non risponde, viene usato automaticamente il motore locale.
 
 ### Comunicazioni
 
-#### Pagina Notion (alternativa al Google Doc)
+#### Agenda Notion (alternativa al Google Doc)
 
-##### Calendario ed elenco (database)
-
-Per mostrare gli eventi su un calendario, crea in Notion un **database dedicato**, condividilo con la connessione interna e scegli **Calendario ed elenco (database)** in **Impostazioni → Integrazioni → Notion**. Incolla il link del database, non quello di una sua singola scheda. La connessione deve poter leggere, inserire e aggiornare contenuti. Il database deve avere una sola origine dati; puoi aggiungere più viste della stessa origine.
-
-**Verifica accesso** controlla il database senza modificarlo. Il primo **Aggiorna ora** aggiunge, se mancanti, le proprietà Tipo, Stato, Luogo, Ritrovo e quelle tecniche `TM Evento ID` e `TM Impronta`. Il titolo e la prima proprietà data esistente sono riutilizzati; se non c'è una data viene creata `Data`. Eventuali proprietà con nomi riservati e tipi incompatibili producono un errore, senza convertirle o cancellarle.
-
-Se esiste già una proprietà `Stato` di tipo status nativo (o di un altro tipo diverso da select), l'app la conserva e usa automaticamente una proprietà select separata `Stato evento`. Usa quest'ultima nelle viste per visualizzare Programmato, Modificato, Annullato e Passato. Le installazioni con `Stato` già di tipo select continuano a usare quella proprietà.
-
-In Notion configura due viste dello stesso database:
-
-- **Prossimi appuntamenti**, di tipo Elenco, ordinata per la proprietà data crescente; consigliata come prima vista per smartphone.
-- **Calendario**, basata sulla stessa proprietà data, mensile o settimanale. Puoi mostrare Tipo, Stato, Luogo e Ritrovo nelle schede e nascondere le proprietà tecniche.
-
-Ogni evento ha una scheda stabile, con data/orari Europe/Rome e dettagli, note, formazione e convocazioni secondo le impostazioni dell'app. Gli aggiornamenti riscrivono solo le schede cambiate; il pulsante manuale forza il ripristino anche del contenuto modificato o svuotato in Notion. La sincronizzazione manuale prosegue in background con richieste di stato brevi, per evitare timeout durante l'aggiornamento di molti eventi.
-
-Restano gli eventi da oggi in avanti e l'ultimo passato incluso, con stato Passato e dettagli grigi e barrati. Le schede gestite dall'app relative a eventi eliminati, esclusi o più vecchi vengono spostate nel cestino di Notion dopo l'aggiornamento delle altre. Le voci create manualmente non vengono toccate. Non modificare le proprietà tecniche `TM Evento ID` e `TM Impronta`: servono a riconoscere gli eventi ed evitare duplicazioni. Le modifiche alle schede gestite dall'app devono essere effettuate nell'app, che rimane la fonte dei dati.
-
-Pubblica il database da Notion e salva il link pubblico da condividere. Le viste non sono autorizzazioni separate: pubblica soltanto informazioni destinate ai lettori. Una pagina Notion già collegata mantiene la modalità Pagina unica finché non scegli esplicitamente Database; cambiare modalità o destinazione richiede un nuovo aggiornamento manuale prima di riattivare l'automatismo e non elimina il contenuto precedente.
-
-##### Pagina unica
+Gli appuntamenti vengono pubblicati su una **pagina normale**, in un'agenda verticale a una sola colonna pensata per smartphone. Il prossimo evento non annullato è in evidenza in un riquadro; seguono gli altri appuntamenti in ordine cronologico. Date, tipo di evento, avversario, luogo, orari, note, formazione ed eventuali convocazioni sono leggibili direttamente, senza aprire schede o sezioni nascoste. In fondo rimane soltanto l'ultimo evento passato, in grigio e barrato. Non servono database, viste calendario o template esterni.
 
 In **Impostazioni → Integrazioni → Notion** puoi collegare una pagina esistente:
 
 1. Crea una connessione interna dal [portale Notion](https://www.notion.so/profile/integrations), con capacità di lettura e aggiornamento contenuti.
-2. Crea una pagina dedicata agli appuntamenti e aggiungi la connessione dal menu della pagina **••• → Connessioni**.
+2. Crea una pagina normale dedicata agli appuntamenti (non un database) e aggiungi la connessione dal menu della pagina **••• → Connessioni**.
 3. Nell'app inserisci il token e il link della pagina del workspace, attiva **Usa Notion per gli appuntamenti** e salva. Il token resta nel backend, non viene restituito al browser né incluso nell'export JSON.
 4. Usa **Verifica accesso**, poi **Comunicazioni → Aggiorna ora**. L'aggiornamento sostituisce tutto il contenuto della pagina: eventuali note manuali devono restare fuori da questa pagina.
 5. Per i genitori, pubblica la pagina da **Condividi → Pubblica** in Notion e salva il relativo link pubblico nell'app. La pubblicazione e le autorizzazioni dei lettori si gestiscono da Notion.
 
 Dopo il primo aggiornamento riuscito, la pagina viene aggiornata dopo le modifiche agli eventi e ogni giorno alle 03:05 (Europe/Rome). Gli aggiornamenti automatici saltano le scritture se il contenuto non cambia; **Aggiorna ora** riscrive sempre la pagina e può ripristinarla dopo uno svuotamento manuale. Restano un evento passato in grigio e barrato e gli eventi da oggi in avanti, rispettando i flag dei tipi evento e delle convocazioni.
+
+La pubblicazione verifica l'accesso alla pagina e ne sostituisce il contenuto con un'unica scrittura, anziché aggiornare separatamente tutti gli eventi. Le richieste di stato del browser controllano solo l'avanzamento del lavoro nel backend, senza chiamare Notion.
+
+**Passaggio dal precedente database:** la relativa configurazione e sincronizzazione non sono più disponibili. Dopo l'aggiornamento dell'app, gli automatismi verso il vecchio database vengono sospesi; il database, le schede e i dati già presenti su Notion restano intatti. Collega una pagina normale (anche la precedente pagina elenco) nelle impostazioni: il token salvato viene mantenuto. Salva il nuovo link pubblico e pubblica con **Aggiorna ora** per riattivare gli aggiornamenti. La prima pubblicazione su questa pagina richiede un'azione manuale anche se il vecchio database era già sincronizzato.
 
 Se la pagina non è accessibile, controlla link, token e connessione: l'app non crea automaticamente altre pagine, perché Notion non distingue sempre una pagina eliminata da una non autorizzata. Per sostituirla, crea una nuova pagina, collegala e pubblicala, quindi aggiorna i link nelle impostazioni.
 

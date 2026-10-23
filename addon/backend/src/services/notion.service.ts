@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { getSetting, setSetting } from "./settings.service";
 import type { CommunicationContent } from "./communication-content";
+import { renderNotionMarkdown } from "./notion-agenda";
+export { renderNotionMarkdown } from "./notion-agenda";
 
 const key = (name: string) => `notion_${name}`;
 export class NotionError extends Error {
@@ -14,18 +16,20 @@ export function notionErrorResponse(error: NotionError) {
   return { error: error.message, upstream: "notion", upstreamStatus: error.upstreamStatus, notionCode: error.notionCode, requestId: error.requestId };
 }
 export const isNotionActive = () => getSetting("communication_provider") === "notion";
-export const notionMode = (): "page" | "database" => getSetting(key("mode")) === "database" ? "database" : "page";
+// Compatibilità con le vecchie installazioni: non usare mai il database salvato
+// come destinazione della nuova agenda, né modificarlo durante il passaggio.
+const requiresPageSetup = () => getSetting(key("mode")) === "database";
 export function notionStatus() {
   return {
     active: isNotionActive(),
-    mode: notionMode(),
+    requiresPageSetup: requiresPageSetup(),
     configured: Boolean(getSetting(key("token")) && getSetting(key("page_id"))),
     pageId: getSetting(key("page_id")) ?? "",
     pageUrl: getSetting(key("page_url")) ?? "",
     publicUrl: getSetting(key("public_url")) ?? "",
     updatedAt: getSetting(key("updated_at")) ?? "",
     lastError: getSetting(key("last_error")),
-    autoSync: getSetting(key("synced_page_id")) === getSetting(key("page_id")) && Boolean(getSetting(key("page_id"))),
+    autoSync: !requiresPageSetup() && getSetting(key("synced_page_id")) === getSetting(key("page_id")) && Boolean(getSetting(key("page_id"))),
   };
 }
 
@@ -43,35 +47,36 @@ export function parseNotionPage(input: string): string {
   return match[1].replace(/-/g, "").toLowerCase();
 }
 
-export function saveNotionSettings(input: { token?: string; page: string; publicUrl: string; active: boolean; mode?: "page" | "database" }) {
+export function saveNotionSettings(input: { token?: string; page: string; publicUrl: string; active: boolean }) {
   const pageId = parseNotionPage(input.page);
+  const legacyDestination = requiresPageSetup() && pageId === getSetting(key("page_id"));
+  if (legacyDestination && input.active) {
+    throw new NotionError("Collega una pagina Notion normale, non il database precedente. Il database e i suoi appuntamenti restano intatti.");
+  }
   if (!input.token?.trim() && !getSetting(key("token"))) throw new NotionError("Inserisci il token della connessione interna Notion.");
   if (input.publicUrl) {
     const url = new URL(input.publicUrl);
     if (url.protocol !== "https:" || !/(^|\.)(notion\.so|notion\.com|notion\.site)$/.test(url.hostname)) throw new NotionError("Il link pubblico deve essere un URL HTTPS di Notion.");
   }
   if (input.token?.trim()) setSetting(key("token"), input.token.trim());
-  if (pageId !== getSetting(key("page_id")) || (input.mode !== undefined && input.mode !== notionMode())) {
+  // È sempre possibile disattivare Notion senza dover prima migrare la pagina.
+  if (legacyDestination) {
+    setSetting("communication_provider", "google");
+    return notionStatus();
+  }
+  if (pageId !== getSetting(key("page_id")) || requiresPageSetup()) {
     for (const name of ["hash", "updated_at", "synced_page_id", "last_error"]) setSetting(key(name), null);
   }
   setSetting(key("page_id"), pageId);
-  if (input.mode) setSetting(key("mode"), input.mode);
+  setSetting(key("mode"), null);
   setSetting(key("page_url"), `https://www.notion.so/${pageId}`);
   setSetting(key("public_url"), input.publicUrl || null);
   setSetting("communication_provider", input.active ? "notion" : "google");
   return notionStatus();
 }
 
-export interface NotionProperty {
-  type?: string;
-  title?: Array<{ plain_text?: string; text?: { content: string } }>;
-  rich_text?: Array<{ plain_text?: string; text?: { content: string } }>;
-}
-export interface NotionResponse {
+interface NotionResponse {
   object?: string; id?: string; archived?: boolean; in_trash?: boolean; warnings?: unknown[];
-  data_sources?: Array<{ id: string }>;
-  properties?: Record<string, NotionProperty>;
-  results?: NotionResponse[]; has_more?: boolean; next_cursor?: string | null;
 }
 let requestQueue: Promise<void> = Promise.resolve();
 let nextRequestAt = 0;
@@ -84,7 +89,7 @@ async function paceNotionRequests() {
   requestQueue = turn.catch(() => undefined);
   await turn;
 }
-export async function notionRequest(path: string, method = "GET", body?: object): Promise<NotionResponse> {
+async function notionRequest(path: string, method = "GET", body?: object): Promise<NotionResponse> {
   const token = getSetting(key("token"));
   if (!token) throw new NotionError("Configura la connessione Notion nelle Impostazioni.");
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -128,27 +133,11 @@ export async function notionRequest(path: string, method = "GET", body?: object)
 export async function verifyNotion() {
   const id = getSetting(key("page_id"));
   if (!id) throw new NotionError("Configura la pagina Notion nelle Impostazioni.");
-  if (notionMode() === "database") {
-    const { verifyNotionDatabase } = await import("./notion-calendar.service.js");
-    return verifyNotionDatabase();
-  }
+  if (requiresPageSetup()) throw new NotionError("Collega una pagina Notion normale nelle Impostazioni per pubblicare l'agenda. Il database precedente non viene modificato.");
   const page = await notionRequest(`pages/${id}`);
   if (page.archived || page.in_trash) throw new NotionError("La pagina Notion è nel cestino. Ripristinala oppure collega un'altra pagina.");
   if (page.object !== "page") throw new NotionError("Il link deve indicare una pagina Notion.");
   return page;
-}
-
-export function renderNotionMarkdown(content: CommunicationContent): string {
-  const escape = (text: string) => text.replace(/[\\*~`$\[\]<>{}|^#]/g, "\\$&").replace(/\r?\n/g, "<br>");
-  return content.paragraphs.map((paragraph) => {
-    if (!paragraph.text) return "---";
-    let text = escape(paragraph.text);
-    if (paragraph.kind === "event" || paragraph.kind === "match") text = `**${text}**`;
-    if (paragraph.kind === "note") text = `*${text}*`;
-    if (paragraph.past) text = `~~${text}~~`;
-    const prefix = paragraph.kind === "title" ? "# " : paragraph.kind === "date" ? "## " : "";
-    return `${prefix}${text}${paragraph.past ? ' {color="gray"}' : ""}`;
-  }).join("\n\n");
 }
 
 export async function publishNotion(content: CommunicationContent, force = false) {

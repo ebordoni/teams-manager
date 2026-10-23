@@ -4,11 +4,17 @@ import type { Event, EventRow, EventTypeDef, EventTypeDefRow, FormationRow } fro
 import { areMatchCallupsEnabled, getTeamName } from "./settings.service";
 
 export type ParagraphKind = "title" | "subtitle" | "date" | "event" | "note" | "match" | "normal";
-export interface CommunicationParagraph { text: string; kind: ParagraphKind; past?: boolean }
+export interface CommunicationParagraph {
+  text: string;
+  kind: ParagraphKind;
+  past?: boolean;
+  /** Metadati sull'intestazione data, per impaginare l'agenda senza analizzare il testo. */
+  event?: Pick<Event, "id" | "date" | "status">;
+}
 export interface CommunicationContent { title: string; paragraphs: CommunicationParagraph[] }
 class ContentBuilder {
   paragraphs: CommunicationParagraph[] = [];
-  addParagraph(text: string, style: ParagraphKind | { kind: ParagraphKind; past: boolean }) {
+  addParagraph(text: string, style: ParagraphKind | Omit<CommunicationParagraph, "text">) {
     this.paragraphs.push({ text, ...(typeof style === "string" ? { kind: style } : style) });
     return this;
   }
@@ -153,7 +159,7 @@ export function buildCommunicationContent(
 ): CommunicationContent {
   const sorted = events
     .filter((event) => eventTypes.get(event.type)?.includeInGoogleDoc ?? true)
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "").localeCompare(b.startTime ?? ""));
   const teamName = getTeamName();
   const today = todayIso();
   const title = `${teamName} – Appuntamenti`;
@@ -179,7 +185,9 @@ export function buildCommunicationContent(
     const style = (kind: ParagraphKind) => ({ kind, past: event.date < today });
 
     builder
-      .addParagraph(formatDateIt(event.date), style("date"))
+      .addParagraph(formatDateIt(event.date), {
+        ...style("date"), event: { id: event.id, date: event.date, status: event.status },
+      })
       .addParagraph(
         `${eventIcon(typeDef?.icon)} ${eventTitle}`,
         style("event"),

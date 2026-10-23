@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.25.0] — 2026-10-23
+
+### Added
+
+- Mobile-friendly, single-column Notion agenda with the next non-cancelled appointment highlighted and all event details readable without opening separate pages.
+
+### Changed
+
+- Other appointments are ordered by date and time; the most recent past event appears at the bottom in gray with strikethrough. Inclusion and call-up settings are preserved, with notes and lineups directly visible.
+- Publishing verifies access and replaces the same page's content in one write instead of updating each event separately. Automatic updates skip unchanged content; manual refreshes always rebuild the page.
+- Updated Communications, Notion settings, documentation, and tests for agenda rendering, migration, and background publishing.
+
+### Removed
+
+- Notion database configuration and appointment synchronization. Existing databases and event pages on Notion are neither modified nor deleted.
+
+### Migration
+
+- If a database was configured, Notion updates are paused until a regular page is connected under Settings → Integrations. The saved token is retained; the previous list page can be reused.
+- Save the page and its public link, then use Communications → Refresh now to publish the agenda and re-enable automatic updates. Existing regular-page configurations keep their destination.
+
 ## [0.24.1] — 2026-10-23
 
 ### Fixed

@@ -7,6 +7,27 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.25.0] — 2026-10-23
+
+### Aggiunto
+
+- Agenda Notion verticale a una sola colonna, pensata per smartphone, con il prossimo evento non annullato in evidenza e tutti i dettagli leggibili senza aprire schede.
+
+### Modificato
+
+- Gli altri appuntamenti sono ordinati per data e ora; l'ultimo passato viene mostrato in fondo all'agenda, in grigio e barrato. Restano rispettati i flag di inclusione e convocazione, con note e formazioni direttamente visibili.
+- La pubblicazione verifica l'accesso e sostituisce il contenuto della stessa pagina con un'unica scrittura, senza aggiornamenti separati per evento. Gli automatismi evitano scritture a contenuto invariato; l'aggiornamento manuale ricostruisce sempre la pagina.
+- Aggiornate le schermate Comunicazioni e Impostazioni, la documentazione e i test per agenda, migrazione e aggiornamenti in background.
+
+### Rimosso
+
+- Configurazione e sincronizzazione dei database Notion per gli appuntamenti. Il database e le schede già presenti su Notion non vengono modificati né eliminati.
+
+### Migrazione
+
+- Se era configurato un database, gli aggiornamenti Notion vengono sospesi finché non si collega una pagina normale in Impostazioni → Integrazioni. Il token salvato viene mantenuto; è possibile riutilizzare la precedente pagina elenco.
+- Dopo aver salvato la pagina e il relativo link pubblico, usare Comunicazioni → Aggiorna ora per pubblicare l'agenda e riattivare gli automatismi. Le installazioni già collegate a una pagina normale mantengono la destinazione esistente.
+
 ## [0.24.1] — 2026-10-23
 
 ### Corretto

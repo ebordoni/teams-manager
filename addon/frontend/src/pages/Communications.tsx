@@ -96,7 +96,8 @@ export default function Communications() {
       <PageHeader title="Comunicazioni" description="Pubblica e aggiorna gli appuntamenti della squadra." action={<Button component={Link} to="/settings" variant="light">Configura integrazioni</Button>} />
 
       {error && <Alert color="red" title="Errore">{error}</Alert>}
-      {live?.lastError && !error && <Alert color="red" title="Ultimo aggiornamento non riuscito">{live.lastError}</Alert>}
+      {live?.lastError && !live.requiresPageSetup && !error && <Alert color="red" title="Ultimo aggiornamento non riuscito">{live.lastError}</Alert>}
+      {live?.requiresPageSetup && <Alert color="orange" title="Collega una pagina per l'agenda">Il precedente database Notion rimane intatto e non viene più aggiornato. In <Text component={Link} to="/settings" inherit td="underline">Impostazioni → Integrazioni</Text> collega una pagina normale, poi usa Aggiorna ora. Il token già salvato viene mantenuto.</Alert>}
 
       {loading ? <Loader /> : (
         <>
@@ -104,9 +105,9 @@ export default function Communications() {
             <Stack gap="sm">
               <Group justify="space-between" wrap="wrap">
                 <div>
-                  <Text fw={600}>{live?.provider === "notion" ? live.notionMode === "database" ? "Calendario Notion · Appuntamenti" : "Pagina Notion · Appuntamenti" : "Documento appuntamenti"}</Text>
+                  <Text fw={600}>{live?.provider === "notion" ? "Agenda Notion · Appuntamenti" : "Documento appuntamenti"}</Text>
                   <Text size="sm" c="dimmed">
-                    {live?.updatedAt
+                    {live?.requiresPageSetup ? "Aggiornamenti sospesi: collega una pagina Notion nelle Impostazioni." : live?.updatedAt
                       ? `Ultimo aggiornamento: ${formatDisplayDateTime(live.updatedAt)}`
                       : live?.provider === "notion" ? "Pagina collegata. Pubblica gli appuntamenti con Aggiorna ora." : "Crea il documento unico da condividere con la squadra."}
                   </Text>
@@ -117,8 +118,8 @@ export default function Communications() {
                       {live.provider === "notion" ? "Apri in Notion" : "Apri documento"}
                     </Button>
                   )}
-                  {live?.provider === "notion" && live.publicUrl && <Button component="a" href={live.publicUrl} target="_blank" rel="noopener noreferrer" variant="light">Apri pagina pubblica</Button>}
-                  <Button onClick={handleRefresh} loading={refreshing} leftSection={<IconRefresh size={16} />}>
+                  {live?.provider === "notion" && !live.requiresPageSetup && live.publicUrl && <Button component="a" href={live.publicUrl} target="_blank" rel="noopener noreferrer" variant="light">Apri pagina pubblica</Button>}
+                  <Button onClick={handleRefresh} loading={refreshing} disabled={live?.requiresPageSetup} leftSection={<IconRefresh size={16} />}>
                     {live ? "Aggiorna ora" : "Crea documento"}
                   </Button>
                   {live?.provider === "google" && (
@@ -129,10 +130,10 @@ export default function Communications() {
                 </Group>
               </Group>
               <Text size="sm" c="dimmed">
-                Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. Il documento conserva soltanto l'ultimo appuntamento passato, in grigio e barrato, e quelli da oggi in avanti.
+                Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. Restano gli appuntamenti da oggi in avanti e soltanto l'ultimo passato, in grigio e barrato{live?.provider === "notion" ? " in fondo all'agenda" : ""}.
               </Text>
-              {live?.provider === "notion" && <Alert color="blue">{live.notionMode === "database" ? "Ogni appuntamento viene aggiornato nella sua scheda, mantenendo lo stesso collegamento. Le schede gestite dall'app vengono sovrascritte; quelle create manualmente non vengono rimosse. Gli eventi esclusi, eliminati e quelli passati oltre l'ultimo vengono archiviati. Dopo la prima sincronizzazione riuscita si attivano gli aggiornamenti automatici." : "Aggiorna ora sostituisce l'intero contenuto della pagina collegata e ripristina anche una pagina svuotata. Le modifiche manuali nella pagina vengono sovrascritte. Dopo il primo aggiornamento riuscito si attiva la sincronizzazione automatica. Per cambiare pagina, collega un nuovo link nelle Impostazioni."}</Alert>}
-              {live?.provider === "notion" && !live.publicUrl && <Text size="sm" c="dimmed">Per condividere con i genitori, pubblica la pagina da Notion e salva il link pubblico nelle Impostazioni.</Text>}
+              {live?.provider === "notion" && !live.requiresPageSetup && <Alert color="blue">Il prossimo appuntamento è in evidenza e tutti i dettagli sono visibili nell'elenco, senza aprire schede. Aggiorna ora sostituisce l'intero contenuto della pagina e ripristina anche una pagina svuotata: le modifiche manuali vengono sovrascritte. Dopo la prima pubblicazione riuscita si attivano gli aggiornamenti automatici.</Alert>}
+              {live?.provider === "notion" && !live.requiresPageSetup && !live.publicUrl && <Text size="sm" c="dimmed">Per condividere con i genitori, pubblica la pagina da Notion e salva il link pubblico nelle Impostazioni.</Text>}
             </Stack>
           </Card>
 
