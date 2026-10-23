@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { NotionError, notionStatus, verifyNotion } from "../services/notion.service";
+import { NotionError, notionErrorResponse, notionStatus, verifyNotion } from "../services/notion.service";
 import { configureNotion } from "../services/communication.service";
 
 const router = Router();
@@ -14,6 +14,6 @@ router.put("/", async (req, res) => {
 });
 router.post("/verify", async (_req, res) => {
   try { await verifyNotion(); res.json({ message: "Pagina accessibile. Per verificare la scrittura usa Aggiorna ora in Comunicazioni." }); }
-  catch (error) { res.status(502).json({ error: error instanceof NotionError ? error.message : "Verifica Notion non riuscita." }); }
+  catch (error) { res.status(502).json(error instanceof NotionError ? notionErrorResponse(error) : { error: "Verifica Notion non riuscita." }); }
 });
 export default router;

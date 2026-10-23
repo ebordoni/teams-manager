@@ -11,7 +11,7 @@ import {
   refreshLiveCommunication,
 } from "../services/communication.service";
 import { GoogleAuthRequiredError } from "../services/google/auth";
-import { NotionError } from "../services/notion.service";
+import { NotionError, notionErrorResponse } from "../services/notion.service";
 
 const router = Router();
 
@@ -21,7 +21,7 @@ const router = Router();
  */
 function sendServiceError(res: Response, err: unknown, fallback: string): void {
   if (err instanceof NotionError) {
-    res.status(502).json({ error: err.message });
+    res.status(502).json(notionErrorResponse(err));
     return;
   }
   if (err instanceof GoogleAuthRequiredError) {

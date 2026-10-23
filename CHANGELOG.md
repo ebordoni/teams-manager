@@ -7,6 +7,14 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.23.1] — 2026-10-23
+
+### Corretto
+
+- Gli errori di Notion riportano il messaggio originale, il codice, lo stato HTTP e l'identificativo della richiesta, oscurando eventuali token presenti nei dettagli.
+- La verifica dell'accesso alla pagina non suggerisce più problemi con sottopagine o database senza conoscere la causa restituita da Notion.
+- Gestite anche le risposte d'errore non JSON di Notion, mantenendo distinta la provenienza dell'errore dal codice HTTP restituito dall'app.
+
 ## [0.23.0] — 2026-10-22
 
 ### Aggiunto

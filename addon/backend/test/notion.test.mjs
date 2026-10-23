@@ -113,3 +113,37 @@ test("Notion replaces a stable page, skips unchanged background writes, forces r
     assert.equal(notion.notionStatus().updatedAt, "");
   } finally { globalThis.fetch = originalFetch; }
 });
+
+test("verify preserves upstream validation details without exposing credentials or suggesting content deletion", async () => {
+  globalThis.fetch = async (url, options) => {
+    assert.match(String(url), /\/v1\/pages\/[^/]+$/);
+    assert.equal(options.method, "GET");
+    assert.equal(options.body, undefined);
+    return Response.json({
+      code: "validation_error",
+      message: "Provided ID is a database, not a page. secret-notion-token ntn_sensitive",
+      request_id: "notion-request-123",
+      extra: "secret-notion-token",
+    }, { status: 400 });
+  };
+  try {
+    const response = await originalFetch(`${base}/api/notion/verify`, { method: "POST" });
+    assert.equal(response.status, 502);
+    const body = await response.json();
+    assert.equal(body.upstream, "notion");
+    assert.equal(body.upstreamStatus, 400);
+    assert.equal(body.notionCode, "validation_error");
+    assert.equal(body.requestId, "notion-request-123");
+    assert.match(body.error, /Verifica accesso/);
+    assert.match(body.error, /database, not a page/);
+    assert.doesNotMatch(body.error, /sottopagine/);
+    assert.doesNotMatch(JSON.stringify(body), /secret-notion-token|ntn_sensitive|extra/);
+
+    globalThis.fetch = async () => new Response("<html>Bad gateway</html>", { status: 502 });
+    const unavailable = await originalFetch(`${base}/api/notion/verify`, { method: "POST" });
+    const fallback = await unavailable.json();
+    assert.equal(fallback.upstreamStatus, 502);
+    assert.match(fallback.error, /Verifica accesso/);
+    assert.doesNotMatch(fallback.error, /<html>|sottopagine/);
+  } finally { globalThis.fetch = originalFetch; }
+});

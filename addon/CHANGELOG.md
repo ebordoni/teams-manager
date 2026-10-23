@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.1] — 2026-10-23
+
+### Fixed
+
+- Notion errors now include the original message, error code, upstream HTTP status, and request ID, with any tokens in the details redacted.
+- Page access verification no longer suggests child-page or database issues without reporting Notion's actual error.
+- Non-JSON upstream errors are handled gracefully, distinguishing Notion failures from the HTTP status returned by the app.
+
 ## [0.23.0] — 2026-10-22
 
 ### Added
