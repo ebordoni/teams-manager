@@ -7,11 +7,15 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.0.4] — 2026-11-16
+## [1.0.5] — 2026-11-16
 
 ### Aggiunto
 
 - Pagina pubblica installabile sulla schermata Home con icona squadra, guida iPhone/Android e pulsante di installazione nei browser compatibili.
+
+## [1.0.4] — 2026-11-16
+
+### Aggiunto
 
 - Barra di navigazione mobile con icone delle sezioni, accessibili direttamente e scorrevoli sugli schermi più stretti.
 

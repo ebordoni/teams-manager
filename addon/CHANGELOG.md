@@ -1,10 +1,14 @@
 # Changelog
 
-## [1.0.4] — 2026-11-16
+## [1.0.5] — 2026-11-16
 
 ### Added
 
 - Installable public website with team icon, iPhone/Android guidance and an install button in supported browsers.
+
+## [1.0.4] — 2026-11-16
+
+### Added
 
 - Mobile navigation bar with direct section icons, scrollable on narrow screens.
 
