@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.0.3] — 2026-11-16
+
+### Added
+
+- Dashboard header with team name and compact player, match and goal counters.
+
+### Changed
+
+- Removed the team summary box, replacing it with a more compact and informative header.
+
+## [1.0.2] — 2026-11-16
+
+### Added
+
+- Dashboard Calendar card with a side-by-side today and tomorrow agenda, directly openable events, and no-event state.
+
+### Changed
+
+- Removed duplicate “Next event” and “Upcoming” cards; last event and results remain in the overview.
+
 ## [1.0.1] — 2026-10-23
 
 ### Changed

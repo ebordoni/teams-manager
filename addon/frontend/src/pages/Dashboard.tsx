@@ -12,8 +12,7 @@ import {
   Title,
 } from "@mantine/core";
 import {
-  IconBallFootball,
-  IconCalendarEvent,
+  IconCalendar,
   IconCalendarPlus,
   IconChevronRight,
   IconFileText,
@@ -26,7 +25,6 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EventTypeIcon } from "../components/EventTypeIcon";
 import PageLoader from "../components/PageLoader";
-import PageHeader from "../components/PageHeader";
 import type { EventTypeDef, Player, TeamEvent, TeamSummary } from "../types";
 import { formatDisplayDate } from "../utils/date";
 
@@ -49,6 +47,21 @@ function formatFullDate(date: string, time?: string | null): string {
     year: "numeric",
   }).format(new Date(`${date}T12:00:00`));
   return `${formatted.charAt(0).toUpperCase()}${formatted.slice(1)}${time ? ` alle ${time}` : ""}`;
+}
+
+function nextIsoDay(date: string): string {
+  const value = new Date(`${date}T12:00:00`);
+  value.setDate(value.getDate() + 1);
+  return value.toISOString().slice(0, 10);
+}
+
+function shortDay(date: string): { weekday: string; day: string; month: string } {
+  const value = new Date(`${date}T12:00:00`);
+  return {
+    weekday: new Intl.DateTimeFormat("it-IT", { weekday: "short" }).format(value).replace(".", ""),
+    day: new Intl.DateTimeFormat("it-IT", { day: "2-digit" }).format(value),
+    month: new Intl.DateTimeFormat("it-IT", { month: "short" }).format(value).replace(".", ""),
+  };
 }
 
 export default function Dashboard() {
@@ -91,18 +104,19 @@ export default function Dashboard() {
   const today = todayIso();
   const pastEvents = events.filter((event) => event.date < today);
   const lastEvent = pastEvents[pastEvents.length - 1];
-  const nextEvent = events.find((event) => event.date >= today);
-  const upcomingEvents = events.filter((event) => event.date >= today).slice(0, 4);
+  const tomorrow = nextIsoDay(today);
+  const todayEvents = events.filter((event) => event.date === today);
+  const tomorrowEvents = events.filter((event) => event.date === tomorrow);
   const typeOf = (key: string) => eventTypes.find((type) => type.key === key);
 
-  function renderEventOverview(event: TeamEvent, variant: "last" | "next") {
+  function renderEventOverview(event: TeamEvent) {
     const type = typeOf(event.type);
     const isMatch = type?.hasOpponent;
     return (
       <Stack gap="xs">
         <Group justify="space-between" wrap="nowrap">
           <Group gap="xs" wrap="nowrap">
-            <ThemeIcon variant="light" color={variant === "next" ? "blue" : "gray"} size="lg">
+            <ThemeIcon variant="light" color="gray" size="lg">
               <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={20} />
             </ThemeIcon>
             <div>
@@ -130,7 +144,6 @@ export default function Dashboard() {
           </Group>
         )}
         <Group justify="flex-end" gap="xs">
-          {variant === "next" && <Button component={Link} to={`/events/${event.id}?tab=attendance`} variant="light" size="sm">Apri presenze</Button>}
           <Button component={Link} to={`/events/${event.id}`} variant="subtle" size="sm" rightSection={<IconChevronRight size={15} />}>
             Vedi l'evento
           </Button>
@@ -139,56 +152,62 @@ export default function Dashboard() {
     );
   }
 
+  function renderDayAgenda(date: string, label: "Oggi" | "Domani", dayEvents: TeamEvent[]) {
+    const day = shortDay(date);
+    return <Stack gap="sm" style={{ minWidth: 0 }}>
+      <Text size="sm" fw={700} tt="capitalize">{day.weekday}</Text>
+      <Group gap="xs" align="center">
+        <Text fw={800} fz="xl" c={label === "Oggi" ? "blue.3" : undefined} style={label === "Oggi" ? { background: "var(--mantine-color-blue-filled)", color: "white", borderRadius: "var(--mantine-radius-sm)", padding: "0 7px", lineHeight: 1.25 } : undefined}>{day.day}</Text>
+        <Text size="sm" fw={700} tt="uppercase">{day.month}</Text>
+        <Text size="xs" c="dimmed">{label}</Text>
+      </Group>
+      <Stack gap="xs" mt="xs">
+        {dayEvents.length === 0 ? <Text size="sm" c="dimmed" style={{ borderLeft: "2px solid var(--mantine-color-blue-6)", paddingLeft: 10 }}>✓ Nessun evento</Text> : dayEvents.map((event) => {
+          const type = typeOf(event.type);
+          const title = `${type?.label ?? event.type}${event.opponent ? ` · vs ${event.opponent}` : ""}`;
+          return <Link key={event.id} to={`/events/${event.id}`} style={{ color: "inherit", textDecoration: "none", borderLeft: `2px solid var(--mantine-color-${event.status === "cancelled" ? "red" : event.status === "modified" ? "orange" : "blue"}-6)`, paddingLeft: 10 }}>
+            <Text size="sm" fw={650} lineClamp={2}>{title}</Text>
+            <Group gap={5}><EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={14} /><Text size="sm" c="dimmed">{event.startTime ?? "Orario da definire"}</Text>{event.location && <Text size="sm" c="dimmed" truncate>· {event.location}</Text>}</Group>
+          </Link>;
+        })}
+      </Stack>
+    </Stack>;
+  }
+
   return (
     <Stack gap="lg">
-      <PageHeader title="Dashboard" description="Una panoramica di squadra, appuntamenti e risultati." />
+      <Group className="app-page-header" justify="space-between" align="center" gap="md" wrap="wrap">
+        <Stack gap={2} style={{ minWidth: 0 }}>
+          <Title order={2} className="app-page-title">{teamName}</Title>
+          <Text c="dimmed" size="sm">Calcio · Gestione squadra</Text>
+        </Stack>
+        <Group gap={0} wrap="wrap" style={{ border: "1px solid var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-md)", overflow: "hidden" }}>
+          <TeamMetric value={players.length} label="Giocatori" />
+          <TeamMetric value={summary?.results.played ?? 0} label="Partite" withBorder />
+          <TeamMetric value={summary?.results.goalsFor ?? 0} label="Reti" withBorder />
+        </Group>
+      </Group>
 
       {error && <Alert color="red" title="Caricamento non riuscito">{error}</Alert>}
 
       <SimpleGrid cols={{ base: 1, md: 2 }}>
         <Card withBorder padding="lg" radius="md">
-          <Title order={4} mb="md">Prossimo evento</Title>
-          {nextEvent ? renderEventOverview(nextEvent, "next") : (
-            <Stack align="center" justify="center" py="xl" gap="xs" c="dimmed">
-              <IconCalendarEvent size={30} />
-              <Text>Nessun evento futuro</Text>
-              <Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Vedi il calendario</Button>
-            </Stack>
-          )}
+          <Group justify="space-between" mb="md"><Group gap="xs"><IconCalendar size={20} /><Title order={4}>Calendario</Title></Group><Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Vedi tutto</Button></Group>
+          <Title order={2} mb="lg">Oggi e domani</Title>
+          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="xl">
+            {renderDayAgenda(today, "Oggi", todayEvents)}
+            {renderDayAgenda(tomorrow, "Domani", tomorrowEvents)}
+          </SimpleGrid>
         </Card>
         <Card withBorder padding="lg" radius="md">
           <Title order={4} mb="md">Ultimo evento</Title>
-          {lastEvent ? renderEventOverview(lastEvent, "last") : (
+          {lastEvent ? renderEventOverview(lastEvent) : (
             <Text c="dimmed">Nessun evento passato da mostrare.</Text>
           )}
         </Card>
       </SimpleGrid>
 
-      <Card withBorder padding={0} radius="md" style={{ overflow: "hidden" }}>
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={0}>
-          <div style={{ minHeight: 190, display: "grid", placeItems: "center", background: "linear-gradient(135deg, var(--mantine-primary-color-7), var(--mantine-color-cyan-6))" }}>
-            <ThemeIcon size={88} radius="xl" variant="white" color="blue">
-              <IconBallFootball size={52} />
-            </ThemeIcon>
-          </div>
-          <Stack gap="md" p="lg" className="app-dashboard-team">
-            <div>
-              <Title order={3}>{teamName.toUpperCase()}</Title>
-              <Text c="dimmed">Calcio · Gestione squadra</Text>
-            </div>
-            <Group gap="xl" wrap="wrap">
-              <div><Text size="xl" fw={700}>{players.length}</Text><Text size="sm" c="dimmed">Giocatori</Text></div>
-              <Divider orientation="vertical" />
-              <div><Text size="xl" fw={700}>{summary?.results.played ?? 0}</Text><Text size="sm" c="dimmed">Partite</Text></div>
-              <Divider orientation="vertical" />
-              <div><Text size="xl" fw={700}>{summary?.results.goalsFor ?? 0}</Text><Text size="sm" c="dimmed">Reti</Text></div>
-            </Group>
-          </Stack>
-        </SimpleGrid>
-      </Card>
-
-      <SimpleGrid cols={{ base: 1, lg: 2 }}>
-        <Card withBorder padding="lg" radius="md">
+      <Card withBorder padding="lg" radius="md">
           <Group justify="space-between" mb="sm">
             <Title order={4}>Ultimi risultati</Title>
             <ThemeIcon variant="light" color="yellow"><IconTrophy size={18} /></ThemeIcon>
@@ -203,27 +222,7 @@ export default function Dashboard() {
               ))}
             </Stack>
           ) : <Text c="dimmed">Nessun risultato registrato.</Text>}
-        </Card>
-        <Card withBorder padding="lg" radius="md">
-          <Group justify="space-between" mb="sm">
-            <Title order={4}>In programma</Title>
-            <Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Calendario</Button>
-          </Group>
-          {upcomingEvents.length ? (
-            <Stack gap="xs">
-              {upcomingEvents.map((event) => {
-                const type = typeOf(event.type);
-                return <Link key={event.id} to={`/events/${event.id}`} style={{ color: "inherit", textDecoration: "none" }}>
-                  <Group justify="space-between" wrap="nowrap">
-                    <Group gap="xs" wrap="nowrap"><EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={17} /><Text size="sm" truncate>{type?.label ?? event.type}{event.opponent ? ` · vs ${event.opponent}` : ""}</Text></Group>
-                    <Text size="sm" c="dimmed" style={{ whiteSpace: "nowrap" }}>{formatDisplayDate(event.date)}</Text>
-                  </Group>
-                </Link>;
-              })}
-            </Stack>
-          ) : <Text c="dimmed">Nessun appuntamento in programma.</Text>}
-        </Card>
-      </SimpleGrid>
+      </Card>
 
       <Group gap="sm" wrap="wrap">
         <Button component={Link} to="/calendar" leftSection={<IconCalendarPlus size={18} />}>Nuovo appuntamento</Button>
@@ -232,4 +231,11 @@ export default function Dashboard() {
       </Group>
     </Stack>
   );
+}
+
+function TeamMetric({ value, label, withBorder = false }: { value: number; label: string; withBorder?: boolean }) {
+  return <Stack gap={0} px="md" py="xs" style={withBorder ? { borderLeft: "1px solid var(--mantine-color-default-border)" } : undefined}>
+    <Text fw={800} fz="lg">{value}</Text>
+    <Text size="xs" c="dimmed">{label}</Text>
+  </Stack>;
 }

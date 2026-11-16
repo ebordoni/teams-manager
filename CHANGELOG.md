@@ -7,6 +7,26 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.3] — 2026-11-16
+
+### Aggiunto
+
+- Intestazione Dashboard con nome squadra e contatori compatti di giocatori, partite e reti.
+
+### Modificato
+
+- Rimosso il box riepilogativo della squadra, sostituito da una testata più compatta e informativa.
+
+## [1.0.2] — 2026-11-16
+
+### Aggiunto
+
+- Box Calendario in dashboard con agenda affiancata per oggi e domani, eventi apribili direttamente e stato “nessun evento”.
+
+### Modificato
+
+- Rimossi i box duplicati “Prossimo evento” e “In programma”; l'ultimo evento e i risultati restano disponibili nella panoramica.
+
 ## [1.0.1] — 2026-10-23
 
 ### Modificato
