@@ -423,7 +423,7 @@ export default function EventDetail() {
           )}
             </Stack>
           </Card>
-          <Group className="mobile-form-actions" mt="md">
+          <Group className="event-edit-actions" mt="md">
             <Button onClick={handleSaveStatus} loading={savingStatus}>
               Salva modifiche
             </Button>

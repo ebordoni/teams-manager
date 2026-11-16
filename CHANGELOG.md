@@ -7,6 +7,18 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.4] — 2026-11-16
+
+### Aggiunto
+
+- Barra di navigazione mobile con icone delle sezioni, accessibili direttamente e scorrevoli sugli schermi più stretti.
+
+### Modificato
+
+- Rimossi titolo interno duplicato e menu hamburger; la navigazione laterale rimane disponibile su desktop.
+- Pulsante di salvataggio della modifica evento su mobile più discreto, distanziato e senza barra di sfondo.
+- Accessi a Comunicazioni e Intelligenza artificiale spostati dal menu principale alle impostazioni.
+
 ## [1.0.3] — 2026-11-16
 
 ### Aggiunto

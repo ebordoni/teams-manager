@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.4] — 2026-11-16
+
+### Added
+
+- Mobile navigation bar with direct section icons, scrollable on narrow screens.
+
+### Changed
+
+- Removed the duplicate internal title and hamburger menu; desktop retains its sidebar navigation.
+- Made the mobile event-edit save button floating, spaced and free of the background bar.
+- Moved Communications and AI settings links from main navigation into Settings.
+
 ## [1.0.3] — 2026-11-16
 
 ### Added

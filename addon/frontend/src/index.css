@@ -29,11 +29,31 @@ a {
   margin-bottom: 4px;
 }
 
-.app-brand {
+.app-mobile-nav {
   display: flex;
+  height: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.app-mobile-nav-link {
+  flex: 1 0 44px;
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 8px;
-  letter-spacing: -0.03em;
+  color: var(--mantine-color-dimmed);
+  border-bottom: 3px solid transparent;
+}
+
+.app-mobile-nav-link.is-active {
+  color: var(--mantine-primary-color-filled);
+  border-bottom-color: var(--mantine-primary-color-filled);
+}
+
+.app-mobile-nav-link:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -3px;
 }
 
 .app-page {
@@ -142,6 +162,20 @@ a {
 
   .app-page .mantine-ActionIcon-root {
     min-width: 44px;
+  }
+
+  .event-edit-actions {
+    position: sticky;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+    justify-content: flex-end;
+    padding: 4px 12px;
+    pointer-events: none;
+  }
+
+  .event-edit-actions .mantine-Button-root {
+    pointer-events: auto;
+    box-shadow: var(--mantine-shadow-md);
   }
 
   .mobile-form-actions {

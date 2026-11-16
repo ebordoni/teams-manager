@@ -1,19 +1,12 @@
 import {
   AppShell,
-  Burger,
-  Group,
   NavLink as MantineNavLink,
-  Title,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
 import {
   IconCalendarEvent,
   IconClipboardList,
-  IconFileText,
   IconLayoutDashboard,
   IconLayoutList,
-  IconPlayFootball,
-  IconRobot,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react";
@@ -25,37 +18,29 @@ const navItems = [
   { to: "/players", label: "Giocatori", icon: IconUsers },
   { to: "/attendance", label: "Registro presenze", icon: IconClipboardList },
   { to: "/formations", label: "Formazioni", icon: IconLayoutList },
-  { to: "/communications", label: "Comunicazioni", icon: IconFileText },
-  { to: "/ai-settings", label: "Intelligenza artificiale", icon: IconRobot },
   { to: "/settings", label: "Impostazioni", icon: IconSettings },
 ];
 
 export default function Layout() {
-  const [opened, { toggle, close }] = useDisclosure();
   const location = useLocation();
+  const settingsActive = ["/settings", "/communications", "/ai-settings"].some((path) => location.pathname.startsWith(path));
 
   return (
     <AppShell
-      header={{ height: 56 }}
-      navbar={{ width: 230, breakpoint: "sm", collapsed: { mobile: !opened } }}
+      header={{ height: { base: 56, sm: 0 } }}
+      navbar={{ width: 230, breakpoint: "sm", collapsed: { mobile: true } }}
       padding={{ base: "sm", sm: "lg" }}
       className="app-shell"
       styles={{ main: { minWidth: 0 } }}
     >
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group gap="xs">
-            <Burger
-              opened={opened}
-              onClick={toggle}
-              hiddenFrom="sm"
-              size="sm"
-            />
-            <Title order={3} fz={{ base: "h4", sm: "h3" }} className="app-brand">
-              <IconPlayFootball /> Teams Manager
-            </Title>
-          </Group>
-        </Group>
+      <AppShell.Header hiddenFrom="sm">
+        <nav className="app-mobile-nav" aria-label="Navigazione principale">
+          {navItems.map((item) => (
+            <NavLink key={item.to} to={item.to} title={item.label} aria-label={item.label} className={({ isActive }) => `app-mobile-nav-link${(item.to === "/settings" ? settingsActive : isActive) ? " is-active" : ""}`}>
+              <item.icon size={22} aria-hidden="true" />
+            </NavLink>
+          ))}
+        </nav>
       </AppShell.Header>
       <AppShell.Navbar p="md" className="app-navbar">
         {navItems.map((item) => (
@@ -65,8 +50,7 @@ export default function Layout() {
             to={item.to}
             label={item.label}
             leftSection={<item.icon size={18} />}
-            active={location.pathname.startsWith(item.to)}
-            onClick={close}
+            active={item.to === "/settings" ? settingsActive : location.pathname.startsWith(item.to)}
             variant="filled"
             style={{ borderRadius: 6 }}
           />

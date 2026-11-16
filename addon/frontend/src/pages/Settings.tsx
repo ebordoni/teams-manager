@@ -15,6 +15,7 @@ import {
 } from "@mantine/core";
 import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import {
   EventTypeIcon,
@@ -274,6 +275,17 @@ export default function Settings() {
           <Tabs.Tab value="event-types">Tipi di evento</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="general"><Stack gap="md">
+
+      <Card withBorder padding="md" radius="md">
+        <Stack gap="sm">
+          <Title order={5}>Comunicazioni e intelligenza artificiale</Title>
+          <Text size="sm" c="dimmed">Gestisci le comunicazioni e configura i provider per il piano partita.</Text>
+          <Group>
+            <Button component={Link} to="/communications" variant="light">Comunicazioni</Button>
+            <Button component={Link} to="/ai-settings" variant="light">Intelligenza artificiale</Button>
+          </Group>
+        </Stack>
+      </Card>
 
       <Card withBorder padding="md" radius="md">
         <Stack gap="sm">
