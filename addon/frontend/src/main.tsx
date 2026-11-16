@@ -5,15 +5,16 @@ import "@mantine/dates/styles.css";
 import { Notifications } from "@mantine/notifications";
 import "@mantine/notifications/styles.css";
 import "dayjs/locale/it";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import AppErrorBoundary from "./components/AppErrorBoundary";
+import { theme } from "./theme";
 import "./index.css";
 
-const theme = {
-  primaryColor: "blue",
-  fontFamily: "Noto Sans, Arial, sans-serif",
-};
+// Mantine DateInput usa il formato visualizzato anche per l'inserimento manuale.
+dayjs.extend(customParseFormat);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <MantineProvider theme={theme} defaultColorScheme="auto">

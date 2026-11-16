@@ -15,6 +15,17 @@ npm run check
 API e compila backend e frontend. La CI esegue gli stessi controlli e costruisce l'immagine Docker
 dell'add-on.
 
+### Verifiche UI
+
+Dal root del repository, dopo aver installato le dipendenze locali:
+
+```bash
+npm exec --prefix addon/frontend -- playwright install --with-deps chromium
+npm run test:ui
+```
+
+La suite usa backend e frontend compilati, dati sintetici e un database temporaneo. Non legge o modifica `data/` e non pubblica contenuti. Copre le schermate responsive, entrambi i temi, i flussi gestionali esistenti e i percorsi Ingress. Chromium e le sue librerie sono necessari; la suite è separata da `npm run check`. Gli screenshot vengono salvati nella cartella temporanea indicata nell'output, oppure nella cartella esistente specificata con `UI_SCREENSHOT_DIR`.
+
 ## Versioni, changelog e commit
 
 - Usa Conventional Commits in inglese: `feat:`, `fix:`, `docs:`, `refactor:`.

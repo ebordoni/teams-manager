@@ -16,7 +16,13 @@ import {
 import { Calendar as MantineCalendar } from "@mantine/dates";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconChevronLeft, IconChevronRight, IconTrash } from "@tabler/icons-react";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconPlus,
+  IconRefresh,
+  IconTrash,
+} from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -24,6 +30,8 @@ import { api } from "../api/client";
 import EventCreationModal from "../components/EventCreationModal";
 import PageHeader from "../components/PageHeader";
 import { EventTypeIcon } from "../components/EventTypeIcon";
+import EventSummary from "../components/EventPresentation";
+import EmptyState from "../components/EmptyState";
 import type {
   EventTypeDef,
   GoogleStatus,
@@ -73,15 +81,11 @@ export default function Calendar() {
     dayjs().format("YYYY-MM-DD"),
   );
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [calendarView, setCalendarView] = useState<"month" | "list">(
-    "list",
-  );
+  const [calendarView, setCalendarView] = useState<"month" | "list">("list");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [generated, setGenerated] = useState<LiveCommunication | null>(
-    null,
-  );
+  const [generated, setGenerated] = useState<LiveCommunication | null>(null);
   const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
   const [exporting, setExporting] = useState(false);
   const [deletingSelected, setDeletingSelected] = useState(false);
@@ -217,7 +221,9 @@ export default function Calendar() {
       const results = await Promise.allSettled(
         ids.map((id) => api.deleteEvent(id)),
       );
-      const deleted = results.filter((result) => result.status === "fulfilled").length;
+      const deleted = results.filter(
+        (result) => result.status === "fulfilled",
+      ).length;
       const failed = ids.length - deleted;
       setSelectedIds(new Set());
       notifications.show({
@@ -433,7 +439,13 @@ export default function Calendar() {
     const isPast = event.date < today;
     const isToday = event.date === today;
     return (
-      <Card key={event.id} withBorder padding="sm" radius="md" className={isPast ? "mobile-event-card is-past" : "mobile-event-card"}>
+      <Card
+        key={event.id}
+        withBorder
+        padding="sm"
+        radius="md"
+        className={isPast ? "mobile-event-card is-past" : "mobile-event-card"}
+      >
         <Group wrap="nowrap" align="flex-start" gap="sm">
           <Checkbox
             checked={selectedIds.has(event.id)}
@@ -441,18 +453,14 @@ export default function Calendar() {
             aria-label={`Seleziona ${label} del ${formatDisplayDate(event.date)}`}
             mt={8}
           />
-          <Link to={`/events/${event.id}`} className="mobile-event-link">
-            <Group gap="xs" wrap="nowrap">
-              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={20} />
-              <Text fw={isToday ? 800 : 600} truncate>{label}</Text>
-              {event.result && <Badge size="sm" variant="light">{event.result.teamScore}–{event.result.opponentScore}</Badge>}
-            </Group>
-            <Text size="sm" fw={isToday ? 700 : 500} mt={4}>
-              {formatDisplayDate(event.date)}{event.startTime ? ` alle ${event.startTime}` : ""}
-            </Text>
-            {event.opponent && <Text size="sm" c="dimmed" truncate>vs {event.opponent}</Text>}
-            {event.status !== "scheduled" && <Badge mt={4} size="sm" color={STATUS_COLOR[event.status]} variant="light">{event.status === "cancelled" ? "Annullato" : "Modificato"}</Badge>}
-          </Link>
+          <div className="mobile-event-link">
+            <EventSummary event={event} type={type} highlighted={isToday} />
+            {event.result && (
+              <Badge mt={6} size="sm" variant="light">
+                {event.result.teamScore}–{event.result.opponentScore}
+              </Badge>
+            )}
+          </div>
           <ActionIcon
             color="red"
             variant="subtle"
@@ -469,28 +477,35 @@ export default function Calendar() {
 
   return (
     <Stack gap="md">
-      <PageHeader title="Calendario" description="Organizza eventi, partite e allenamenti." action={
-        <>
-          <SegmentedControl
-            aria-label="Vista del calendario"
-            size="sm"
-            value={calendarView}
-            onChange={(value) => setCalendarView(value as "month" | "list")}
-            data={[
-              { label: "Mese", value: "month" },
-              { label: "Elenco", value: "list" },
-            ]}
-          />
-          <Button
-            variant="light"
-            onClick={handleGenerateCommunication}
-            loading={generating}
-          >
-            📄 Aggiorna appuntamenti
+      <PageHeader
+        title="Calendario"
+        description="Allenamenti, partite e appuntamenti. Tutto in ordine."
+        action={
+          <Button onClick={handleOpenForm} leftSection={<IconPlus size={17} />}>
+            Nuovo evento
           </Button>
-          <Button onClick={handleOpenForm}>+ Nuovo evento</Button>
-        </>
-      } />
+        }
+      />
+      <Group className="calendar-toolbar" justify="space-between" gap="sm">
+        <SegmentedControl
+          aria-label="Vista del calendario"
+          size="sm"
+          value={calendarView}
+          onChange={(value) => setCalendarView(value as "month" | "list")}
+          data={[
+            { label: "Mese", value: "month" },
+            { label: "Elenco", value: "list" },
+          ]}
+        />
+        <Button
+          variant="subtle"
+          leftSection={<IconRefresh size={16} />}
+          onClick={handleGenerateCommunication}
+          loading={generating}
+        >
+          Aggiorna comunicazioni
+        </Button>
+      </Group>
 
       <EventCreationModal
         opened={showForm}
@@ -501,7 +516,12 @@ export default function Calendar() {
       />
 
       {selectedIds.size > 0 && (
-        <Card withBorder padding="md" radius="md">
+        <Card
+          withBorder
+          padding="md"
+          radius="md"
+          className="calendar-selection"
+        >
           <Group justify="space-between" wrap="wrap">
             <Text size="sm">{selectedIds.size} evento/i selezionato/i</Text>
             <Group gap="xs" wrap="wrap">
@@ -637,7 +657,8 @@ export default function Calendar() {
                               px={4}
                               py={3}
                               style={{
-                                background: "var(--mantine-color-default-hover)",
+                                background:
+                                  "var(--mantine-color-default-hover)",
                                 borderLeft: `3px solid var(--mantine-color-${event.status === "scheduled" ? "blue" : STATUS_COLOR[event.status]}-6)`,
                                 borderRadius: "var(--mantine-radius-sm)",
                               }}
@@ -675,22 +696,24 @@ export default function Calendar() {
               </Card>
 
               {selectedDay ? (
-            <Stack gap="xs">
-              <Group justify="space-between">
-                <Title order={5}>{formatDayLabel(selectedDay)}</Title>
-                <Button size="xs" variant="light" onClick={handleOpenForm}>
-                  + Aggiungi evento
-                </Button>
-              </Group>
-              {selectedDayEvents.length === 0 ? (
-                <Text c="dimmed">Nessun evento in questa giornata.</Text>
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Title order={5}>{formatDayLabel(selectedDay)}</Title>
+                    <Button size="xs" variant="light" onClick={handleOpenForm}>
+                      + Aggiungi evento
+                    </Button>
+                  </Group>
+                  {selectedDayEvents.length === 0 ? (
+                    <Text c="dimmed">Nessun evento in questa giornata.</Text>
+                  ) : (
+                    selectedDayEvents.map(renderEventCard)
+                  )}
+                </Stack>
               ) : (
-                selectedDayEvents.map(renderEventCard)
+                <Text c="dimmed">
+                  Seleziona un giorno per vedere gli eventi.
+                </Text>
               )}
-            </Stack>
-          ) : (
-            <Text c="dimmed">Seleziona un giorno per vedere gli eventi.</Text>
-          )}
             </>
           ) : (
             <Card withBorder padding="md" radius="md">
@@ -715,20 +738,29 @@ export default function Calendar() {
                   </ActionIcon>
                 </Group>
                 {eventsByDate.size === 0 ? (
-                  <Text c="dimmed">Nessun evento in questo mese.</Text>
+                  <EmptyState
+                    title="Un mese ancora da organizzare"
+                    description="Aggiungi allenamenti e partite oppure consulta un altro mese."
+                    action={
+                      <Button variant="light" onClick={handleOpenForm}>
+                        Crea un evento
+                      </Button>
+                    }
+                  />
+                ) : compactDays ? (
+                  <Stack gap="xs">
+                    <Checkbox
+                      size="lg"
+                      checked={allVisibleEventsSelected}
+                      indeterminate={
+                        someVisibleEventsSelected && !allVisibleEventsSelected
+                      }
+                      onChange={toggleAllVisibleEvents}
+                      label="Seleziona tutti gli eventi del mese"
+                    />
+                    {events.map(renderMobileEventRow)}
+                  </Stack>
                 ) : (
-                  compactDays ? (
-                    <Stack gap="xs">
-                      <Checkbox
-                        size="lg"
-                        checked={allVisibleEventsSelected}
-                        indeterminate={someVisibleEventsSelected && !allVisibleEventsSelected}
-                        onChange={toggleAllVisibleEvents}
-                        label="Seleziona tutti gli eventi del mese"
-                      />
-                      {events.map(renderMobileEventRow)}
-                    </Stack>
-                  ) : (
                   <Table.ScrollContainer minWidth={600}>
                     <Table
                       highlightOnHover
@@ -755,10 +787,11 @@ export default function Calendar() {
                           <Table.Th w={48}>Azioni</Table.Th>
                         </Table.Tr>
                       </Table.Thead>
-                      <Table.Tbody>{events.map(renderEventListRow)}</Table.Tbody>
+                      <Table.Tbody>
+                        {events.map(renderEventListRow)}
+                      </Table.Tbody>
                     </Table>
                   </Table.ScrollContainer>
-                  )
                 )}
               </Stack>
             </Card>

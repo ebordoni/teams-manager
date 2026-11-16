@@ -7,6 +7,24 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] — 2026-11-16
+
+### Modificato
+
+- Revisione completa della UI gestionale senza nuove funzioni o modifiche alle API: tema condiviso, font Poppins locale, superfici e gerarchie coerenti, con supporto chiaro e scuro.
+- Navigazione mobile in basso con etichette e impostazioni nella testata; sidebar desktop con identità della squadra e stato attivo mantenuto nei dettagli evento.
+- Panoramica centrata sull'agenda di oggi e domani, indicatori essenziali e accessi agli strumenti; calendario con azioni separate, schede evento condivise e rosa organizzata per profili.
+- Dettaglio evento suddiviso in data/orari, luogo/squadra e stato/note; registro presenze con schede espandibili su smartphone e matrice su desktop. Campo virtuale condiviso rinnovato per formazioni e piani partita.
+- Impostazioni riordinate per squadra, convocazioni e backup, con connessioni raggruppate per provider; spiegazioni delle comunicazioni e creazione di ulteriori piani richiudibili per ridurre il rumore visivo.
+
+### Aggiunto
+
+- Smoke test UI ripetibili con Playwright su database temporaneo: tutte le pagine a diverse larghezze e in entrambi i temi, flussi gestionali esistenti e compatibilità con percorsi Home Assistant Ingress.
+
+### Corretto
+
+- Parsing delle date inserite manualmente nel formato italiano dei campi data; la scheda attiva nelle Impostazioni viene mantenuta dopo i salvataggi.
+
 ## [1.1.0] — 2026-11-16
 
 ### Aggiunto

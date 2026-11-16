@@ -177,18 +177,6 @@ export default function EventCreationModal({
             </Tabs.List>
           </Tabs>
 
-          <Textarea
-            label="Descrizione"
-            placeholder="Aggiungi informazioni sull'evento"
-            minRows={3}
-            autosize
-            value={form.notes}
-            onChange={(event) => {
-              const notes = event.currentTarget.value;
-              setForm((current) => ({ ...current, notes }));
-            }}
-          />
-
           {selectedType?.hasOpponent && (
             <TextInput
               label="Avversario"
@@ -290,7 +278,7 @@ export default function EventCreationModal({
             <Text fw={600}>Luogo</Text>
             <div>
               <Text size="sm" fw={500} mb={6}>
-                Sede della partita
+                Sede dell'evento
               </Text>
               <Button.Group>
                 <Button
@@ -333,7 +321,22 @@ export default function EventCreationModal({
             />
           </Stack>
 
-          <Group justify="flex-end" wrap="wrap-reverse" className="mobile-form-actions">
+          <Textarea
+            label="Note e indicazioni"
+            placeholder="Le informazioni utili da condividere per l'appuntamento"
+            minRows={3}
+            autosize
+            value={form.notes}
+            onChange={(event) => {
+              const notes = event.currentTarget.value;
+              setForm((current) => ({ ...current, notes }));
+            }}
+          />
+          <Group
+            justify="flex-end"
+            wrap="wrap-reverse"
+            className="mobile-form-actions"
+          >
             <Button type="button" variant="default" onClick={onClose}>
               Annulla
             </Button>
