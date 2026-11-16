@@ -1,67 +1,39 @@
+import { Alert, Badge, Button, Card, Stack, Text } from "@mantine/core";
 import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Divider,
-  Group,
-  SimpleGrid,
-  Stack,
-  Text,
-  ThemeIcon,
-  Title,
-} from "@mantine/core";
-import {
+  IconBallFootball,
   IconCalendar,
   IconCalendarPlus,
+  IconCheck,
   IconChevronRight,
   IconFileText,
   IconLayoutList,
-  IconMapPin,
   IconTrophy,
+  IconUsers,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import { EventTypeIcon } from "../components/EventTypeIcon";
+import EventSummary from "../components/EventPresentation";
+import EmptyState from "../components/EmptyState";
+import PageHeader from "../components/PageHeader";
 import PageLoader from "../components/PageLoader";
+import SectionHeading from "../components/SectionHeading";
 import type { EventTypeDef, Player, TeamEvent, TeamSummary } from "../types";
 import { formatDisplayDate } from "../utils/date";
+import type { ReactNode } from "react";
 
 function todayIso(): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Rome",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
-  const value = (type: string) => parts.find((part) => part.type === type)?.value;
-  return `${value("year")}-${value("month")}-${value("day")}`;
+  }).format(new Date());
 }
-
-function formatFullDate(date: string, time?: string | null): string {
-  const formatted = new Intl.DateTimeFormat("it-IT", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(`${date}T12:00:00`));
-  return `${formatted.charAt(0).toUpperCase()}${formatted.slice(1)}${time ? ` alle ${time}` : ""}`;
-}
-
-function nextIsoDay(date: string): string {
-  const value = new Date(`${date}T12:00:00`);
-  value.setDate(value.getDate() + 1);
-  return value.toISOString().slice(0, 10);
-}
-
-function shortDay(date: string): { weekday: string; day: string; month: string } {
-  const value = new Date(`${date}T12:00:00`);
-  return {
-    weekday: new Intl.DateTimeFormat("it-IT", { weekday: "short" }).format(value).replace(".", ""),
-    day: new Intl.DateTimeFormat("it-IT", { day: "2-digit" }).format(value),
-    month: new Intl.DateTimeFormat("it-IT", { month: "short" }).format(value).replace(".", ""),
-  };
+function tomorrowIso(today: string): string {
+  const date = new Date(`${today}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
 }
 
 export default function Dashboard() {
@@ -72,170 +44,249 @@ export default function Dashboard() {
   const [teamName, setTeamName] = useState("La squadra");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [playersRes, eventsRes, typesRes, summaryRes, settingsRes] = await Promise.all([
-          api.getPlayers(),
-          api.getEvents(),
-          api.getEventTypes(),
-          api.getTeamSummary(),
-          api.getSettings(),
-        ]);
+    void Promise.all([
+      api.getPlayers(),
+      api.getEvents(),
+      api.getEventTypes(),
+      api.getTeamSummary(),
+      api.getSettings(),
+    ])
+      .then(([playersRes, eventsRes, typesRes, summaryRes, settingsRes]) => {
         setPlayers(playersRes.data);
         setEvents(eventsRes.data);
         setEventTypes(typesRes.data);
         setSummary(summaryRes.data);
         setTeamName(settingsRes.data.teamName);
-      } catch {
-        setError("Impossibile caricare la panoramica della squadra. Riprova tra poco.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
+      })
+      .catch(() =>
+        setError(
+          "Impossibile caricare la panoramica della squadra. Riprova tra poco.",
+        ),
+      )
+      .finally(() => setLoading(false));
   }, []);
-
   if (loading) return <PageLoader />;
-
   const today = todayIso();
+  const tomorrow = tomorrowIso(today);
   const pastEvents = events.filter((event) => event.date < today);
   const lastEvent = pastEvents[pastEvents.length - 1];
-  const tomorrow = nextIsoDay(today);
-  const todayEvents = events.filter((event) => event.date === today);
-  const tomorrowEvents = events.filter((event) => event.date === tomorrow);
   const typeOf = (key: string) => eventTypes.find((type) => type.key === key);
-
-  function renderEventOverview(event: TeamEvent) {
-    const type = typeOf(event.type);
-    const isMatch = type?.hasOpponent;
-    return (
-      <Stack gap="xs">
-        <Group justify="space-between" wrap="nowrap">
-          <Group gap="xs" wrap="nowrap">
-            <ThemeIcon variant="light" color="gray" size="lg">
-              <EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={20} />
-            </ThemeIcon>
-            <div>
-              <Text fw={700}>{type?.label ?? event.type}</Text>
-              <Text size="sm" c="dimmed">{formatFullDate(event.date, event.startTime)}</Text>
-            </div>
-          </Group>
-          {event.status !== "scheduled" && (
-            <Badge color={event.status === "cancelled" ? "red" : "orange"} variant="light">
-              {event.status === "cancelled" ? "Annullato" : "Modificato"}
-            </Badge>
-          )}
-        </Group>
-        <Divider />
-        {isMatch && (
-          <Group justify="space-between" wrap="nowrap">
-            <Text>{teamName}</Text>
-            <Text fw={600}>{event.opponent ?? "Avversario da definire"}</Text>
-          </Group>
-        )}
-        {event.location && (
-          <Group gap={6} c="dimmed">
-            <IconMapPin size={16} />
-            <Text size="sm">{event.location}</Text>
-          </Group>
-        )}
-        <Group justify="flex-end" gap="xs">
-          <Button component={Link} to={`/events/${event.id}`} variant="subtle" size="sm" rightSection={<IconChevronRight size={15} />}>
-            Vedi l'evento
-          </Button>
-        </Group>
-      </Stack>
-    );
-  }
-
-  function renderDayAgenda(date: string, label: "Oggi" | "Domani", dayEvents: TeamEvent[]) {
-    const day = shortDay(date);
-    return <Stack gap="sm" style={{ minWidth: 0 }}>
-      <Text size="sm" fw={700} tt="capitalize">{day.weekday}</Text>
-      <Group gap="xs" align="center">
-        <Text fw={800} fz="xl" c={label === "Oggi" ? "blue.3" : undefined} style={label === "Oggi" ? { background: "var(--mantine-color-blue-filled)", color: "white", borderRadius: "var(--mantine-radius-sm)", padding: "0 7px", lineHeight: 1.25 } : undefined}>{day.day}</Text>
-        <Text size="sm" fw={700} tt="uppercase">{day.month}</Text>
-        <Text size="xs" c="dimmed">{label}</Text>
-      </Group>
-      <Stack gap="xs" mt="xs">
-        {dayEvents.length === 0 ? <Text size="sm" c="dimmed" style={{ borderLeft: "2px solid var(--mantine-color-blue-6)", paddingLeft: 10 }}>✓ Nessun evento</Text> : dayEvents.map((event) => {
-          const type = typeOf(event.type);
-          const title = `${type?.label ?? event.type}${event.opponent ? ` · vs ${event.opponent}` : ""}`;
-          return <Link key={event.id} to={`/events/${event.id}`} style={{ color: "inherit", textDecoration: "none", borderLeft: `2px solid var(--mantine-color-${event.status === "cancelled" ? "red" : event.status === "modified" ? "orange" : "blue"}-6)`, paddingLeft: 10 }}>
-            <Text size="sm" fw={650} lineClamp={2}>{title}</Text>
-            <Group gap={5}><EventTypeIcon name={type?.icon ?? "IconCalendarEvent"} size={14} /><Text size="sm" c="dimmed">{event.startTime ?? "Orario da definire"}</Text>{event.location && <Text size="sm" c="dimmed" truncate>· {event.location}</Text>}</Group>
-          </Link>;
-        })}
-      </Stack>
-    </Stack>;
-  }
 
   return (
     <Stack gap="lg">
-      <Group className="app-page-header" justify="space-between" align="center" gap="md" wrap="wrap">
-        <Stack gap={2} style={{ minWidth: 0 }}>
-          <Title order={2} className="app-page-title">{teamName}</Title>
-          <Text c="dimmed" size="sm">Calcio · Gestione squadra</Text>
+      <PageHeader
+        eyebrow="La tua squadra, ogni giorno"
+        title="Panoramica"
+        description={teamName}
+        action={
+          <Button
+            component={Link}
+            to="/calendar"
+            leftSection={<IconCalendarPlus size={17} />}
+          >
+            Nuovo appuntamento
+          </Button>
+        }
+      />
+      {error && (
+        <Alert color="red" title="Caricamento non riuscito">
+          {error}
+        </Alert>
+      )}
+      <div className="dashboard-metrics">
+        <Metric
+          value={error ? "—" : players.length}
+          label="Giocatori in rosa"
+          icon={<IconUsers size={23} stroke={1.6} />}
+        />
+        <Metric
+          value={error ? "—" : (summary?.results.played ?? 0)}
+          label="Partite giocate"
+          icon={<IconTrophy size={23} stroke={1.6} />}
+        />
+        <Metric
+          value={error ? "—" : (summary?.results.goalsFor ?? 0)}
+          label="Reti segnate"
+          icon={<IconBallFootball size={23} stroke={1.6} />}
+        />
+      </div>
+      <div className="dashboard-main-grid">
+        <Stack gap="lg">
+          <Card withBorder>
+            <SectionHeading
+              title="L'agenda della squadra"
+              description="Oggi e domani, a colpo d'occhio."
+              icon={<IconCalendar size={18} />}
+              action={
+                <Link
+                  to="/calendar"
+                  className="app-section-link"
+                  aria-label="Apri calendario"
+                >
+                  <span>Calendario</span>
+                  <IconChevronRight size={16} />
+                </Link>
+              }
+            />
+            {[
+              { date: today, label: "Oggi" },
+              { date: tomorrow, label: "Domani" },
+            ].map((day) => {
+              const items = events.filter((event) => event.date === day.date);
+              return (
+                <section
+                  className="dashboard-agenda-day"
+                  key={day.date}
+                  aria-label={`Agenda di ${day.label.toLowerCase()}`}
+                >
+                  <div className="dashboard-day-label">
+                    <strong>{day.label}</strong>
+                    <span>
+                      {new Intl.DateTimeFormat("it-IT", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "long",
+                      }).format(new Date(`${day.date}T12:00:00`))}
+                    </span>
+                  </div>
+                  {items.length ? (
+                    items.map((event) => (
+                      <EventSummary
+                        key={event.id}
+                        event={event}
+                        type={typeOf(event.type)}
+                        highlighted={day.date === today}
+                      />
+                    ))
+                  ) : (
+                    <div className="dashboard-no-events">
+                      <IconCheck size={17} stroke={1.5} />
+                      <span>Nessun evento in programma.</span>
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </Card>
+          <Card withBorder>
+            <SectionHeading
+              title="Strumenti di squadra"
+              description="Dalla preparazione del campo alle comunicazioni."
+            />
+            <Link className="dashboard-shortcut" to="/formations">
+              <IconLayoutList size={21} stroke={1.6} />
+              <div>
+                <Text size="sm" fw={500}>
+                  Prepara una formazione
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Schieramenti e assegnazioni sul campo
+                </Text>
+              </div>
+              <IconChevronRight size={17} />
+            </Link>
+            <Link className="dashboard-shortcut" to="/communications">
+              <IconFileText size={21} stroke={1.6} />
+              <div>
+                <Text size="sm" fw={500}>
+                  Condividi gli appuntamenti
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Pubblica le comunicazioni della squadra
+                </Text>
+              </div>
+              <IconChevronRight size={17} />
+            </Link>
+          </Card>
         </Stack>
-        <Group gap={0} wrap="wrap" style={{ border: "1px solid var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-md)", overflow: "hidden" }}>
-          <TeamMetric value={players.length} label="Giocatori" />
-          <TeamMetric value={summary?.results.played ?? 0} label="Partite" withBorder />
-          <TeamMetric value={summary?.results.goalsFor ?? 0} label="Reti" withBorder />
-        </Group>
-      </Group>
-
-      {error && <Alert color="red" title="Caricamento non riuscito">{error}</Alert>}
-
-      <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <Card withBorder padding="lg" radius="md">
-          <Group justify="space-between" mb="md"><Group gap="xs"><IconCalendar size={20} /><Title order={4}>Calendario</Title></Group><Button component={Link} to="/calendar" variant="subtle" size="compact-sm">Vedi tutto</Button></Group>
-          <Title order={2} mb="lg">Oggi e domani</Title>
-          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="xl">
-            {renderDayAgenda(today, "Oggi", todayEvents)}
-            {renderDayAgenda(tomorrow, "Domani", tomorrowEvents)}
-          </SimpleGrid>
-        </Card>
-        <Card withBorder padding="lg" radius="md">
-          <Title order={4} mb="md">Ultimo evento</Title>
-          {lastEvent ? renderEventOverview(lastEvent) : (
-            <Text c="dimmed">Nessun evento passato da mostrare.</Text>
-          )}
-        </Card>
-      </SimpleGrid>
-
-      <Card withBorder padding="lg" radius="md">
-          <Group justify="space-between" mb="sm">
-            <Title order={4}>Ultimi risultati</Title>
-            <ThemeIcon variant="light" color="yellow"><IconTrophy size={18} /></ThemeIcon>
-          </Group>
-          {summary?.recentResults.length ? (
-            <Stack gap="xs">
-              {summary.recentResults.map((match) => (
-                <Group key={match.eventId} justify="space-between">
-                  <Text size="sm">{formatDisplayDate(match.date)}{match.opponent ? ` · vs ${match.opponent}` : ""}</Text>
-                  <Badge color={match.teamScore > match.opponentScore ? "green" : match.teamScore < match.opponentScore ? "red" : "gray"}>{match.teamScore}–{match.opponentScore}</Badge>
-                </Group>
-              ))}
-            </Stack>
-          ) : <Text c="dimmed">Nessun risultato registrato.</Text>}
-      </Card>
-
-      <Group gap="sm" wrap="wrap">
-        <Button component={Link} to="/calendar" leftSection={<IconCalendarPlus size={18} />}>Nuovo appuntamento</Button>
-        <Button component={Link} to="/formations" variant="light" leftSection={<IconLayoutList size={18} />}>Formazioni</Button>
-        <Button component={Link} to="/communications" variant="light" leftSection={<IconFileText size={18} />}>Comunicazioni</Button>
-      </Group>
+        <Stack gap="lg">
+          <Card withBorder>
+            <SectionHeading
+              title="Ultimo evento"
+              icon={<IconCalendar size={18} />}
+            />
+            {lastEvent ? (
+              <>
+                <EventSummary event={lastEvent} type={typeOf(lastEvent.type)} />
+                {lastEvent.opponent && (
+                  <Text size="xs" c="dimmed">
+                    {teamName} · {lastEvent.opponent}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <EmptyState
+                title="Si comincia da qui"
+                description="Gli eventi trascorsi compariranno in questa sezione."
+              />
+            )}
+          </Card>
+          <Card withBorder>
+            <SectionHeading
+              title="Ultimi risultati"
+              icon={<IconTrophy size={18} />}
+            />
+            {summary?.recentResults.length ? (
+              summary.recentResults.map((match) => (
+                <Link
+                  className="dashboard-result"
+                  key={match.eventId}
+                  to={`/events/${match.eventId}`}
+                >
+                  <div>
+                    <Text size="sm" fw={500}>
+                      {match.opponent ? `vs ${match.opponent}` : "Partita"}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={3}>
+                      {formatDisplayDate(match.date)}
+                    </Text>
+                  </div>
+                  <Badge
+                    className="dashboard-result-score"
+                    size="lg"
+                    color={
+                      match.teamScore > match.opponentScore
+                        ? "green"
+                        : match.teamScore < match.opponentScore
+                          ? "red"
+                          : "gray"
+                    }
+                  >
+                    {match.teamScore} – {match.opponentScore}
+                  </Badge>
+                </Link>
+              ))
+            ) : (
+              <EmptyState
+                title="Ancora nessun risultato"
+                description="I risultati delle partite saranno raccolti qui."
+                icon={<IconTrophy size={24} stroke={1.5} />}
+              />
+            )}
+          </Card>
+        </Stack>
+      </div>
     </Stack>
   );
 }
 
-function TeamMetric({ value, label, withBorder = false }: { value: number; label: string; withBorder?: boolean }) {
-  return <Stack gap={0} px="md" py="xs" style={withBorder ? { borderLeft: "1px solid var(--mantine-color-default-border)" } : undefined}>
-    <Text fw={800} fz="lg">{value}</Text>
-    <Text size="xs" c="dimmed">{label}</Text>
-  </Stack>;
+function Metric({
+  value,
+  label,
+  icon,
+}: {
+  value: number | string;
+  label: string;
+  icon: ReactNode;
+}) {
+  return (
+    <div className="dashboard-metric">
+      <span className="dashboard-metric-icon">{icon}</span>
+      <div>
+        <strong>{value}</strong>
+        <small>{label}</small>
+      </div>
+    </div>
+  );
 }

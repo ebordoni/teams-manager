@@ -5,10 +5,8 @@ import {
   Button,
   Card,
   Collapse,
-  DataList,
   Divider,
   Group,
-  Indicator,
   Loader,
   NumberInput,
   Select,
@@ -20,11 +18,24 @@ import {
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconChartBar, IconPencil, IconTrash } from "@tabler/icons-react";
+import {
+  IconChartBar,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+  IconUsers,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import PageHeader from "../components/PageHeader";
-import type { AttendanceHistoryItem, Player, PlayerStatistics, PreferredFoot } from "../types";
+import EmptyState from "../components/EmptyState";
+import SectionHeading from "../components/SectionHeading";
+import type {
+  AttendanceHistoryItem,
+  Player,
+  PlayerStatistics,
+  PreferredFoot,
+} from "../types";
 import { formatDisplayDate } from "../utils/date";
 
 const ROLES = [
@@ -152,8 +163,12 @@ function PlayerFields({
       </SimpleGrid>
 
       <div>
-        <Text fw={500} size="sm" mb="xs">Ruoli</Text>
-        <Text size="xs" c="dimmed" mb="sm">Il primo ruolo selezionato è quello principale.</Text>
+        <Text fw={500} size="sm" mb="xs">
+          Ruoli
+        </Text>
+        <Text size="xs" c="dimmed" mb="sm">
+          Il primo ruolo selezionato è quello principale.
+        </Text>
         <Group gap="xs">
           {ROLES.map((role) => (
             <Button
@@ -161,7 +176,13 @@ function PlayerFields({
               type="button"
               size="compact-sm"
               radius="xl"
-              variant={roles.includes(role) ? (roles[0] === role ? "filled" : "light") : "default"}
+              variant={
+                roles.includes(role)
+                  ? roles[0] === role
+                    ? "filled"
+                    : "light"
+                  : "default"
+              }
               onClick={() => toggleRole(role)}
             >
               {role}
@@ -286,16 +307,24 @@ export default function Players() {
 
   return (
     <Stack gap="md">
-      <PageHeader title="Giocatori" description="Gestisci la rosa e consulta le statistiche individuali." action={
-        <Button onClick={toggleForm}>
-          {showForm ? "Annulla" : "+ Nuovo giocatore"}
-        </Button>
-      } />
+      <PageHeader
+        title="Rosa giocatori"
+        description="Ogni giocatore, le sue caratteristiche e il suo percorso."
+        action={
+          <Button
+            onClick={toggleForm}
+            leftSection={!showForm ? <IconPlus size={17} /> : undefined}
+          >
+            {showForm ? "Annulla" : "Nuovo giocatore"}
+          </Button>
+        }
+      />
       {editing && (
         <Card
           withBorder
           padding="lg"
           radius="md"
+          className="player-edit-panel"
           style={{ borderColor: "var(--mantine-primary-color-filled)" }}
         >
           <form onSubmit={handleUpdate}>
@@ -315,7 +344,13 @@ export default function Players() {
               />
               <Group>
                 <Button type="submit">Salva modifiche</Button>
-                <Button variant="subtle" type="button" onClick={() => setEditing(null)}>Annulla</Button>
+                <Button
+                  variant="subtle"
+                  type="button"
+                  onClick={() => setEditing(null)}
+                >
+                  Annulla
+                </Button>
               </Group>
             </Stack>
           </form>
@@ -333,7 +368,9 @@ export default function Players() {
               </Button>
             </Group>
             <Group gap="xs">
-              <Badge color="blue" size="lg">{history.statistics.goals} gol</Badge>
+              <Badge color="blue" size="lg">
+                {history.statistics.goals} gol
+              </Badge>
               <Text size="sm" c="dimmed">
                 in {history.statistics.matchesScored} partite a segno
               </Text>
@@ -378,13 +415,18 @@ export default function Players() {
             <Stack gap="lg">
               <div>
                 <Title order={4}>Aggiungi giocatore</Title>
-                <Text size="sm" c="dimmed">Inserisci i dati disponibili per il nuovo componente della rosa.</Text>
+                <Text size="sm" c="dimmed">
+                  Inserisci i dati disponibili per il nuovo componente della
+                  rosa.
+                </Text>
               </div>
               <Divider label="Giocatore" labelPosition="left" />
               <PlayerFields value={draft} onChange={setDraft} includeNotes />
               <Group>
                 <Button type="submit">Aggiungi giocatore</Button>
-                <Button variant="subtle" type="button" onClick={closeForm}>Annulla</Button>
+                <Button variant="subtle" type="button" onClick={closeForm}>
+                  Annulla
+                </Button>
               </Group>
             </Stack>
           </form>
@@ -393,79 +435,85 @@ export default function Players() {
       {loading ? (
         <Loader />
       ) : players.length === 0 ? (
-        <Text c="dimmed">Nessun giocatore in anagrafica.</Text>
+        <Card withBorder>
+          <EmptyState
+            title="La rosa parte da qui"
+            description="Aggiungi il primo giocatore per preparare formazioni e registrare le presenze."
+            icon={<IconUsers size={24} stroke={1.5} />}
+          />
+        </Card>
       ) : (
-        <Stack gap="xs">
-          {players.map((player) => (
-            <Card key={player.id} withBorder padding="sm" radius="md">
-              <Group justify="space-between" align="flex-start" wrap="nowrap">
-                <Indicator
-                  inline
-                  label={player.jerseyNumber}
-                  disabled={player.jerseyNumber === null}
-                  size={18}
-                  position="top-end"
-                  offset={5}
-                  color="blue"
-                  withBorder
-                >
+        <Stack gap="md">
+          <SectionHeading
+            title="La tua rosa"
+            action={
+              <Badge variant="light" color="gray">
+                {players.length} giocatori
+              </Badge>
+            }
+          />
+          <div className="player-grid">
+            {players.map((player) => (
+              <Card key={player.id} withBorder className="player-card">
+                <div className="player-card-head">
                   <Avatar
                     name={player.name}
-                    color="initials"
-                    radius="xl"
-                    size="lg"
+                    color="brand"
+                    radius="lg"
+                    size={48}
                     alt={`Avatar di ${player.name}`}
                   />
-                </Indicator>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <Text fw={600} truncate>
-                    {player.name}
-                  </Text>
-                  <DataList size="sm" mt={4} style={{ maxWidth: 440 }}>
-                    <DataList.Item>
-                      <DataList.ItemLabel>Piede</DataList.ItemLabel>
-                      <DataList.ItemValue>
-                        {FOOT_LABEL[player.preferredFoot]}
-                      </DataList.ItemValue>
-                    </DataList.Item>
-                    <DataList.Item>
-                      <DataList.ItemLabel>Ruoli</DataList.ItemLabel>
-                      <DataList.ItemValue>
-                        {[player.role, ...player.secondaryRoles]
-                          .filter(Boolean)
-                          .join(", ") || "Non assegnati"}
-                      </DataList.ItemValue>
-                    </DataList.Item>
-                  </DataList>
+                  <div className="player-card-main">
+                    <Text fw={600} size="sm" lineClamp={2}>
+                      {player.name}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={5} lineClamp={2}>
+                      {[player.role, ...player.secondaryRoles]
+                        .filter(Boolean)
+                        .join(" · ") || "Ruoli non assegnati"}
+                    </Text>
+                  </div>
+                  {player.jerseyNumber !== null && (
+                    <Badge size="lg" color="gray" variant="light">
+                      #{player.jerseyNumber}
+                    </Badge>
+                  )}
                 </div>
-                <Group gap="xs" wrap="nowrap">
-                  <ActionIcon
-                    variant="subtle"
-                    loading={loadingHistory && history?.player.id !== player.id}
-                    onClick={() => void showHistory(player)}
-                    aria-label={`Storico presenze ${player.name}`}
-                  >
-                    <IconChartBar size={18} />
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="subtle"
-                    onClick={() => startEditing(player)}
-                    aria-label={`Modifica ${player.name}`}
-                  >
-                    <IconPencil size={18} />
-                  </ActionIcon>
-                  <ActionIcon
-                    color="red"
-                    variant="subtle"
-                    onClick={() => handleDelete(player.id)}
-                    aria-label={`Elimina ${player.name}`}
-                  >
-                    <IconTrash size={18} />
-                  </ActionIcon>
-                </Group>
-              </Group>
-            </Card>
-          ))}
+                <div className="player-card-footer">
+                  <Text size="xs" c="dimmed">
+                    Piede {FOOT_LABEL[player.preferredFoot].toLowerCase()}
+                  </Text>
+                  <Group gap={4} wrap="nowrap">
+                    <ActionIcon
+                      variant="subtle"
+                      loading={
+                        loadingHistory && history?.player.id !== player.id
+                      }
+                      onClick={() => void showHistory(player)}
+                      aria-label={`Storico presenze ${player.name}`}
+                    >
+                      <IconChartBar size={18} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      onClick={() => startEditing(player)}
+                      aria-label={`Modifica ${player.name}`}
+                    >
+                      <IconPencil size={18} />
+                    </ActionIcon>
+                    <ActionIcon
+                      color="red"
+                      variant="subtle"
+                      onClick={() => handleDelete(player.id)}
+                      aria-label={`Elimina ${player.name}`}
+                    >
+                      <IconTrash size={18} />
+                    </ActionIcon>
+                  </Group>
+                </div>
+              </Card>
+            ))}
+          </div>
         </Stack>
       )}
     </Stack>

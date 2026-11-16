@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0] — 2026-11-16
+
+### Changed
+
+- Rebuilt the management UI without new product features or API changes: shared design tokens, self-hosted Poppins, consistent surfaces and typography, and light/dark themes.
+- Labeled bottom navigation on mobile and a team-aware desktop sidebar with correct active states for nested event screens.
+- Agenda-first overview, focused calendar actions, shared event presentation and player profile cards; clearer event sections and mobile-friendly attendance details alongside the desktop matrix.
+- Refreshed the shared formation pitch, match-plan navigation and settings organization. Grouped integration providers and collapsible secondary explanations reduce visual clutter while retaining existing operations.
+
+### Added
+
+- Repeatable Playwright UI smoke checks using isolated temporary data: responsive routes, both themes, existing workflows and Home Assistant Ingress subpaths.
+
+### Fixed
+
+- Parse manually entered Italian-format dates correctly and preserve the active Settings tab across saves.
+
 ## [1.1.0] — 2026-11-16
 
 ### Added

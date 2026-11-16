@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Accordion,
   Alert,
   Badge,
   Button,
@@ -13,7 +14,19 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconPencil, IconTrash } from "@tabler/icons-react";
+import {
+  IconBrandGoogle,
+  IconBrandNotion,
+  IconCalendarEvent,
+  IconFileText,
+  IconPencil,
+  IconPlugConnected,
+  IconRobot,
+  IconSettings,
+  IconShirt,
+  IconTrash,
+  IconWorld,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
@@ -26,6 +39,7 @@ import PageHeader from "../components/PageHeader";
 import NotionSettings from "../components/NotionSettings";
 import WebsiteSettings from "../components/WebsiteSettings";
 import DataBackupSettings from "../components/DataBackupSettings";
+import SectionHeading from "../components/SectionHeading";
 import type { EventTypeDef, GoogleStatus } from "../types";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -48,6 +62,7 @@ function slugify(input: string): string {
 
 export default function Settings() {
   const [status, setStatus] = useState<GoogleStatus | null>(null);
+  const [activeTab, setActiveTab] = useState<string | null>("general");
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +80,10 @@ export default function Settings() {
   const [calendarId, setCalendarId] = useState("primary");
   const [savingCalendar, setSavingCalendar] = useState(false);
   const [testingCalendar, setTestingCalendar] = useState(false);
-  const [calendarTest, setCalendarTest] = useState<{ color: "green" | "red"; message: string } | null>(null);
+  const [calendarTest, setCalendarTest] = useState<{
+    color: "green" | "red";
+    message: string;
+  } | null>(null);
   const [matchCallupsEnabled, setMatchCallupsEnabled] = useState(true);
   const [savingMatchCallups, setSavingMatchCallups] = useState(false);
   const [teamName, setTeamName] = useState("");
@@ -201,7 +219,9 @@ export default function Settings() {
     setMatchCallupsEnabled(enabled);
     setSavingMatchCallups(true);
     try {
-      const response = await api.updateSettings({ matchCallupsEnabled: enabled });
+      const response = await api.updateSettings({
+        matchCallupsEnabled: enabled,
+      });
       setMatchCallupsEnabled(response.data.matchCallupsEnabled);
     } catch (err) {
       setMatchCallupsEnabled(previous);
@@ -215,7 +235,9 @@ export default function Settings() {
     setTestingCalendar(true);
     setCalendarTest(null);
     try {
-      const response = await api.verifyGoogleCalendar(calendarId.trim() || "primary");
+      const response = await api.verifyGoogleCalendar(
+        calendarId.trim() || "primary",
+      );
       setCalendarTest({
         color: "green",
         message: `Accesso verificato per il calendario “${response.data.calendarId}”.`,
@@ -251,329 +273,463 @@ export default function Settings() {
 
   return (
     <Stack gap="xl">
-      <PageHeader title="Impostazioni" description="Configura squadra, integrazioni e tipi di evento." />
+      <PageHeader
+        title="Impostazioni"
+        description="Configura squadra, integrazioni e tipi di evento."
+      />
 
-      <Tabs defaultValue="general" className="app-detail-tabs">
+      <Tabs
+        value={activeTab}
+        onChange={setActiveTab}
+        className="app-detail-tabs"
+      >
         <Tabs.List mb="md">
-          <Tabs.Tab value="general">Generale</Tabs.Tab>
-          <Tabs.Tab value="integrations">Integrazioni</Tabs.Tab>
-          <Tabs.Tab value="event-types">Tipi di evento</Tabs.Tab>
+          <Tabs.Tab value="general" leftSection={<IconSettings size={16} />}>
+            Generale
+          </Tabs.Tab>
+          <Tabs.Tab
+            value="integrations"
+            leftSection={<IconPlugConnected size={16} />}
+          >
+            Integrazioni
+          </Tabs.Tab>
+          <Tabs.Tab
+            value="event-types"
+            leftSection={<IconCalendarEvent size={16} />}
+          >
+            Tipi di evento
+          </Tabs.Tab>
         </Tabs.List>
-        <Tabs.Panel value="general"><Stack gap="md">
+        <Tabs.Panel value="general">
+          <Stack gap="md">
+            <Card withBorder padding="md" radius="md">
+              <Stack gap="sm">
+                <SectionHeading
+                  title="La tua squadra"
+                  icon={<IconShirt size={18} />}
+                />
+                <Text size="sm" c="dimmed">
+                  Il nome viene usato nelle pagine partita e nelle comunicazioni
+                  per i genitori.
+                </Text>
+                <Group align="flex-end">
+                  <TextInput
+                    label="Nome squadra"
+                    required
+                    maxLength={100}
+                    value={teamName}
+                    onChange={(event) => {
+                      setTeamName(event.currentTarget.value);
+                      setTeamNameSaved(false);
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    onClick={handleSaveTeamName}
+                    loading={savingTeamName}
+                    disabled={!teamName.trim()}
+                  >
+                    Salva
+                  </Button>
+                </Group>
+                {teamNameSaved && (
+                  <Text size="sm" c="green">
+                    Nome squadra salvato.
+                  </Text>
+                )}
+              </Stack>
+            </Card>
 
-      <Card withBorder padding="md" radius="md">
-        <Stack gap="sm">
-          <Title order={5}>Comunicazioni e intelligenza artificiale</Title>
-          <Text size="sm" c="dimmed">Gestisci le comunicazioni e configura i provider per il piano partita.</Text>
-          <Group>
-            <Button component={Link} to="/communications" variant="light">Comunicazioni</Button>
-            <Button component={Link} to="/ai-settings" variant="light">Intelligenza artificiale</Button>
-          </Group>
-        </Stack>
-      </Card>
+            <Card withBorder>
+              <Stack gap="sm">
+                <SectionHeading
+                  title="Convocazioni"
+                  description="Scegli cosa condividere nelle comunicazioni."
+                />
+                <Checkbox
+                  label="Mostra le convocazioni per le partite"
+                  description="Quando attivo, la pagina appuntamenti include l'elenco dei giocatori per gli eventi partita."
+                  checked={matchCallupsEnabled}
+                  disabled={savingMatchCallups}
+                  onChange={(event) =>
+                    handleMatchCallupsChange(event.currentTarget.checked)
+                  }
+                />
+              </Stack>
+            </Card>
+            {error && (
+              <Alert color="red" title="Operazione non riuscita">
+                {error}
+              </Alert>
+            )}
+            <div className="settings-links">
+              <Link to="/communications" className="settings-link-card">
+                <IconFileText size={24} stroke={1.6} />
+                <div>
+                  <Text fw={600} size="sm">
+                    Comunicazioni
+                  </Text>
+                  <Text size="xs" c="dimmed" mt={4}>
+                    Pubblicazione degli appuntamenti
+                  </Text>
+                </div>
+              </Link>
+              <Link to="/ai-settings" className="settings-link-card">
+                <IconRobot size={24} stroke={1.6} />
+                <div>
+                  <Text fw={600} size="sm">
+                    Intelligenza artificiale
+                  </Text>
+                  <Text size="xs" c="dimmed" mt={4}>
+                    Provider e preferenze dei piani
+                  </Text>
+                </div>
+              </Link>
+            </div>
+            <DataBackupSettings onImported={() => loadAll(false)} />
+          </Stack>
+        </Tabs.Panel>
 
-      <Card withBorder padding="md" radius="md">
-        <Stack gap="sm">
-          <Title order={5}>Squadra</Title>
-          <Text size="sm" c="dimmed">
-            Il nome viene usato nelle pagine partita e nelle comunicazioni per i genitori.
-          </Text>
-          <Group align="flex-end">
-            <TextInput
-              label="Nome squadra"
-              required
-              maxLength={100}
-              value={teamName}
-              onChange={(event) => {
-                setTeamName(event.currentTarget.value);
-                setTeamNameSaved(false);
-              }}
-              style={{ flex: 1 }}
+        <Tabs.Panel value="integrations">
+          <Stack gap="md">
+            <SectionHeading
+              title="Connessioni e pubblicazione"
+              description="Apri il servizio che vuoi configurare. Le credenziali restano protette."
             />
-            <Button onClick={handleSaveTeamName} loading={savingTeamName} disabled={!teamName.trim()}>
-              Salva
-            </Button>
-          </Group>
-          {teamNameSaved && <Text size="sm" c="green">Nome squadra salvato.</Text>}
-        </Stack>
-      </Card>
-
-      <DataBackupSettings onImported={() => loadAll(false)} />
-        </Stack></Tabs.Panel>
-
-        <Tabs.Panel value="integrations"><Stack gap="md">
-
-      <WebsiteSettings />
-      <NotionSettings />
-
-      <Card withBorder padding="md" radius="md">
-        <Stack gap="sm">
-          <Title order={5}>Google (Docs, Drive e Calendar)</Title>
-          <Text size="sm" c="dimmed">
-            Collega Google per Calendar e per esportare i piani partita. Il documento appuntamenti resta disponibile come alternativa a Notion.
-          </Text>
-
-          {!status?.configured && (
-            <Alert color="orange" title="Configurazione mancante">
-              Client ID/Secret Google non configurati: impostali nelle opzioni
-              dell'addon (Impostazioni → Add-on → Teams Manager →
-              Configurazione).
-            </Alert>
-          )}
-
-          {status?.configured && (
-            <Group>
-              <Badge color={status.connected ? "green" : "gray"}>
-                {status.connected ? "Collegato" : "Non collegato"}
-              </Badge>
-              {status.connected ? (
-                <Button
-                  color="red"
-                  variant="subtle"
-                  size="sm"
-                  onClick={handleDisconnect}
+            <Accordion
+              multiple
+              defaultValue={["website"]}
+              variant="separated"
+              radius="lg"
+              className="settings-integrations"
+            >
+              <Accordion.Item value="website">
+                <Accordion.Control icon={<IconWorld size={21} stroke={1.6} />}>
+                  Sito pubblico · Cloudflare
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <WebsiteSettings />
+                </Accordion.Panel>
+              </Accordion.Item>
+              <Accordion.Item value="notion">
+                <Accordion.Control
+                  icon={<IconBrandNotion size={21} stroke={1.6} />}
                 >
-                  Disconnetti
-                </Button>
-              ) : (
-                <Button size="sm" onClick={handleConnect} loading={connecting}>
-                  Collega Google
-                </Button>
-              )}
-            </Group>
-          )}
+                  Notion
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <NotionSettings />
+                </Accordion.Panel>
+              </Accordion.Item>
+              <Accordion.Item value="google">
+                <Accordion.Control
+                  icon={<IconBrandGoogle size={21} stroke={1.6} />}
+                >
+                  Google
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <Stack gap="lg">
+                    <Card withBorder padding="md" radius="md">
+                      <Stack gap="sm">
+                        <Title order={5}>Google (Docs, Drive e Calendar)</Title>
+                        <Text size="sm" c="dimmed">
+                          Collega Google per Calendar e per esportare i piani
+                          partita. Il documento appuntamenti resta disponibile
+                          come alternativa a Notion.
+                        </Text>
 
-          {error && (
-            <Alert color="red" title="Errore">
-              {error}
-            </Alert>
-          )}
-          {status?.connected && !status.calendarConnected && (
-            <Alert color="blue" title="Autorizzazione Calendar necessaria">
-              Ricollega Google per abilitare l'esportazione unidirezionale degli
-              eventi su Google Calendar.
-            </Alert>
-          )}
-        </Stack>
-      </Card>
+                        {!status?.configured && (
+                          <Alert color="orange" title="Configurazione mancante">
+                            Client ID/Secret Google non configurati: impostali
+                            nelle opzioni dell'addon (Impostazioni → Add-on →
+                            Teams Manager → Configurazione).
+                          </Alert>
+                        )}
 
-      <Card withBorder padding="md" radius="md">
-        <Stack gap="sm">
-          <Title order={5}>Google Calendar</Title>
-          <Text size="sm" c="dimmed">
-            L'esportazione dalla pagina Calendario è manuale e unidirezionale:
-            ripetendola, gli eventi già esportati vengono aggiornati. Non
-            importiamo né eliminiamo eventi da Google Calendar.
-          </Text>
-          <Group align="flex-end">
-            <TextInput
-              label="ID calendario"
-              description={
-                'Usa "primary" per il calendario principale, oppure l\'ID di un calendario condiviso.'
-              }
-              value={calendarId}
-              onChange={(e) => setCalendarId(e.currentTarget.value)}
-              style={{ flex: 1 }}
-            />
-            <Button onClick={handleSaveCalendar} loading={savingCalendar}>Salva</Button>
-            <Button variant="light" onClick={handleTestCalendar} loading={testingCalendar}>
-              Verifica accesso
-            </Button>
-          </Group>
-          {calendarTest && <Alert color={calendarTest.color} title={calendarTest.color === "green" ? "Calendario raggiungibile" : "Verifica non riuscita"}>{calendarTest.message}</Alert>}
-          <Text size="xs" c="dimmed">
-            Se la verifica fallisce, controlla l'ID e che il calendario sia
-            condiviso con l'account Google collegato. Dopo aver cambiato gli
-            scope o le credenziali, disconnetti e ricollega Google.
-          </Text>
-        </Stack>
-      </Card>
+                        {status?.configured && (
+                          <Group>
+                            <Badge color={status.connected ? "green" : "gray"}>
+                              {status.connected ? "Collegato" : "Non collegato"}
+                            </Badge>
+                            {status.connected ? (
+                              <Button
+                                color="red"
+                                variant="subtle"
+                                size="sm"
+                                onClick={handleDisconnect}
+                              >
+                                Disconnetti
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={handleConnect}
+                                loading={connecting}
+                              >
+                                Collega Google
+                              </Button>
+                            )}
+                          </Group>
+                        )}
 
-      <Card withBorder padding="md" radius="md">
-        <Stack gap="xs">
-          <Title order={5}>Convocazioni</Title>
-          <Checkbox
-            label="Mostra le convocazioni per le partite"
-            description="Quando attivo, la pagina appuntamenti include l'elenco dei giocatori per gli eventi partita."
-            checked={matchCallupsEnabled}
-            disabled={savingMatchCallups}
-            onChange={(event) => handleMatchCallupsChange(event.currentTarget.checked)}
-          />
-        </Stack>
-      </Card>
-        </Stack></Tabs.Panel>
+                        {error && (
+                          <Alert color="red" title="Errore">
+                            {error}
+                          </Alert>
+                        )}
+                        {status?.connected && !status.calendarConnected && (
+                          <Alert
+                            color="blue"
+                            title="Autorizzazione Calendar necessaria"
+                          >
+                            Ricollega Google per abilitare l'esportazione
+                            unidirezionale degli eventi su Google Calendar.
+                          </Alert>
+                        )}
+                      </Stack>
+                    </Card>
+
+                    <Card withBorder padding="md" radius="md">
+                      <Stack gap="sm">
+                        <Title order={5}>Google Calendar</Title>
+                        <Text size="sm" c="dimmed">
+                          L'esportazione dalla pagina Calendario è manuale e
+                          unidirezionale: ripetendola, gli eventi già esportati
+                          vengono aggiornati. Non importiamo né eliminiamo
+                          eventi da Google Calendar.
+                        </Text>
+                        <Group align="flex-end">
+                          <TextInput
+                            label="ID calendario"
+                            description={
+                              'Usa "primary" per il calendario principale, oppure l\'ID di un calendario condiviso.'
+                            }
+                            value={calendarId}
+                            onChange={(e) =>
+                              setCalendarId(e.currentTarget.value)
+                            }
+                            style={{ flex: 1 }}
+                          />
+                          <Button
+                            onClick={handleSaveCalendar}
+                            loading={savingCalendar}
+                          >
+                            Salva
+                          </Button>
+                          <Button
+                            variant="light"
+                            onClick={handleTestCalendar}
+                            loading={testingCalendar}
+                          >
+                            Verifica accesso
+                          </Button>
+                        </Group>
+                        {calendarTest && (
+                          <Alert
+                            color={calendarTest.color}
+                            title={
+                              calendarTest.color === "green"
+                                ? "Calendario raggiungibile"
+                                : "Verifica non riuscita"
+                            }
+                          >
+                            {calendarTest.message}
+                          </Alert>
+                        )}
+                        <Text size="xs" c="dimmed">
+                          Se la verifica fallisce, controlla l'ID e che il
+                          calendario sia condiviso con l'account Google
+                          collegato. Dopo aver cambiato gli scope o le
+                          credenziali, disconnetti e ricollega Google.
+                        </Text>
+                      </Stack>
+                    </Card>
+                  </Stack>
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
+          </Stack>
+        </Tabs.Panel>
 
         <Tabs.Panel value="event-types">
+          <Card withBorder padding="md" radius="md">
+            <Stack gap="sm">
+              <Title order={5}>Tipi di evento</Title>
+              <Text size="sm" c="dimmed">
+                Gestisci i tipi disponibili nel calendario (es. Allenamento,
+                Partita, Torneo, Amichevole…). "Ha avversario" mostra il campo
+                avversario per quel tipo. L’icona è ricercabile e viene mostrata
+                in anteprima prima del salvataggio.
+              </Text>
 
-      <Card withBorder padding="md" radius="md">
-        <Stack gap="sm">
-          <Title order={5}>Tipi di evento</Title>
-          <Text size="sm" c="dimmed">
-            Gestisci i tipi disponibili nel calendario (es. Allenamento,
-            Partita, Torneo, Amichevole…). "Ha avversario" mostra il campo
-            avversario per quel tipo. L’icona è ricercabile e viene mostrata in
-            anteprima prima del salvataggio.
-          </Text>
+              {typeError && (
+                <Alert color="red" title="Errore">
+                  {typeError}
+                </Alert>
+              )}
 
-          {typeError && (
-            <Alert color="red" title="Errore">
-              {typeError}
-            </Alert>
-          )}
+              <Stack gap="xs">
+                {eventTypes.map((type) => (
+                  <Group
+                    key={type.id}
+                    className="app-type-row"
+                    justify="space-between"
+                    wrap="wrap"
+                    gap="xs"
+                  >
+                    <Text>
+                      <EventTypeIcon name={type.icon} /> {type.label}{" "}
+                      <Text span c="dimmed" size="sm">
+                        ({type.key})
+                      </Text>
+                    </Text>
+                    <Group gap="xs" wrap="nowrap">
+                      <Checkbox
+                        label="Ha avversario"
+                        checked={type.hasOpponent}
+                        onChange={() => handleToggleOpponent(type)}
+                      />
+                      <ActionIcon
+                        variant="subtle"
+                        onClick={() => setEditingType({ ...type })}
+                        aria-label="Modifica tipo"
+                      >
+                        <IconPencil size={18} />
+                      </ActionIcon>
+                      <ActionIcon
+                        color="red"
+                        variant="subtle"
+                        onClick={() => handleDeleteType(type)}
+                        aria-label="Elimina tipo"
+                      >
+                        <IconTrash size={18} />
+                      </ActionIcon>
+                    </Group>
+                  </Group>
+                ))}
+              </Stack>
 
-          <Stack gap="xs">
-            {eventTypes.map((type) => (
-              <Group key={type.id} className="app-type-row" justify="space-between" wrap="wrap" gap="xs">
-                <Text>
-                  <EventTypeIcon name={type.icon} /> {type.label}{" "}
-                  <Text span c="dimmed" size="sm">
-                    ({type.key})
-                  </Text>
-                </Text>
-                <Group gap="xs" wrap="nowrap">
+              {editingType && (
+                <form onSubmit={handleSaveType}>
+                  <Card withBorder padding="sm" radius="sm">
+                    <Stack gap="xs">
+                      <Text fw={600}>Modifica tipo: {editingType.key}</Text>
+                      <Group align="flex-end">
+                        <TextInput
+                          label="Nome"
+                          required
+                          value={editingType.label}
+                          onChange={(e) =>
+                            setEditingType({
+                              ...editingType,
+                              label: e.currentTarget.value,
+                            })
+                          }
+                          style={{ flex: 1 }}
+                        />
+                        <EventTypeIconPicker
+                          label="Icona"
+                          value={editingType.icon}
+                          onChange={(icon) =>
+                            setEditingType({
+                              ...editingType,
+                              icon: icon ?? "IconBallFootball",
+                            })
+                          }
+                          style={{ width: 180 }}
+                        />
+                        <Checkbox
+                          label="Ha avversario"
+                          mb={8}
+                          checked={editingType.hasOpponent}
+                          onChange={(e) =>
+                            setEditingType({
+                              ...editingType,
+                              hasOpponent: e.currentTarget.checked,
+                            })
+                          }
+                        />
+                        <Checkbox
+                          label="Includi nella pagina appuntamenti"
+                          mb={8}
+                          checked={editingType.includeInGoogleDoc}
+                          onChange={(e) =>
+                            setEditingType({
+                              ...editingType,
+                              includeInGoogleDoc: e.currentTarget.checked,
+                            })
+                          }
+                        />
+                        <Button type="submit">Salva</Button>
+                        <Button
+                          variant="subtle"
+                          onClick={() => setEditingType(null)}
+                        >
+                          Annulla
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Card>
+                </form>
+              )}
+
+              <Divider label="Nuovo tipo" labelPosition="left" />
+
+              <form onSubmit={handleAddType}>
+                <Group align="flex-end">
+                  <TextInput
+                    label="Nome"
+                    description={
+                      newType.label.trim()
+                        ? `Chiave: ${slugify(newType.label)}`
+                        : undefined
+                    }
+                    placeholder="es. Amichevole"
+                    required
+                    value={newType.label}
+                    onChange={(e) =>
+                      setNewType({ ...newType, label: e.currentTarget.value })
+                    }
+                    style={{ flex: 1 }}
+                  />
+                  <EventTypeIconPicker
+                    label="Icona"
+                    value={newType.icon}
+                    onChange={(icon) =>
+                      setNewType({
+                        ...newType,
+                        icon: icon ?? "IconBallFootball",
+                      })
+                    }
+                    style={{ width: 180 }}
+                  />
                   <Checkbox
                     label="Ha avversario"
-                    checked={type.hasOpponent}
-                    onChange={() => handleToggleOpponent(type)}
+                    mb={8}
+                    checked={newType.hasOpponent}
+                    onChange={(e) =>
+                      setNewType({
+                        ...newType,
+                        hasOpponent: e.currentTarget.checked,
+                      })
+                    }
                   />
-                  <ActionIcon
-                    variant="subtle"
-                    onClick={() => setEditingType({ ...type })}
-                    aria-label="Modifica tipo"
-                  >
-                    <IconPencil size={18} />
-                  </ActionIcon>
-                  <ActionIcon
-                    color="red"
-                    variant="subtle"
-                    onClick={() => handleDeleteType(type)}
-                    aria-label="Elimina tipo"
-                  >
-                    <IconTrash size={18} />
-                  </ActionIcon>
+                  <Checkbox
+                    label="Includi nella pagina appuntamenti"
+                    mb={8}
+                    checked={newType.includeInGoogleDoc}
+                    onChange={(e) =>
+                      setNewType({
+                        ...newType,
+                        includeInGoogleDoc: e.currentTarget.checked,
+                      })
+                    }
+                  />
+                  <Button type="submit">Aggiungi</Button>
                 </Group>
-              </Group>
-            ))}
-          </Stack>
-
-          {editingType && (
-            <form onSubmit={handleSaveType}>
-              <Card withBorder padding="sm" radius="sm">
-                <Stack gap="xs">
-                  <Text fw={600}>Modifica tipo: {editingType.key}</Text>
-                  <Group align="flex-end">
-                    <TextInput
-                      label="Nome"
-                      required
-                      value={editingType.label}
-                      onChange={(e) =>
-                        setEditingType({
-                          ...editingType,
-                          label: e.currentTarget.value,
-                        })
-                      }
-                      style={{ flex: 1 }}
-                    />
-                    <EventTypeIconPicker
-                      label="Icona"
-                      value={editingType.icon}
-                      onChange={(icon) =>
-                        setEditingType({
-                          ...editingType,
-                          icon: icon ?? "IconBallFootball",
-                        })
-                      }
-                      style={{ width: 180 }}
-                    />
-                    <Checkbox
-                      label="Ha avversario"
-                      mb={8}
-                      checked={editingType.hasOpponent}
-                      onChange={(e) =>
-                        setEditingType({
-                          ...editingType,
-                          hasOpponent: e.currentTarget.checked,
-                        })
-                      }
-                    />
-                    <Checkbox
-                      label="Includi nella pagina appuntamenti"
-                      mb={8}
-                      checked={editingType.includeInGoogleDoc}
-                      onChange={(e) =>
-                        setEditingType({
-                          ...editingType,
-                          includeInGoogleDoc: e.currentTarget.checked,
-                        })
-                      }
-                    />
-                    <Button type="submit">Salva</Button>
-                    <Button
-                      variant="subtle"
-                      onClick={() => setEditingType(null)}
-                    >
-                      Annulla
-                    </Button>
-                  </Group>
-                </Stack>
-              </Card>
-            </form>
-          )}
-
-          <Divider label="Nuovo tipo" labelPosition="left" />
-
-          <form onSubmit={handleAddType}>
-            <Group align="flex-end">
-              <TextInput
-                label="Nome"
-                description={
-                  newType.label.trim()
-                    ? `Chiave: ${slugify(newType.label)}`
-                    : undefined
-                }
-                placeholder="es. Amichevole"
-                required
-                value={newType.label}
-                onChange={(e) =>
-                  setNewType({ ...newType, label: e.currentTarget.value })
-                }
-                style={{ flex: 1 }}
-              />
-              <EventTypeIconPicker
-                label="Icona"
-                value={newType.icon}
-                onChange={(icon) =>
-                  setNewType({ ...newType, icon: icon ?? "IconBallFootball" })
-                }
-                style={{ width: 180 }}
-              />
-              <Checkbox
-                label="Ha avversario"
-                mb={8}
-                checked={newType.hasOpponent}
-                onChange={(e) =>
-                  setNewType({
-                    ...newType,
-                    hasOpponent: e.currentTarget.checked,
-                  })
-                }
-              />
-              <Checkbox
-                label="Includi nella pagina appuntamenti"
-                mb={8}
-                checked={newType.includeInGoogleDoc}
-                onChange={(e) =>
-                  setNewType({
-                    ...newType,
-                    includeInGoogleDoc: e.currentTarget.checked,
-                  })
-                }
-              />
-              <Button type="submit">Aggiungi</Button>
-            </Group>
-          </form>
-        </Stack>
-      </Card>
+              </form>
+            </Stack>
+          </Card>
         </Tabs.Panel>
       </Tabs>
     </Stack>
