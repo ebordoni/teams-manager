@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0] — 2026-11-16
+
+### Added
+
+- Import existing JSON exports from Settings → General with record-count comparison, format and reference validation, and explicit confirmation of full replacement.
+- Automatically create a private SQLite backup before transactional replacement; failed imports roll back completely. Existing settings, credentials and integration destinations are preserved.
+- Reject stale previews and imports during active publication. Pause automatic communications until a successful manual refresh; leave remote content untouched and reset local Google Calendar export mappings to prevent incorrect associations.
+
 ## [1.0.5] — 2026-11-16
 
 ### Added

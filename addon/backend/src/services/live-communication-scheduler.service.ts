@@ -1,12 +1,14 @@
 import { getLiveCommunication, refreshLiveCommunication } from "./communication.service";
 import { isNotionActive, notionStatus } from "./notion.service";
 import { isWebsiteActive, websiteSettings } from "./public-site.service";
+import { getSetting } from "./settings.service";
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 let dailyTimer: ReturnType<typeof setTimeout> | undefined;
 let firstQueuedAt = 0;
 
 function refreshInBackground(reason: string): void {
+  if (getSetting("communication_import_paused") === "true") return;
   // Il primo documento è una scelta esplicita dell'utente; da quel momento
   // tutti gli aggiornamenti successivi sono automatici.
   if (!getLiveCommunication()) return;

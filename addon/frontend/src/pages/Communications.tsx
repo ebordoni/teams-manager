@@ -98,6 +98,7 @@ export default function Communications() {
       <PageHeader title="Comunicazioni" description="Pubblica e aggiorna gli appuntamenti della squadra." action={<Button component={Link} to="/settings" variant="light">Configura integrazioni</Button>} />
 
       {error && <Alert color="red" title="Errore">{error}</Alert>}
+      {live?.syncPaused && <Alert color="orange" title="Aggiornamenti automatici sospesi">Sono stati importati nuovi dati. Verifica gli appuntamenti, poi usa Aggiorna ora per pubblicarli e riattivare gli aggiornamenti automatici.</Alert>}
       {live?.lastError && !live.requiresPageSetup && !error && <Alert color="red" title="Ultimo aggiornamento non riuscito">{live.lastError}</Alert>}
       {live?.requiresPageSetup && <Alert color="orange" title="Collega una pagina per l'agenda">Il precedente database Notion rimane intatto e non viene più aggiornato. In <Text component={Link} to="/settings" inherit td="underline">Impostazioni → Integrazioni</Text> collega una pagina normale, poi usa Aggiorna ora. Il token già salvato viene mantenuto.</Alert>}
 

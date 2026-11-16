@@ -4,7 +4,7 @@ import path from "path";
 import { config } from "../config";
 
 let db: DatabaseSync | undefined;
-const LATEST_SCHEMA_VERSION = 7;
+export const LATEST_SCHEMA_VERSION = 7;
 
 const SCHEMA_V1 = `
   CREATE TABLE IF NOT EXISTS schema_version (

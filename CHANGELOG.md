@@ -7,6 +7,14 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.1.0] — 2026-11-16
+
+### Aggiunto
+
+- Importazione degli export JSON da Impostazioni → Generale → Backup e ripristino dati, con confronto dei conteggi, validazione di formato e riferimenti e conferma esplicita della sostituzione completa.
+- Backup SQLite privato automatico prima dell'importazione e ripristino transazionale: in caso di errore nessuna modifica parziale viene conservata. Impostazioni, credenziali e collegamenti delle integrazioni rimangono invariati.
+- Protezione dai dati modificati dopo l'anteprima e dalle pubblicazioni in corso; gli aggiornamenti automatici delle comunicazioni restano sospesi fino a un aggiornamento manuale riuscito. Gli eventi remoti non vengono modificati e i collegamenti locali Google Calendar vengono azzerati per evitare associazioni errate.
+
 ## [1.0.5] — 2026-11-16
 
 ### Aggiunto

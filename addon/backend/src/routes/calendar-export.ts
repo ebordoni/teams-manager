@@ -13,6 +13,7 @@ import {
 } from "../services/google/calendar";
 import { getSetting, SETTINGS_KEYS } from "../services/settings.service";
 import type { EventRow, EventTypeDefRow } from "../types";
+import { trackDataWrite } from "../services/data-operations.service";
 
 const router = Router();
 const ExportSchema = z.object({
@@ -77,7 +78,7 @@ router.post("/export", async (req: Request, res: Response) => {
   let exported = 0;
 
   try {
-    await withGoogleAuth(async (auth) => {
+    await trackDataWrite(() => withGoogleAuth(async (auth) => {
       for (const eventId of new Set(parse.data.eventIds)) {
         const row = db
           .prepare("SELECT * FROM events WHERE id = ?")
@@ -103,7 +104,7 @@ router.post("/export", async (req: Request, res: Response) => {
         ).run(eventId, googleEventId);
         exported += 1;
       }
-    });
+    }));
     res.json({ exported });
   } catch (error) {
     if (error instanceof GoogleAuthRequiredError) {

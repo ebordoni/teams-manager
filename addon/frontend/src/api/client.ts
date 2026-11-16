@@ -39,6 +39,8 @@ export const api = {
     apiClient.put<Player>(`/players/${id}`, data),
   deletePlayer: (id: number) => apiClient.delete(`/players/${id}`),
   exportData: () => apiClient.get("/data/export", { responseType: "blob" }),
+  previewDataImport: (backup: unknown) => apiClient.post<import("../types").DataImportPreview>("/data/import/preview", backup),
+  importData: (backup: unknown, expectedRevision: string) => apiClient.post<import("../types").DataImportResult>("/data/import", { backup, expectedRevision, confirmReplace: true }),
 
   // ── Events ─────────────────────────────────────────────────────────────
   getEvents: (filters?: EventFilters) =>

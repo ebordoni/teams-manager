@@ -5,7 +5,7 @@ import { createStyledDocument, replaceStyledDocument } from "./google/docs";
 import { documentStyles } from "./google/document-styles";
 import { DocumentBuilder } from "./google/DocumentBuilder";
 import { deleteFile, ensureCommunicationsFolder, makeShareableAndGetLink, moveFileToFolder } from "./google/drive";
-import { getSetting, getTeamName, SETTINGS_KEYS } from "./settings.service";
+import { getSetting, getTeamName, setSetting, SETTINGS_KEYS } from "./settings.service";
 import { buildCommunicationContent, loadEventTypes, loadLiveEvents } from "./communication-content";
 import { isNotionActive, notionStatus, publishNotion, NotionError, saveNotionSettings } from "./notion.service";
 import { isWebsiteActive, websiteSettings, publishWebsite, saveWebsiteSettings } from "./public-site.service";
@@ -28,6 +28,7 @@ export interface LiveCommunication {
   provider: "google" | "notion" | "website";
   published?: boolean;
   autoSync?: boolean;
+  syncPaused?: boolean;
   requiresPageSetup?: boolean;
   documentId: string;
   url: string;
@@ -49,18 +50,23 @@ export interface RefreshLiveCommunicationOptions {
 // evento e dal job giornaliero. Serializzarli evita che due sostituzioni del
 // body leggano lo stesso contenuto e lo inseriscano entrambe.
 let liveRefreshQueue: Promise<void> = Promise.resolve();
+let pendingOperations = 0;
+export const isLiveCommunicationBusy = () => pendingOperations > 0;
+
+function queueOperation<T>(operation: () => T | Promise<T>): Promise<T> {
+  pendingOperations++;
+  const result = liveRefreshQueue.then(operation);
+  liveRefreshQueue = result.then(() => { pendingOperations--; }, () => { pendingOperations--; });
+  return result;
+}
 
 /** Evita di cambiare pagina o token mentre una pubblicazione è in corso. */
 export function configureNotion(input: Parameters<typeof saveNotionSettings>[0]) {
-  const save = liveRefreshQueue.then(() => saveNotionSettings(input));
-  liveRefreshQueue = save.then(() => undefined, () => undefined);
-  return save;
+  return queueOperation(() => saveNotionSettings(input));
 }
 
 export function configureWebsite(input: Parameters<typeof saveWebsiteSettings>[0]) {
-  const save = liveRefreshQueue.then(() => saveWebsiteSettings(input));
-  liveRefreshQueue = save.then(() => undefined, () => undefined);
-  return save;
+  return queueOperation(() => saveWebsiteSettings(input));
 }
 
 /** La richiesta non è valida: nessun evento selezionato o id inesistenti. */
@@ -115,19 +121,21 @@ function savedLiveCommunication(): LiveCommunication | null {
 
 /** Restituisce il documento unico, se è già stato creato o adottato. */
 export function getLiveCommunication(): LiveCommunication | null {
+  const syncPaused = getSetting("communication_import_paused") === "true";
   if (isWebsiteActive()) {
     const status = websiteSettings();
     return { title: `${getTeamName()} – Sito pubblico`, provider: "website", documentId: status.workerName,
-      url: status.url, updatedAt: status.updatedAt, lastError: status.lastError, published: status.published, autoSync: status.autoSync };
+      url: status.url, updatedAt: status.updatedAt, lastError: status.lastError, published: status.published, autoSync: status.autoSync && !syncPaused, syncPaused };
   }
   if (isNotionActive()) {
     const status = notionStatus();
     return status.configured ? {
       title: `${getTeamName()} – Appuntamenti`, provider: "notion", requiresPageSetup: status.requiresPageSetup, documentId: status.pageId,
-      url: status.pageUrl, publicUrl: status.publicUrl, updatedAt: status.updatedAt, lastError: status.lastError,
+      url: status.pageUrl, publicUrl: status.publicUrl, updatedAt: status.updatedAt, lastError: status.lastError, syncPaused,
     } : null;
   }
-  return savedLiveCommunication();
+  const live = savedLiveCommunication();
+  return live ? { ...live, syncPaused } : null;
 }
 
 /**
@@ -138,12 +146,14 @@ export function getLiveCommunication(): LiveCommunication | null {
 export function refreshLiveCommunication(
   options: RefreshLiveCommunicationOptions = {},
 ): Promise<LiveCommunication> {
-  const refresh = liveRefreshQueue.then(() => refreshLiveCommunicationNow(options));
-  liveRefreshQueue = refresh.then(
-    () => undefined,
-    () => undefined,
-  );
-  return refresh;
+  return queueOperation(async () => {
+    if (getSetting("communication_import_paused") === "true" && !options.force && !options.confirmPublic && !options.recreate) {
+      throw new CommunicationRequestError("Aggiornamenti sospesi dopo l'importazione. Usa Aggiorna ora in Comunicazioni.");
+    }
+    const live = await refreshLiveCommunicationNow(options);
+    setSetting("communication_import_paused", null);
+    return { ...live, syncPaused: false, ...(live.provider === "website" ? { autoSync: websiteSettings().autoSync } : {}) };
+  });
 }
 
 async function refreshLiveCommunicationNow(

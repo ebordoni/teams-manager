@@ -4,7 +4,7 @@
 
 **Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le presenze della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
 
-[![Version](https://img.shields.io/badge/version-1.0.5-blue)](addon/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue)](addon/CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Home%20Assistant-41BDF5)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20aarch64-lightgrey)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
@@ -13,7 +13,7 @@
 
 ---
 
-> ✅ **Stato: MVP operativo (v1.0.5).** Calendario, giocatori, presenze, formazioni, piani partita AI ed esportazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
+> ✅ **Stato: MVP operativo (v1.1.0).** Calendario, giocatori, presenze, formazioni, piani partita AI ed esportazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
 
 ## 🎯 Obiettivo
 
@@ -48,6 +48,14 @@ Il database (SQLite) resta locale all'addon; Google Docs è solo il formato di p
 Avvia l'addon e aprilo dalla barra laterale di Home Assistant (Ingress).
 
 ---
+
+## Backup e ripristino
+
+In **Impostazioni → Generale → Backup e ripristino dati** puoi esportare i dati in JSON e importare un export precedente (massimo 5 MB). L'importazione mostra un confronto dei conteggi e richiede la conferma della **sostituzione completa**, non dell'unione: comprende anche gli elenchi vuoti del file.
+
+Prima di modificare i dati viene creato un backup SQLite `teams-manager.pre-import-*.db` nella cartella dati; se il backup fallisce, l'importazione non parte. Le scritture sono transazionali e un errore le annulla interamente. Questi backup completi contengono anche credenziali: hanno permessi privati, vanno custoditi e gestiti manualmente e non vengono cancellati automaticamente.
+
+Nome squadra, preferenze e credenziali delle integrazioni restano quelli dell'installazione corrente. Nessun contenuto remoto viene aggiornato: verifica gli appuntamenti e usa **Comunicazioni → Aggiorna ora** per riattivare gli automatismi. I collegamenti locali delle precedenti esportazioni Google Calendar vengono azzerati: gli eventi remoti restano presenti e una nuova esportazione potrebbe duplicarli.
 
 ## 🛠️ Sviluppo locale
 

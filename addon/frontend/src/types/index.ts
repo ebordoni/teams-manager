@@ -81,11 +81,25 @@ export interface GeneratedCommunication {
   whatsappMessage: string;
 }
 
+export type DataCounts = Record<"players" | "eventTypes" | "events" | "attendance" | "results" | "formations" | "matchPlans" | "matchPeriods", number>;
+export interface DataImportPreview {
+  exportedAt: string;
+  counts: DataCounts;
+  currentCounts: DataCounts;
+  expectedRevision: string;
+}
+export interface DataImportResult {
+  imported: DataCounts;
+  backupFile: string;
+  communicationsPaused: boolean;
+}
+
 export interface LiveCommunication {
   title: string;
   provider: "google" | "notion" | "website";
   published?: boolean;
   autoSync?: boolean;
+  syncPaused?: boolean;
   requiresPageSetup?: boolean;
   documentId: string;
   url: string;

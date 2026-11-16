@@ -1,7 +1,7 @@
 # Teams Manager — Specifiche Applicative
 
 > Documento vivo — da aggiornare progressivamente man mano che raccogliamo i requisiti.
-> Stato attuale: **MVP operativo (v1.0.5)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
+> Stato attuale: **MVP operativo (v1.1.0)** — include piani partita AI multi-provider con rotazioni validate, fallback locale ed export in Google Docs.
 > Fonte: documento di progettazione iniziale (2026-08-26).
 
 Estensione sito pubblico: [specifica e piano di evoluzione](docs/PUBLIC_WEBSITE_SPEC.md), con confronto hosting gratuiti e architettura. La prima integrazione Cloudflare è disponibile dalla 1.0.0; configurazione e limiti effettivi sono descritti nella [documentazione dell'add-on](DOCS.md).
@@ -218,6 +218,10 @@ id, match_plan_id, period_number, assignments, bench_player_ids
 ```
 GET    /api/health
 
+GET    /api/data/export
+POST   /api/data/import/preview     -- body: export JSON; anteprima in sola lettura
+POST   /api/data/import             -- body: { backup, expectedRevision, confirmReplace: true }
+
 GET    /api/players
 POST   /api/players
 GET    /api/players/:id
@@ -354,6 +358,6 @@ redirect OAuth statico. Per questo l'addon espone, oltre a Ingress, anche una **
 
 ### Bacheca — hardening dati
 
-- import JSON validato, con anteprima e conferma esplicita prima della scrittura
+- ✅ Import JSON validato, con anteprima, controllo di concorrenza, conferma esplicita, backup SQLite privato e sostituzione transazionale. Impostazioni preservate e comunicazioni sospese fino al successivo aggiornamento manuale riuscito.
 - politica di conservazione e gestione dei backup locali
 - controlli di coerenza estesi e prova di upgrade su una copia reale dell'istanza Home Assistant

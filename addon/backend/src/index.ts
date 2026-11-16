@@ -99,6 +99,9 @@ export function createApp() {
   // ── Global error handler ───────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    const type = (err as Error & { type?: string }).type;
+    if (type === "entity.too.large") return void res.status(413).json({ error: "Il file supera il limite di 5 MB." });
+    if (type === "entity.parse.failed") return void res.status(400).json({ error: "JSON non valido. Seleziona un file esportato da Teams Manager." });
     console.error("[error]", err.message);
     res.status(500).json({ error: "Internal server error" });
   });
