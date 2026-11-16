@@ -91,7 +91,7 @@ function eventCard(event, featured = false) {
 }
 
 function page(title, content, active, updatedAt, { teamName, demo }) {
-  return `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="description" content="Sito dimostrativo Teams Manager, senza dati reali."><title>${escape(title)} · Squadra demo</title><link rel="icon" href="/logo.png" type="image/png"><link rel="preload" href="/fonts/poppins-latin-400.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/style.css"><script src="/site.js" defer></script></head><body>
+  return `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="description" content="Sito dimostrativo Teams Manager, senza dati reali."><meta name="theme-color" content="#1e40a3"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="${escape(teamName)}"><title>${escape(title)} · Squadra demo</title><link rel="icon" href="/logo.png" type="image/png"><link rel="apple-touch-icon" href="/icon-192.png"><link rel="manifest" href="/app.webmanifest"><link rel="preload" href="/fonts/poppins-latin-400.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/style.css"><script src="/site.js" defer></script></head><body>
   <a class="skip" href="#contenuto">Vai al contenuto</a>${demo ? '<div class="demo">PROTOTIPO · Dati fittizi, nessun appuntamento reale</div>' : ""}
   <header><a class="brand" href="/"><img class="team-logo" src="/logo.png" alt="" width="44" height="52" decoding="async"><span class="brand-text">${escape(teamName)}<small>Bacheca avvisi e appuntamenti</small></span></a><details class="menu"><summary aria-controls="site-navigation"><span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span><span class="menu-label">Menu</span></summary><nav id="site-navigation" aria-label="Menu principale">${[
     ["/", "Bacheca"],
@@ -103,7 +103,7 @@ function page(title, content, active, updatedAt, { teamName, demo }) {
         `<a href="${url}"${active === url ? ' aria-current="page"' : ""}>${label}</a>`,
     )
     .join("")}</nav></details></header>
-  <main id="contenuto">${content}</main><footer><strong>${escape(teamName)}</strong><span>Ultimo aggiornamento: ${escape(updatedAt)}</span><span>${demo ? "Prototipo Teams Manager · nessun dato personale" : "Appuntamenti di squadra"}</span></footer></body></html>`
+  <main id="contenuto">${content}<section class="install-help" id="installa"><h2>Porta la bacheca sul telefono</h2><p>Aggiungi un collegamento alla schermata Home per ritrovare rapidamente gli appuntamenti.</p><button type="button" id="install-app" hidden>Installa sul dispositivo</button><details><summary>Come aggiungerla alla schermata Home</summary><p><strong>iPhone:</strong> apri questa pagina in Safari, tocca Condividi e scegli “Aggiungi alla schermata Home”. Se disponibile, attiva “Apri come app”, poi tocca Aggiungi.</p><p><strong>Android:</strong> apri il menu del browser e scegli “Aggiungi alla schermata Home” o “Installa app”.</p></details></section></main><footer><strong>${escape(teamName)}</strong><span>Ultimo aggiornamento: ${escape(updatedAt)}</span><span>${demo ? "Prototipo Teams Manager · nessun dato personale" : "Appuntamenti di squadra"}</span></footer></body></html>`
     .replace(
       'content="Sito dimostrativo Teams Manager, senza dati reali."',
       () => `content="${escape(teamName)} · Appuntamenti di squadra"`,
@@ -160,6 +160,7 @@ export function buildSite(model, now = new Date()) {
     page(title, body, active, updatedAt, { teamName, demo });
   const files = new Map([
     ["/index.html", wrap("Bacheca", agenda, "/")],
+    ["/app.webmanifest", JSON.stringify({ name: teamName, short_name: teamName, start_url: "/", scope: "/", display: "standalone", background_color: "#ffffff", theme_color: "#1e40a3", icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }, { src: "/icon-512.png", sizes: "512x512", type: "image/png" }] })],
     ["/robots.txt", "User-agent: *\nDisallow: /\n"],
   ]);
   files.set(

@@ -102,7 +102,7 @@ export async function previewWebsite() {
   return { html: files.get("/index.html")!.toString()
     .replace('<link rel="stylesheet" href="/style.css">', () => `<style>${css}</style>`)
     .replaceAll('src="/logo.png"', `src="data:image/png;base64,${Buffer.from(files.get("/logo.png")!).toString("base64")}"`)
-    .replace(/<link[^>]+rel="(?:icon|preload)"[^>]*>/g, "")
+    .replace(/<link[^>]+rel="(?:icon|apple-touch-icon|manifest|preload)"[^>]*>/g, "")
     .replace('<script src="/site.js" defer></script>', "") };
 }
 

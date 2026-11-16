@@ -6,7 +6,7 @@ import { securityHeaders } from "./cloudflare.mjs";
 
 const directory = fileURLToPath(new URL("../../../public-site-assets/", import.meta.url));
 export const PUBLIC_ASSET_FILES = [
-  "style.css", "site.js", "logo.png", "fonts/OFL.txt",
+  "style.css", "site.js", "logo.png", "icon-192.png", "icon-512.png", "fonts/OFL.txt",
   ...[400, 500, 600, 700].map((weight) => `fonts/poppins-latin-${weight}.woff2`),
 ];
 

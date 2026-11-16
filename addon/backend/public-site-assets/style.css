@@ -220,3 +220,9 @@ footer strong { margin-right: auto; color: var(--blue); }
   dl { gap: 12px 24px; }
   .section-title { align-items: flex-start; }
 }
+.install-help { margin: 2rem 0; padding: 1.25rem; border: 1px solid #d5dce7; border-radius: 1rem; background: #fff; color: #18233a; }
+.install-help h2 { margin: 0 0 .5rem; font-size: 1.1rem; }
+.install-help p { margin: .5rem 0; }
+.install-help summary { cursor: pointer; font-weight: 600; padding: .5rem 0; }
+.install-help button { cursor: pointer; border: 0; border-radius: .5rem; padding: .75rem 1rem; background: #1e40a3; color: white; font: inherit; font-weight: 600; }
+.install-help button[hidden] { display: none; }

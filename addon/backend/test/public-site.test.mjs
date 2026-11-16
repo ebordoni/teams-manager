@@ -74,6 +74,13 @@ test("public model includes selected appointments only, never player data or pri
   assert.equal(files.get("/logo.png").subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
   assert.equal(files.get("/index.html").split('id="evento-').length - 1, 3);
   assert.equal(JSON.parse(files.get("/manifest.json")).prototype, false);
+  const webManifest = JSON.parse(files.get("/app.webmanifest"));
+  assert.equal(webManifest.display, "standalone");
+  assert.equal(webManifest.start_url, "/");
+  assert.ok(webManifest.icons.every((icon) => files.has(icon.src)));
+  assert.match(files.get("/index.html"), /rel="manifest" href="\/app.webmanifest"/);
+  assert.match(files.get("/index.html"), /Aggiungi alla schermata Home/);
+  assert.doesNotMatch(preview.data.html, /rel="(?:manifest|apple-touch-icon)"/);
 });
 
 function cloudflareMock({ fail = false, foreign = false } = {}) {

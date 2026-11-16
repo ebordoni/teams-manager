@@ -1,5 +1,23 @@
 const filter = document.getElementById("tipo");
 const menu = document.querySelector("details.menu");
+const installButton = document.getElementById("install-app");
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  if (installButton) installButton.hidden = false;
+});
+installButton?.addEventListener("click", async () => {
+  if (!installPrompt) return;
+  const prompt = installPrompt;
+  installPrompt = null;
+  installButton.hidden = true;
+  await prompt.prompt();
+});
+window.addEventListener("appinstalled", () => {
+  installPrompt = null;
+  if (installButton) installButton.hidden = true;
+});
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && menu?.open) {
     menu.open = false;
