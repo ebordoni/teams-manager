@@ -4,7 +4,7 @@
 
 **Home Assistant Addon** per gestire il calendario, l'anagrafica giocatori e le presenze della squadra, con generazione automatica di comunicazioni per i genitori (Google Docs + WhatsApp).
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue)](addon/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue)](addon/CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Home%20Assistant-41BDF5)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20aarch64-lightgrey)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
@@ -13,14 +13,15 @@
 
 ---
 
-> ✅ **Stato: MVP operativo (v1.2.0).** Calendario, giocatori, presenze, formazioni, piani partita AI ed esportazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
+> ✅ **Stato: MVP operativo (v1.3.0).** Calendario, giocatori, presenze, formazioni, piani partita AI ed esportazioni Google sono disponibili; la roadmap residua è descritta in [`SPECS.md`](SPECS.md).
 
 ## 🎯 Obiettivo
 
 Teams Manager è il gestionale della squadra pensato per essere installato come addon nella propria istanza Home Assistant:
 
 - **Calendario** — allenamenti, partite, tornei, eventi speciali.
-- **Anagrafica giocatori** — ruoli, piede preferito, profilo tecnico 0–100 e note.
+- **Anagrafica giocatori** — foto profilo, data di nascita, ruoli, piede preferito, profilo tecnico 0–100 e note. Le foto compaiono anche sul campo di Formazioni e Piano partita.
+- **Compleanni** — scheda in dashboard per i festeggiati del giorno. Dal profilo puoi abilitare gli auguri sul sito Cloudflare scegliendo un nome pubblico; foto, anno di nascita ed età restano privati. Il cambio giorno segue il fuso Europe/Rome (i nati il 29 febbraio vengono ricordati il 28 negli anni non bisestili).
 - **Rosa automatica** — tutti i giocatori sono inclusi in ogni evento; le presenze partono da “presente”.
 - **Comunicazioni** — generazione di un Google Document condivisibile via WhatsApp con i genitori.
 - **Piani partita** — crea le formazioni manualmente sul campo virtuale oppure genera rotazioni AI, con minutaggio bilanciato, ruoli e fallback locale.
@@ -51,7 +52,9 @@ Avvia l'addon e aprilo dalla barra laterale di Home Assistant (Ingress).
 
 ## Backup e ripristino
 
-In **Impostazioni → Generale → Backup e ripristino dati** puoi esportare i dati in JSON e importare un export precedente (massimo 5 MB). L'importazione mostra un confronto dei conteggi e richiede la conferma della **sostituzione completa**, non dell'unione: comprende anche gli elenchi vuoti del file.
+In **Impostazioni → Generale → Backup e ripristino dati** puoi esportare i dati in JSON e importare un export precedente (massimo 25 MB). Foto e date di nascita sono incluse nel backup: conserva il file come dato privato. L'importazione mostra un confronto dei conteggi e richiede la conferma della **sostituzione completa**, non dell'unione: comprende anche gli elenchi vuoti del file.
+
+Le foto si caricano dal dispositivo in JPG, PNG o WebP (massimo 8 MB e 20 MP). L'app le ritaglia al centro, le riduce fino a 512 px / 80 KB e rimuove i metadati prima di salvarle; puoi sostituirle o rimuoverle dal profilo. I backup precedenti restano importabili senza i nuovi campi.
 
 Prima di modificare i dati viene creato un backup SQLite `teams-manager.pre-import-*.db` nella cartella dati; se il backup fallisce, l'importazione non parte. Le scritture sono transazionali e un errore le annulla interamente. Questi backup completi contengono anche credenziali: hanno permessi privati, vanno custoditi e gestiti manualmente e non vengono cancellati automaticamente.
 

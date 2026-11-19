@@ -4,7 +4,7 @@ import path from "path";
 import { config } from "../config";
 
 let db: DatabaseSync | undefined;
-export const LATEST_SCHEMA_VERSION = 7;
+export const LATEST_SCHEMA_VERSION = 8;
 
 const SCHEMA_V1 = `
   CREATE TABLE IF NOT EXISTS schema_version (
@@ -210,6 +210,11 @@ const migrations: Record<number, () => void> = {
   // risultato finale: serve già in fase di convocazione e di export.
   6: () => ensureColumn("events", "venue", "TEXT NOT NULL DEFAULT 'home' CHECK (venue IN ('home', 'away', 'neutral'))"),
   7: () => ensureColumn("event_types", "include_in_google_doc", "INTEGER NOT NULL DEFAULT 1"),
+  8: () => {
+    ensureColumn("players", "photo", "TEXT");
+    ensureColumn("players", "birth_date", "TEXT");
+    ensureColumn("players", "birthday_public_name", "TEXT");
+  },
 };
 
 function applyMigrations(dbPath: string, databaseAlreadyExists: boolean): void {

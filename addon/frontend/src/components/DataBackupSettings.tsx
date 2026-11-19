@@ -46,7 +46,7 @@ export default function DataBackupSettings({ onImported }: { onImported: () => v
     setConfirmed(false);
     setBusy("checking");
     try {
-      if (file.size > 5 * 1024 * 1024) throw new Error("Il file supera il limite di 5 MB.");
+      if (file.size > 25 * 1024 * 1024) throw new Error("Il file supera il limite di 25 MB.");
       let backup: unknown;
       try { backup = JSON.parse((await file.text()).replace(/^\uFEFF/, "")); }
       catch { throw new Error("Il file non contiene JSON valido. Seleziona un export di Teams Manager."); }
@@ -79,7 +79,7 @@ export default function DataBackupSettings({ onImported }: { onImported: () => v
   return <Card withBorder padding="md" radius="md">
     <Stack gap="sm">
       <Title order={5}>Backup e ripristino dati</Title>
-      <Text size="sm" c="dimmed">Esporta o ripristina rosa, tipi evento, eventi, presenze, risultati, formazioni e piani partita. Impostazioni della squadra, collegamenti e credenziali delle integrazioni non sono inclusi nel file e non vengono sostituiti.</Text>
+      <Text size="sm" c="dimmed">Esporta o ripristina rosa (incluse foto, date di nascita e preferenze degli auguri), tipi evento, eventi, presenze, risultati, formazioni e piani partita. Conserva il file come dato privato. Impostazioni della squadra, collegamenti e credenziali delle integrazioni non sono inclusi nel file e non vengono sostituiti.</Text>
       <Group>
         <Button variant="light" leftSection={<IconDownload size={16} />} onClick={exportData} loading={exporting} disabled={busy !== null}>Esporta dati JSON</Button>
         <FileButton onChange={selectFile} accept=".json,application/json" resetRef={resetFile}>
@@ -99,7 +99,7 @@ export default function DataBackupSettings({ onImported }: { onImported: () => v
       {selection && <Stack gap="sm">
         <Text size="sm" fw={600} mt="sm">Verifica il ripristino</Text>
         <Text size="sm" fw={600} style={{ overflowWrap: "anywhere" }}>{selection.name}</Text>
-        <Text size="sm" c="dimmed">Esportato il {formatDisplayDateTime(selection.preview.exportedAt)} · massimo 5 MB</Text>
+        <Text size="sm" c="dimmed">Esportato il {formatDisplayDateTime(selection.preview.exportedAt)} · massimo 25 MB</Text>
         <Table withTableBorder striped>
           <Table.Thead><Table.Tr><Table.Th>Dati</Table.Th><Table.Th>Attuali</Table.Th><Table.Th>Nel file</Table.Th></Table.Tr></Table.Thead>
           <Table.Tbody>{(Object.keys(labels) as Array<keyof typeof labels>).map((key) => <Table.Tr key={key}>

@@ -1,8 +1,18 @@
-import { Alert, Badge, Button, Card, Stack, Text } from "@mantine/core";
+import {
+  Alert,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Stack,
+  Text,
+} from "@mantine/core";
 import {
   IconBallFootball,
   IconCalendar,
   IconCalendarPlus,
+  IconCake,
   IconCheck,
   IconChevronRight,
   IconFileText,
@@ -18,18 +28,17 @@ import EmptyState from "../components/EmptyState";
 import PageHeader from "../components/PageHeader";
 import PageLoader from "../components/PageLoader";
 import SectionHeading from "../components/SectionHeading";
-import type { EventTypeDef, Player, TeamEvent, TeamSummary } from "../types";
+import type {
+  EventTypeDef,
+  Player,
+  TeamEvent,
+  TeamSummary,
+  TodayBirthdays,
+} from "../types";
+import { useRomeDay } from "../utils/rome-day";
 import { formatDisplayDate } from "../utils/date";
 import type { ReactNode } from "react";
 
-function todayIso(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Rome",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 function tomorrowIso(today: string): string {
   const date = new Date(`${today}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() + 1);
@@ -37,6 +46,8 @@ function tomorrowIso(today: string): string {
 }
 
 export default function Dashboard() {
+  const today = useRomeDay();
+  const [birthdays, setBirthdays] = useState<TodayBirthdays | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [events, setEvents] = useState<TeamEvent[]>([]);
   const [eventTypes, setEventTypes] = useState<EventTypeDef[]>([]);
@@ -45,29 +56,48 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
+    let active = true;
+    setError(null);
     void Promise.all([
       api.getPlayers(),
       api.getEvents(),
       api.getEventTypes(),
       api.getTeamSummary(),
       api.getSettings(),
+      api.getBirthdays(),
     ])
-      .then(([playersRes, eventsRes, typesRes, summaryRes, settingsRes]) => {
-        setPlayers(playersRes.data);
-        setEvents(eventsRes.data);
-        setEventTypes(typesRes.data);
-        setSummary(summaryRes.data);
-        setTeamName(settingsRes.data.teamName);
-      })
-      .catch(() =>
-        setError(
-          "Impossibile caricare la panoramica della squadra. Riprova tra poco.",
-        ),
+      .then(
+        ([
+          playersRes,
+          eventsRes,
+          typesRes,
+          summaryRes,
+          settingsRes,
+          birthdaysRes,
+        ]) => {
+          if (!active) return;
+          setPlayers(playersRes.data);
+          setEvents(eventsRes.data);
+          setEventTypes(typesRes.data);
+          setSummary(summaryRes.data);
+          setTeamName(settingsRes.data.teamName);
+          setBirthdays(birthdaysRes.data);
+        },
       )
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        if (active)
+          setError(
+            "Impossibile caricare la panoramica della squadra. Riprova tra poco.",
+          );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [today]);
   if (loading) return <PageLoader />;
-  const today = todayIso();
   const tomorrow = tomorrowIso(today);
   const pastEvents = events.filter((event) => event.date < today);
   const lastEvent = pastEvents[pastEvents.length - 1];
@@ -93,6 +123,44 @@ export default function Dashboard() {
         <Alert color="red" title="Caricamento non riuscito">
           {error}
         </Alert>
+      )}
+      {birthdays?.date === today && birthdays.players.length > 0 && (
+        <Card
+          withBorder
+          className="birthday-card"
+          component="section"
+          aria-label="Compleanni di oggi"
+        >
+          <div className="birthday-card-symbol">
+            <IconCake size={30} stroke={1.6} />
+          </div>
+          <Stack gap={8} style={{ minWidth: 0 }}>
+            <div>
+              <Text size="xs" fw={600} tt="uppercase" c="dimmed">
+                Oggi si festeggia
+              </Text>
+              <Text size="lg" fw={600}>
+                Buon compleanno! 🎉
+              </Text>
+            </div>
+            <Group gap="md">
+              {birthdays.players.map((player) => (
+                <Group key={player.id} gap="xs" wrap="nowrap">
+                  <Avatar
+                    src={player.photo}
+                    name={player.name}
+                    color="brand"
+                    size={34}
+                    radius="xl"
+                  />
+                  <Text size="sm" fw={500} style={{ overflowWrap: "anywhere" }}>
+                    {player.name}
+                  </Text>
+                </Group>
+              ))}
+            </Group>
+          </Stack>
+        </Card>
       )}
       <div className="dashboard-metrics">
         <Metric

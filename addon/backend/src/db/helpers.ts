@@ -13,6 +13,9 @@ export function rowToPlayer(row: PlayerRow): Player {
   return {
     id: row.id,
     name: row.name,
+    photo: row.photo,
+    birthDate: row.birth_date,
+    birthdayPublicName: row.birthday_public_name,
     role: row.role,
     secondaryRoles: JSON.parse(row.secondary_roles) as string[],
     jerseyNumber: row.jersey_number,

@@ -7,6 +7,20 @@ e il versioning segue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.0] — 2026-11-19
+
+### Aggiunto
+
+- Foto profilo per i giocatori, con anteprima, sostituzione e rimozione. Ridimensionamento e ritaglio automatici fino a 512 px / 80 KB, validazione lato server e rimozione dei metadati; sorgenti JPG, PNG e WebP fino a 8 MB / 20 MP.
+- Foto dei giocatori sul campo condiviso da Formazioni e Piano partita, con numero o iniziale come alternativa per i profili senza foto.
+- Data di nascita facoltativa e scheda compleanni del giorno in dashboard, aggiornata al cambio data nel fuso italiano.
+- Box auguri responsive nella bacheca Cloudflare, dopo il prossimo appuntamento. Pubblicazione facoltativa per giocatore, con nome pubblico scelto e foto, anno di nascita ed età mantenuti privati; aggiornamento automatico a mezzanotte e rimozione degli auguri scaduti anche sulle pagine rimaste aperte.
+
+### Modificato
+
+- Backup JSON estesi a foto, date di nascita e preferenze degli auguri; compatibilità con i vecchi export e limite di importazione portato a 25 MB. Migrazione automatica del database esistente senza perdita dei dati.
+- Verifiche API e browser estese a caricamento foto, limiti e formati, campi anagrafici, privacy della bacheca, compleanni e ripristino dei backup.
+
 ## [1.2.0] — 2026-11-16
 
 ### Modificato

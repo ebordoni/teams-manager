@@ -455,6 +455,24 @@ a {
   color: var(--app-muted);
   font-size: 0.78rem;
 }
+.app-page .birthday-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  border-color: light-dark(#eadcb4, #655635);
+  background: linear-gradient(110deg, light-dark(#fff9e9, #302b20), light-dark(#fffdf7, #25251f));
+}
+.birthday-card-symbol {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: light-dark(#f7e9bd, #554727);
+  color: light-dark(#856018, #ebc96b);
+}
 .dashboard-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

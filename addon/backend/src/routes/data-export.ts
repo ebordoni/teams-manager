@@ -4,7 +4,7 @@ import { createDataExport, DataImportError, importData, previewDataImport } from
 
 const router = Router();
 
-/** Esporta i dati gestionali, escludendo token OAuth, chiavi AI e stato di consenso. */
+/** Esporta i dati gestionali, escludendo credenziali e stato delle integrazioni. */
 router.get("/export", (_req, res) => {
   const payload = createDataExport();
   const stamp = payload.exportedAt.slice(0, 10);
@@ -15,8 +15,8 @@ router.get("/export", (_req, res) => {
     .send(JSON.stringify(payload, null, 2));
 });
 
-router.post("/import/preview", (req, res, next) => {
-  try { res.json(previewDataImport(req.body)); }
+router.post("/import/preview", async (req, res, next) => {
+  try { res.json(await previewDataImport(req.body)); }
   catch (error) {
     if (error instanceof DataImportError) return void res.status(error.status).json({ error: error.message });
     next(error);
@@ -26,10 +26,10 @@ router.post("/import/preview", (req, res, next) => {
 const importRequest = z.object({
   backup: z.unknown(), confirmReplace: z.literal(true), expectedRevision: z.string().regex(/^[a-f0-9]{64}$/),
 });
-router.post("/import", (req, res, next) => {
+router.post("/import", async (req, res, next) => {
   const parsed = importRequest.safeParse(req.body);
   if (!parsed.success) return void res.status(400).json({ error: "Verifica il file e conferma esplicitamente la sostituzione dei dati prima di importare." });
-  try { res.json(importData(parsed.data.backup, parsed.data.expectedRevision)); }
+  try { res.json(await importData(parsed.data.backup, parsed.data.expectedRevision)); }
   catch (error) {
     if (error instanceof DataImportError) return void res.status(error.status).json({ error: error.message });
     next(error);

@@ -1,9 +1,11 @@
 import {
   ActionIcon,
+  Alert,
   Avatar,
   Badge,
   Button,
   Card,
+  Checkbox,
   Collapse,
   Divider,
   Group,
@@ -30,6 +32,9 @@ import { api } from "../api/client";
 import PageHeader from "../components/PageHeader";
 import EmptyState from "../components/EmptyState";
 import SectionHeading from "../components/SectionHeading";
+import PlayerPhotoField from "../components/PlayerPhotoField";
+import { romeToday } from "../utils/rome-day";
+import type { Dispatch, SetStateAction } from "react";
 import type {
   AttendanceHistoryItem,
   Player,
@@ -66,6 +71,9 @@ const SKILLS = [
 type PlayerDraft = Pick<
   Player,
   | "name"
+  | "photo"
+  | "birthDate"
+  | "birthdayPublicName"
   | "role"
   | "secondaryRoles"
   | "jerseyNumber"
@@ -80,6 +88,9 @@ type PlayerDraft = Pick<
 >;
 const EMPTY_PLAYER: PlayerDraft = {
   name: "",
+  photo: null,
+  birthDate: null,
+  birthdayPublicName: null,
   role: null,
   secondaryRoles: [],
   jerseyNumber: null,
@@ -101,13 +112,28 @@ function optionalNumber(value: string | number): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function playerError(error: unknown): string {
+  const detail = (error as { response?: { data?: { error?: unknown } } })
+    ?.response?.data?.error;
+  if (typeof detail === "string") return detail;
+  if (detail && typeof detail === "object" && "fieldErrors" in detail) {
+    const messages = Object.values(
+      (detail as { fieldErrors: Record<string, string[]> }).fieldErrors,
+    ).flat();
+    if (messages.length) return messages.join(". ");
+  }
+  return "Impossibile salvare il giocatore. Controlla i dati e riprova.";
+}
+
 function PlayerFields({
   value,
   onChange,
   includeNotes = false,
+  onPhotoBusy,
 }: {
   value: PlayerDraft;
-  onChange: (next: PlayerDraft) => void;
+  onChange: Dispatch<SetStateAction<PlayerDraft>>;
+  onPhotoBusy: (busy: boolean) => void;
   includeNotes?: boolean;
 }) {
   const roles = [value.role, ...value.secondaryRoles].filter(
@@ -126,6 +152,12 @@ function PlayerFields({
 
   return (
     <Stack gap="lg">
+      <PlayerPhotoField
+        value={value.photo}
+        name={value.name}
+        onChange={(photo) => onChange((current) => ({ ...current, photo }))}
+        onBusyChange={onPhotoBusy}
+      />
       <TextInput
         label="Nome"
         required
@@ -136,6 +168,49 @@ function PlayerFields({
           onChange({ ...value, name: event.currentTarget.value })
         }
       />
+      <TextInput
+        label="Data di nascita"
+        type="date"
+        min="1900-01-01"
+        max={romeToday()}
+        value={value.birthDate ?? ""}
+        onChange={(event) => {
+          const birthDate = event.currentTarget.value || null;
+          onChange({
+            ...value,
+            birthDate,
+            birthdayPublicName: birthDate ? value.birthdayPublicName : null,
+          });
+        }}
+        description="La data completa resta privata. Il compleanno viene ricordato nella dashboard."
+      />
+      <Checkbox
+        label="Mostra gli auguri sul sito pubblico"
+        description="Pubblica solo il nome scelto qui sotto. Foto, data completa ed età restano private."
+        disabled={!value.birthDate}
+        checked={value.birthdayPublicName !== null}
+        onChange={(event) =>
+          onChange({
+            ...value,
+            birthdayPublicName: event.currentTarget.checked ? "" : null,
+          })
+        }
+      />
+      {value.birthdayPublicName !== null && (
+        <TextInput
+          label="Nome pubblico per gli auguri"
+          description="Scegli un nome o nomignolo, ad esempio Luca. Sarà visibile a chiunque apra il sito."
+          maxLength={60}
+          required
+          value={value.birthdayPublicName}
+          onChange={(event) =>
+            onChange({
+              ...value,
+              birthdayPublicName: event.currentTarget.value,
+            })
+          }
+        />
+      )}
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <NumberInput
           label="Numero di maglia"
@@ -227,6 +302,10 @@ function PlayerFields({
 export default function Players() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<"create" | "edit" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [draftPhotoBusy, setDraftPhotoBusy] = useState(false);
+  const [editPhotoBusy, setEditPhotoBusy] = useState(false);
   const [draft, setDraft] = useState<PlayerDraft>(EMPTY_PLAYER);
   const [editing, setEditing] = useState<Player | null>(null);
   const [history, setHistory] = useState<{
@@ -252,22 +331,38 @@ export default function Players() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!draft.name.trim()) return;
-    await api.createPlayer({ ...draft, name: draft.name.trim() });
-    setDraft(EMPTY_PLAYER);
-    closeForm();
-    loadPlayers();
+    if (!draft.name.trim() || draftPhotoBusy || saving) return;
+    setSaving("create");
+    setError(null);
+    try {
+      await api.createPlayer({ ...draft, name: draft.name.trim() });
+      setDraft(EMPTY_PLAYER);
+      closeForm();
+      loadPlayers();
+    } catch (err) {
+      setError(playerError(err));
+    } finally {
+      setSaving(null);
+    }
   }
 
   async function handleUpdate(event: React.FormEvent) {
     event.preventDefault();
-    if (!editing || !editing.name.trim()) return;
-    await api.updatePlayer(editing.id, {
-      ...editing,
-      name: editing.name.trim(),
-    });
-    setEditing(null);
-    loadPlayers();
+    if (!editing || !editing.name.trim() || editPhotoBusy || saving) return;
+    setSaving("edit");
+    setError(null);
+    try {
+      await api.updatePlayer(editing.id, {
+        ...editing,
+        name: editing.name.trim(),
+      });
+      setEditing(null);
+      loadPlayers();
+    } catch (err) {
+      setError(playerError(err));
+    } finally {
+      setSaving(null);
+    }
   }
 
   async function handleDelete(id: number) {
@@ -319,6 +414,16 @@ export default function Players() {
           </Button>
         }
       />
+      {error && (
+        <Alert
+          color="red"
+          title="Salvataggio non riuscito"
+          withCloseButton
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
       {editing && (
         <Card
           withBorder
@@ -338,12 +443,31 @@ export default function Players() {
                 </div>
               </Group>
               <PlayerFields
+                key={editing.id}
                 value={editing}
-                onChange={(next) => setEditing({ ...editing, ...next })}
+                onChange={(next) =>
+                  setEditing((current) =>
+                    current
+                      ? {
+                          ...current,
+                          ...(typeof next === "function"
+                            ? next(current)
+                            : next),
+                        }
+                      : null,
+                  )
+                }
+                onPhotoBusy={setEditPhotoBusy}
                 includeNotes
               />
               <Group>
-                <Button type="submit">Salva modifiche</Button>
+                <Button
+                  type="submit"
+                  loading={saving === "edit"}
+                  disabled={editPhotoBusy}
+                >
+                  Salva modifiche
+                </Button>
                 <Button
                   variant="subtle"
                   type="button"
@@ -421,9 +545,20 @@ export default function Players() {
                 </Text>
               </div>
               <Divider label="Giocatore" labelPosition="left" />
-              <PlayerFields value={draft} onChange={setDraft} includeNotes />
+              <PlayerFields
+                value={draft}
+                onChange={setDraft}
+                onPhotoBusy={setDraftPhotoBusy}
+                includeNotes
+              />
               <Group>
-                <Button type="submit">Aggiungi giocatore</Button>
+                <Button
+                  type="submit"
+                  loading={saving === "create"}
+                  disabled={draftPhotoBusy}
+                >
+                  Aggiungi giocatore
+                </Button>
                 <Button variant="subtle" type="button" onClick={closeForm}>
                   Annulla
                 </Button>
@@ -457,6 +592,7 @@ export default function Players() {
               <Card key={player.id} withBorder className="player-card">
                 <div className="player-card-head">
                   <Avatar
+                    src={player.photo}
                     name={player.name}
                     color="brand"
                     radius="lg"

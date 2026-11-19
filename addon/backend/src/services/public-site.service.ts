@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getSetting, getTeamName, setSetting } from "./settings.service";
 import { eventIcon, loadEventTypes, loadLiveEvents } from "./communication-content";
+import { publicBirthdaysToday, romeDay } from "./birthdays.service";
 
 const key = (name: string) => `website_${name}`;
 export class PublicSiteError extends Error {}
@@ -61,13 +62,14 @@ function safeError(error: unknown): PublicSiteError {
   return new PublicSiteError(token ? message.split(token).join("[token nascosto]") : message);
 }
 
-export function publicSiteModel() {
+export function publicSiteModel(now = new Date()) {
   const settings = websiteSettings();
   const types = loadEventTypes();
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const today = romeDay(now);
   const teamName = getTeamName();
   return {
     teamName, demo: false, intro: settings.introduction, notice: settings.notice, information: settings.information,
+    birthday: publicBirthdaysToday(now),
     events: loadLiveEvents().map((event) => {
       const type = types.get(event.type);
       const venue = event.venue === "away" ? "in trasferta" : event.venue === "neutral" ? "in campo neutro" : "in casa";
@@ -84,7 +86,7 @@ export function publicSiteModel() {
   };
 }
 
-export async function renderPublicSite(now = new Date(), model = publicSiteModel()) {
+export async function renderPublicSite(now = new Date(), model = publicSiteModel(now)) {
   const { buildSite } = await import("./public-site/render.mjs");
   const { attachSiteAssets } = await import("./public-site/assets.mjs");
   return attachSiteAssets(buildSite(model, now));
@@ -113,11 +115,12 @@ export async function publishWebsite(force = false, confirmPublic = false) {
     // Hash significativo senza timestamp: niente deploy automatici a dati invariati.
     const { readSiteAssets, hashSiteFiles } = await import("./public-site/assets.mjs");
     const assets = hashSiteFiles(await readSiteAssets());
-    const model = publicSiteModel();
+    const now = new Date();
+    const model = publicSiteModel(now);
     const renderer = await readFile(path.resolve(__dirname, "public-site/render.mjs"), "utf8");
     const hash = createHash("sha256").update(JSON.stringify({ model, assets, renderer })).digest("hex");
     if (!force && settings.published && getSetting(key("hash")) === hash) return websiteSettings();
-    const files = await renderPublicSite(new Date(), model);
+    const files = await renderPublicSite(now, model);
     const result = await (await client()).deploy(files);
     setSetting(key("url"), result.url);
     setSetting(key("hash"), hash);

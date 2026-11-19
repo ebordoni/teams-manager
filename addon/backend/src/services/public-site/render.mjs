@@ -117,6 +117,7 @@ export function buildDemo(now = new Date()) {
       events: demoEvents(now),
       teamName: "Squadra demo",
       demo: true,
+      birthday: { day: isoDay(now), names: ["Luca", "Matteo"] },
       intro:
         "Appuntamenti, orari e novità. Tutto quello che serve, in un unico posto.",
       notice:
@@ -150,7 +151,10 @@ export function buildSite(model, now = new Date()) {
     .join("");
   const text = (value) => escape(value).replace(/\r?\n/g, "<br>");
   const past = events.filter((event) => event.past).slice(-1)[0];
-  const agenda = `${hero}${next ? eventCard(next, true) : '<article class="event"><h2>Nessun appuntamento in programma</h2></article>'}${notice ? `<aside class="event notice"><h2>Avviso di squadra</h2><p>${text(notice)}</p></aside>` : ""}<section class="agenda"><div class="section-title"><h2>In programma</h2><label>Mostra <select id="tipo"><option value="all">Tutti gli eventi</option>${typeOptions}</select></label></div><p id="filter-status" class="sr-only" aria-live="polite"></p><div class="events">${upcoming
+  const birthday = model.birthday?.day === isoDay(now) && model.birthday.names?.length
+    ? `<aside class="birthday" data-birthday-day="${escape(model.birthday.day)}" aria-labelledby="birthday-title"><span class="birthday-icon" aria-hidden="true">🎂</span><div><p class="birthday-eyebrow">Oggi si festeggia · ${escape(dateLabel(model.birthday.day))}</p><h2 id="birthday-title">Buon compleanno!</h2><ul>${model.birthday.names.map(name => `<li>${escape(name)}</li>`).join("")}</ul><p class="birthday-wish">Tanti auguri da tutta la squadra! 🎉</p></div></aside>`
+    : "";
+  const agenda = `${hero}${next ? eventCard(next, true) : '<article class="event"><h2>Nessun appuntamento in programma</h2></article>'}${birthday}${notice ? `<aside class="event notice"><h2>Avviso di squadra</h2><p>${text(notice)}</p></aside>` : ""}<section class="agenda"><div class="section-title"><h2>In programma</h2><label>Mostra <select id="tipo"><option value="all">Tutti gli eventi</option>${typeOptions}</select></label></div><p id="filter-status" class="sr-only" aria-live="polite"></p><div class="events">${upcoming
     .filter((event) => event !== next)
     .map((event) => eventCard(event))
     .join(

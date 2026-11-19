@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createHash } from "node:crypto";
 import path from "node:path";
-import { buildDemo, demoEvents } from "./render.mjs";
+import { buildDemo, buildSite, demoEvents } from "./render.mjs";
 import { bundle } from "./cli.mjs";
 import { CloudflareClient, configuration, mime } from "./cloudflare.mjs";
 import { PUBLIC_ASSET_FILES, hashSiteFiles } from "../../addon/backend/src/services/public-site/assets.mjs";
@@ -54,6 +54,19 @@ test("compact introduction puts the featured appointment before notices", () => 
   assert.match(html, /<section class="intro"><h1>Appuntamenti<\/h1>/);
   assert.doesNotMatch(html, /Ci vediamo|in campo\./);
   assert.ok(html.indexOf('id="evento-2"') < html.indexOf('class="event notice"'));
+  assert.ok(html.indexOf('id="evento-2"') < html.indexOf('class="birthday"'));
+});
+
+test("birthday greetings are escaped and appear only on the relevant Rome day", () => {
+  const model = { teamName: "Squadra", events: demoEvents(now), birthday: { day: "2026-10-25", names: ['Luca <script>alert("x")</script>', "Matteo"] } };
+  const html = buildSite(model, now).get("/index.html");
+  assert.match(html, /data-birthday-day="2026-10-25"/);
+  assert.match(html, /Luca &lt;script&gt;/);
+  assert.doesNotMatch(html, /<script>alert/);
+  assert.ok(html.indexOf('id="evento-2"') < html.indexOf('class="birthday"'));
+  for (const birthday of [null, { day: "2026-10-24", names: ["Vecchio"] }, { day: "2026-10-25", names: [] }]) {
+    assert.doesNotMatch(buildSite({ ...model, birthday }, now).get("/index.html"), /data-birthday-day/);
+  }
 });
 
 test("asset revision hashes binary bytes deterministically and includes path names", () => {

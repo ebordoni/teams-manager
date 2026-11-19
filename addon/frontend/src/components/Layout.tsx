@@ -11,6 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { useRomeDay } from "../utils/rome-day";
 import { api } from "../api/client";
 
 const navItems = [
@@ -47,6 +48,7 @@ const navItems = [
 ];
 
 export default function Layout() {
+  const today = useRomeDay();
   const { pathname } = useLocation();
   const [teamName, setTeamName] = useState("La tua squadra");
   const settingsActive = ["/settings", "/communications", "/ai-settings"].some(
@@ -177,7 +179,7 @@ export default function Layout() {
             day: "numeric",
             month: "long",
             timeZone: "Europe/Rome",
-          }).format(new Date())}
+          }).format(new Date(`${today}T12:00:00Z`))}
         </div>
         <Link
           to="/settings"

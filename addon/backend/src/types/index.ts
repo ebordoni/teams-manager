@@ -7,6 +7,9 @@ export type PreferredFoot = "right" | "left" | "both";
 export interface Player {
   id: number;
   name: string;
+  photo: string | null;
+  birthDate: string | null;
+  birthdayPublicName: string | null;
   role: string | null;
   secondaryRoles: string[];
   jerseyNumber: number | null;
@@ -25,6 +28,9 @@ export interface Player {
 export interface PlayerRow {
   id: number;
   name: string;
+  photo: string | null;
+  birth_date: string | null;
+  birthday_public_name: string | null;
   role: string | null;
   secondary_roles: string;
   jersey_number: number | null;

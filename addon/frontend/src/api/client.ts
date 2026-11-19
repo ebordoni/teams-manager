@@ -10,6 +10,7 @@ import type {
   GoogleStatus,
   Player,
   TeamEvent,
+  TodayBirthdays,
   AIConfig,
   MatchPeriod,
   MatchPlan,
@@ -32,6 +33,7 @@ export const api = {
 
   // ── Players ────────────────────────────────────────────────────────────
   getPlayers: () => apiClient.get<Player[]>("/players"),
+  getBirthdays: () => apiClient.get<TodayBirthdays>("/players/birthdays"),
   getPlayer: (id: number) => apiClient.get<Player>(`/players/${id}`),
   createPlayer: (data: Partial<Player>) =>
     apiClient.post<Player>("/players", data),

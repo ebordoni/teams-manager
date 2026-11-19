@@ -2,6 +2,14 @@ const filter = document.getElementById("tipo");
 const menu = document.querySelector("details.menu");
 const installButton = document.getElementById("install-app");
 let installPrompt = null;
+// Nascondi gli auguri scaduti anche su una scheda rimasta aperta o un deploy fermo.
+function refreshBirthdayVisibility() {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  for (const card of document.querySelectorAll("[data-birthday-day]")) card.hidden = card.dataset.birthdayDay !== today;
+}
+refreshBirthdayVisibility();
+setInterval(refreshBirthdayVisibility, 30_000);
+document.addEventListener("visibilitychange", refreshBirthdayVisibility);
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   installPrompt = event;

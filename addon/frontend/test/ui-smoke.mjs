@@ -26,6 +26,13 @@ for (const key of [
 ])
   process.env[key] = "";
 const require = createRequire(import.meta.url);
+const sharp = require(path.join(root, "addon/backend/node_modules/sharp"));
+const { romeDay } = require(
+  path.join(root, "addon/backend/dist/services/birthdays.service.js"),
+);
+const { renderPublicSite } = require(
+  path.join(root, "addon/backend/dist/services/public-site.service.js"),
+);
 const { initDb, getDb, closeDb } = require(
   path.join(root, "addon/backend/dist/db/schema.js"),
 );
@@ -59,6 +66,24 @@ names.forEach((name, index) =>
       index + 1,
       index % 2 ? "left" : "right",
     ),
+);
+const portrait = await sharp(
+  Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="800" height="800" fill="#dbe8fb"/><circle cx="400" cy="320" r="140" fill="#ddb36c"/><ellipse cx="400" cy="790" rx="280" ry="290" fill="#3654a2"/></svg>',
+  ),
+)
+  .jpeg()
+  .toBuffer();
+const normalizedPortrait = await sharp(portrait)
+  .resize(512, 512)
+  .jpeg()
+  .toBuffer();
+db.prepare(
+  "UPDATE players SET photo=?,birth_date=?,birthday_public_name=? WHERE id=1",
+).run(
+  `data:image/jpeg;base64,${normalizedPortrait.toString("base64")}`,
+  `2000-${romeDay().slice(5)}`,
+  "Luca",
 );
 const slots = [
   "portiere",
@@ -153,6 +178,19 @@ for (let period = 1; period <= 3; period++)
 // Exercise the same app under an HA-style path, including relative assets and API calls.
 const express = require(path.join(root, "addon/backend/node_modules/express"));
 const host = express();
+const publicFiles = await renderPublicSite();
+host.get("/public-board", async (_req, res, next) => {
+  try {
+    res.type("html").send((await renderPublicSite()).get("/index.html"));
+  } catch (error) {
+    next(error);
+  }
+});
+host.get(
+  [...publicFiles.keys()].filter((name) => !name.endsWith(".html")),
+  (req, res) =>
+    res.type(path.extname(req.path)).send(publicFiles.get(req.path)),
+);
 host.use("/ha/ingress/test", app);
 host.use(app);
 const server = host.listen(0, "127.0.0.1");
@@ -291,13 +329,101 @@ try {
   await page
     .getByRole("textbox", { name: "Nome", exact: true })
     .fill("Giocatore UI test");
+  const publicOptIn = page.getByRole("checkbox", {
+    name: "Mostra gli auguri sul sito pubblico",
+    exact: true,
+  });
+  assert.equal(await publicOptIn.isChecked(), false);
+  assert.equal(await publicOptIn.isEnabled(), false);
+  await page
+    .getByLabel("Data di nascita", { exact: true })
+    .fill(`2000-${romeDay().slice(5)}`);
+  await publicOptIn.check();
+  await page
+    .getByRole("textbox", { name: "Nome pubblico per gli auguri", exact: true })
+    .fill("Amico della squadra");
+  const upload = page.locator('input[type="file"]').first();
+  await upload.setInputFiles({
+    name: "large.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.alloc(8 * 1024 * 1024 + 1),
+  });
+  await page
+    .getByRole("alert")
+    .filter({ hasText: /supera 8 MB/ })
+    .waitFor();
+  const bomb = Buffer.alloc(24);
+  bomb.writeUInt32BE(0x89504e47, 0);
+  bomb.writeUInt32BE(0x0d0a1a0a, 4);
+  bomb.writeUInt32BE(5000, 16);
+  bomb.writeUInt32BE(5000, 20);
+  await upload.setInputFiles({
+    name: "huge.png",
+    mimeType: "image/png",
+    buffer: bomb,
+  });
+  await page
+    .getByRole("alert")
+    .filter({ hasText: /supera 20 megapixel/ })
+    .waitFor();
+  await page.evaluate(() => {
+    const original = window.createImageBitmap.bind(window);
+    window.createImageBitmap = async (...args) => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      return original(...args);
+    };
+  });
+  await upload.setInputFiles({
+    name: "profile.jpg",
+    mimeType: "image/jpeg",
+    buffer: portrait,
+  });
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Aggiungi giocatore", exact: true })
+      .isEnabled(),
+    false,
+  );
+  await page
+    .getByRole("textbox", { name: "Nome", exact: true })
+    .fill("Giocatore UI test foto");
+  await page
+    .getByRole("button", { name: "Aggiungi giocatore", exact: true })
+    .waitFor();
+  await page.waitForFunction(
+    () =>
+      ![...document.querySelectorAll("button")].find(
+        (button) => button.textContent === "Aggiungi giocatore",
+      )?.disabled,
+  );
   await page
     .getByRole("button", { name: "Aggiungi giocatore", exact: true })
     .click();
-  await page.getByText("Giocatore UI test", { exact: true }).waitFor();
+  await page.getByText("Giocatore UI test foto", { exact: true }).waitFor();
+  assert.equal(
+    await page
+      .locator(".player-card")
+      .filter({ hasText: "Giocatore UI test foto" })
+      .locator("img")
+      .count(),
+    1,
+  );
+  const uploadedPlayer = db
+    .prepare("SELECT * FROM players WHERE name='Giocatore UI test foto'")
+    .get();
+  const savedPhoto = Buffer.from(uploadedPlayer.photo.split(",")[1], "base64");
+  assert.ok(savedPhoto.length <= 80 * 1024);
+  assert.equal((await sharp(savedPhoto).metadata()).width, 512);
   await page
-    .getByRole("button", { name: "Modifica Giocatore UI test", exact: true })
+    .getByRole("button", {
+      name: "Modifica Giocatore UI test foto",
+      exact: true,
+    })
     .click();
+  await page.setViewportSize({ width: 320, height: 900 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await page.locator(".player-edit-panel").screenshot({ path: path.join(output, "player-profile-form-320.png") });
+  await page.setViewportSize({ width: 375, height: 900 });
   await page
     .getByRole("textbox", { name: "Nome", exact: true })
     .fill("Giocatore aggiornato");
@@ -305,7 +431,82 @@ try {
     .getByRole("button", { name: "Salva modifiche", exact: true })
     .click();
   await page.getByText("Giocatore aggiornato", { exact: true }).waitFor();
-  console.log("PASS player creation and editing on isolated database");
+  await page.goto(`${base}/#/dashboard`);
+  const birthdayCard = page.getByRole("region", {
+    name: "Compleanni di oggi",
+    exact: true,
+  });
+  await birthdayCard.getByText("Luca Bianchi", { exact: true }).waitFor();
+  await birthdayCard
+    .getByText("Giocatore aggiornato", { exact: true })
+    .waitFor();
+  await page.screenshot({
+    path: path.join(output, "birthday-dashboard-mobile.png"),
+    fullPage: true,
+  });
+  await page.goto(`${base}/public-board`);
+  await page.locator(".birthday").getByText("Luca", { exact: true }).waitFor();
+  await page
+    .locator(".birthday")
+    .getByText("Amico della squadra", { exact: true })
+    .waitFor();
+  const publicHtml = await page.content();
+  assert.doesNotMatch(
+    publicHtml,
+    /Luca Bianchi|Giocatore aggiornato|data:image|2000-/,
+  );
+  assert.ok(
+    await page
+      .locator(".featured")
+      .evaluate((el) => el.getBoundingClientRect().top < 500),
+  );
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+    true,
+  );
+  await page.screenshot({
+    path: path.join(output, "birthday-public-mobile.png"),
+    fullPage: true,
+  });
+  await page.locator(".birthday").evaluate((el) => {
+    el.dataset.birthdayDay = "2000-01-01";
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  assert.equal(await page.locator(".birthday").isVisible(), false);
+  await page.goto(`${base}/#/players`);
+  await page
+    .getByRole("button", { name: "Modifica Giocatore aggiornato", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Rimuovi foto", exact: true }).click();
+  await page
+    .getByRole("checkbox", {
+      name: "Mostra gli auguri sul sito pubblico",
+      exact: true,
+    })
+    .uncheck();
+  await page
+    .getByRole("button", { name: "Salva modifiche", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Modifica giocatore", exact: true })
+    .waitFor({ state: "hidden" });
+  await page.getByText("Giocatore aggiornato", { exact: true }).waitFor();
+  assert.equal(
+    db.prepare("SELECT photo FROM players WHERE id=?").get(uploadedPlayer.id)
+      .photo,
+    null,
+  );
+  await page.goto(`${base}/public-board`);
+  await page.locator(".birthday").waitFor();
+  assert.equal(
+    await page.getByText("Amico della squadra", { exact: true }).count(),
+    0,
+  );
+  console.log(
+    "PASS player photos, resize limits, birthday opt-in, dashboard and responsive public greetings",
+  );
   await page.goto(`${base}/#/events/2`);
   await page.getByRole("tab", { name: /Presenze/ }).click();
   const attendance = page.getByRole("button", {
@@ -350,7 +551,18 @@ try {
   await page
     .getByRole("button", { name: "Portiere: Luca Bianchi", exact: true })
     .waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Portiere: Luca Bianchi", exact: true })
+      .getByRole("img")
+      .count(),
+    1,
+  );
   await page.goto(`${base}/#/events/2/match-plan`);
+  await page
+    .getByRole("button", { name: "Portiere: Luca Bianchi", exact: true })
+    .getByRole("img")
+    .waitFor();
   await page
     .getByRole("button", { name: "Portiere: Luca Bianchi", exact: true })
     .click();
@@ -486,6 +698,23 @@ try {
     ).text(),
     /SIL OPEN FONT LICENSE/,
   );
+  db.exec("UPDATE players SET birth_date=NULL,birthday_public_name=NULL");
+  await page.goto(`${base}/#/dashboard`);
+  await page
+    .getByRole("heading", { name: "Panoramica", exact: true })
+    .waitFor();
+  assert.equal(
+    await page
+      .getByRole("region", { name: "Compleanni di oggi", exact: true })
+      .count(),
+    0,
+  );
+  await page.goto(`${base}/public-board`);
+  await page
+    .getByRole("heading", { name: "Appuntamenti", exact: true })
+    .waitFor();
+  assert.equal(await page.locator(".birthday").count(), 0);
+  console.log("PASS birthday cards disappear when nobody has a birthday");
   console.log(`Screenshots: ${output}`);
   await context.close();
 } finally {

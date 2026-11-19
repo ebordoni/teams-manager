@@ -5,6 +5,7 @@ import { getSetting } from "./settings.service";
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 let dailyTimer: ReturnType<typeof setTimeout> | undefined;
+let birthdayTimer: ReturnType<typeof setTimeout> | undefined;
 let firstQueuedAt = 0;
 
 function refreshInBackground(reason: string): void {
@@ -31,7 +32,7 @@ export function queueLiveCommunicationRefresh(): void {
   }, isWebsiteActive() ? Math.max(0, Math.min(15_000, firstQueuedAt + 60_000 - Date.now())) : 1_000);
 }
 
-export function millisecondsUntilNextDailyRefresh(now = new Date()): number {
+export function millisecondsUntilNextDailyRefresh(now = new Date(), time = "03:05:00"): number {
   const formatter = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Rome",
     hour: "2-digit",
@@ -43,7 +44,7 @@ export function millisecondsUntilNextDailyRefresh(now = new Date()): number {
   // può durare 23 o 25 ore durante il cambio dell'ora legale.
   const nextMinute = Math.floor(now.getTime() / 60_000) * 60_000 + 60_000;
   for (let instant = nextMinute; instant < nextMinute + 48 * 3_600_000; instant += 60_000) {
-    if (formatter.format(new Date(instant)) === "03:05:00") return instant - now.getTime();
+    if (formatter.format(new Date(instant)) === time) return instant - now.getTime();
   }
   return 24 * 3_600_000;
 }
@@ -60,4 +61,13 @@ export function startLiveCommunicationScheduler(): void {
     }, millisecondsUntilNextDailyRefresh());
   };
   scheduleNext();
+  // Il compleanno cambia a mezzanotte di Roma, non al refresh degli appuntamenti delle 03:05.
+  const scheduleBirthday = () => {
+    birthdayTimer = setTimeout(() => {
+      birthdayTimer = undefined;
+      if (isWebsiteActive()) refreshInBackground("compleanni");
+      scheduleBirthday();
+    }, millisecondsUntilNextDailyRefresh(new Date(), "00:00:00"));
+  };
+  if (!birthdayTimer) scheduleBirthday();
 }

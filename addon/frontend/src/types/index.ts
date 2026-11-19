@@ -17,6 +17,9 @@ export interface EventTypeDef {
 export interface Player {
   id: number;
   name: string;
+  photo: string | null;
+  birthDate: string | null;
+  birthdayPublicName: string | null;
   role: string | null;
   secondaryRoles: string[];
   jerseyNumber: number | null;
@@ -30,6 +33,11 @@ export interface Player {
   notes: string | null;
   archivedAt: string | null;
   createdAt: string;
+}
+
+export interface TodayBirthdays {
+  date: string;
+  players: Array<Pick<Player, "id" | "name" | "photo">>;
 }
 
 export interface TeamEvent {

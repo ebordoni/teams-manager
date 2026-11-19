@@ -250,7 +250,7 @@ export default function Communications() {
                   <Text size="sm" c="dimmed">
                     {live?.provider === "website"
                       ? live.autoSync
-                        ? "Aggiornamenti automatici attivi dopo le modifiche agli eventi e ogni giorno alle 03:05. "
+                        ? "Aggiornamenti automatici attivi dopo le modifiche agli eventi e ai profili, a mezzanotte per i compleanni e alle 03:05 per gli appuntamenti (ora italiana). "
                         : "Gli aggiornamenti automatici si attivano dopo la prima pubblicazione, se abilitati nelle Impostazioni. "
                       : "Lo stesso link viene aggiornato automaticamente dopo ogni modifica agli eventi e ogni giorno alle 03:05. "}
                     Restano gli appuntamenti da oggi in avanti e soltanto
@@ -280,8 +280,9 @@ export default function Communications() {
                       Il sito usa il Worker Cloudflare configurato e mantiene lo
                       stesso link. Aggiorna ora sostituisce tutte le pagine
                       gestite dall'app; le modifiche effettuate direttamente su
-                      Cloudflare vengono sovrascritte. Nomi dei giocatori e
-                      presenze non sono pubblicati. Per controllare i contenuti
+                      Cloudflare vengono sovrascritte. Per gli auguri sono pubblicati
+                      solo i nomi abilitati nei profili. Foto, data completa di nascita,
+                      età e presenze restano private. Per controllare i contenuti
                       apri Anteprima home in Impostazioni → Integrazioni.
                     </Alert>
                   )}

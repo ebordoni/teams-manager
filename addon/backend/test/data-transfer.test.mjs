@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { after, before, test } from "node:test";
+import express from "express";
 
 const directory = await mkdtemp(path.join(os.tmpdir(), "teams-manager-import-"));
 process.env.DATA_DIR = directory;
@@ -43,7 +44,10 @@ before(async () => {
     INSERT INTO google_tokens (id,access_token) VALUES (1,'private-oauth-test');
     INSERT INTO app_settings (key,value) VALUES ('team_name','Nome squadra locale'),('ai_api_key','private-ai-test');
   `);
-  server = app.listen(0, "127.0.0.1");
+  const host = express();
+  host.use("/ha/ingress/test", app);
+  host.use(app);
+  server = host.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
   base = `http://127.0.0.1:${server.address().port}`;
   backup = (await api("export")).data;
@@ -101,9 +105,9 @@ test("invalid formats, incomplete backups, newer versions, duplicate IDs and bro
 
 test("malformed JSON and oversized requests return actionable errors without touching data", async () => {
   assert.equal((await api("import/preview", "{broken", true)).status, 400);
-  const oversized = await api("import/preview", JSON.stringify({ padding: "x".repeat(5 * 1024 * 1024) }), true);
+  const oversized = await originalFetch(`${base}/ha/ingress/test/api/data/import/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ padding: "x".repeat(25 * 1024 * 1024) }) });
   assert.equal(oversized.status, 413);
-  assert.match(oversized.data.error, /5 MB/);
+  assert.match((await oversized.json()).error, /25 MB/);
   assert.deepEqual(await backupFiles(), []);
 });
 

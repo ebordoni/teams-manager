@@ -6,6 +6,8 @@ import { getDb, LATEST_SCHEMA_VERSION } from "../db/schema";
 import { isLiveCommunicationBusy } from "./communication.service";
 import { setSetting } from "./settings.service";
 import { hasPendingDataWrites } from "./data-operations.service";
+import { birthDateSchema, birthdayPublicNameSchema, birthdaySettingsError } from "./birthdays.service";
+import { storedPhotoSchema, validateStoredPhoto } from "./player-photo.service";
 
 export class DataImportError extends Error {
   constructor(message: string, public readonly status = 400) { super(message); }
@@ -42,6 +44,7 @@ const backupSchema = z.object({
   schemaVersion: z.number().int().min(1).max(LATEST_SCHEMA_VERSION),
   players: z.array(z.object({
     id, name: text.min(1), role: nullableText, secondary_roles: jsonColumn(z.array(text)).default("[]"),
+    photo: storedPhotoSchema.nullable().default(null), birth_date: birthDateSchema.nullable().default(null), birthday_public_name: birthdayPublicNameSchema.nullable().default(null),
     jersey_number: z.number().int().min(1).max(99).nullable().default(null),
     preferred_foot: z.enum(["right", "left", "both"]).default("both"),
     fitness: rating, speed: rating, technique: rating, shooting: rating, defending: rating, attacking: rating,
@@ -112,13 +115,21 @@ function references(ids: Array<number | null>, known: Set<number>, label: string
   if (ids.some((value) => value !== null && !known.has(value))) throw new DataImportError(`Riferimento inesistente nel file: ${label}.`);
 }
 
-function validateBackup(input: unknown): Backup {
+async function validateBackup(input: unknown): Promise<Backup> {
   const parsed = backupSchema.safeParse(input);
   if (!parsed.success) {
     const field = parsed.error.issues[0]?.path.map(String).join(".") || "formato";
     throw new DataImportError(`File di backup non valido (${field}). Usa un export JSON di Teams Manager compatibile con questa versione.`);
   }
   const data = parsed.data;
+  for (const player of data.players) {
+    const error = birthdaySettingsError(player.birth_date, player.birthday_public_name);
+    if (error) throw new DataImportError(error);
+    if (player.photo) {
+      try { await validateStoredPhoto(player.photo); }
+      catch { throw new DataImportError("Il file contiene una foto giocatore non valida o troppo grande."); }
+    }
+  }
   for (const key of collectionNames.filter((name) => name !== "results")) unique((data[key] as Array<{ id: number }>).map((row) => row.id), key);
   unique(data.eventTypes.map((row) => row.key), "tipi evento");
   unique(data.players.flatMap((row) => row.jersey_number === null ? [] : [row.jersey_number]), "numeri di maglia");
@@ -161,16 +172,16 @@ function validateBackup(input: unknown): Backup {
   return data;
 }
 
-export function previewDataImport(input: unknown) {
-  const backup = validateBackup(input);
+export async function previewDataImport(input: unknown) {
+  const backup = await validateBackup(input);
   return {
     exportedAt: backup.exportedAt, counts: counts(backup),
     currentCounts: counts(createDataExport()), expectedRevision: currentRevision(),
   };
 }
 
-export function importData(input: unknown, expectedRevision: string) {
-  const backup = validateBackup(input);
+export async function importData(input: unknown, expectedRevision: string) {
+  const backup = await validateBackup(input);
   if (isLiveCommunicationBusy() || hasPendingDataWrites()) throw new DataImportError("Una pubblicazione o generazione è in corso. Attendi il completamento prima di importare.", 409);
   if (expectedRevision !== currentRevision()) throw new DataImportError("I dati sono cambiati dopo l'anteprima. Seleziona di nuovo il file e verifica il riepilogo.", 409);
   const db = getDb();

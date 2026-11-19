@@ -1,4 +1,4 @@
-import { Box, Text, UnstyledButton } from "@mantine/core";
+import { Avatar, Box, Text, UnstyledButton } from "@mantine/core";
 import type { Player } from "../types";
 
 export const formationSlots = [
@@ -75,11 +75,16 @@ export default function FormationPitch({
         const player = players.find((item) => item.id === assignments[key]);
         const content = (
           <>
-            <Box className={`formation-player${!player ? " is-empty" : ""}`}>
+            <Avatar
+              src={player?.photo}
+              alt={player ? `Foto di ${player.name}` : undefined}
+              radius="xl"
+              className={`formation-player${!player ? " is-empty" : ""}`}
+            >
               {player
                 ? (player.jerseyNumber ?? player.name.slice(0, 1).toUpperCase())
                 : "+"}
-            </Box>
+            </Avatar>
             <Text className="formation-position" c="white" lineClamp={2}>
               {player?.name ?? label}
             </Text>

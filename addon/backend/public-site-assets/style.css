@@ -188,6 +188,19 @@ dd { margin: 2px 0 0; font-weight: 600; }
 .featured .note { border-color: #ffffff4d; }
 .match { font-weight: 600; }
 .notice { margin-top: 16px; border-left: 4px solid var(--gold); }
+.birthday {
+  display: flex; gap: 16px; align-items: flex-start;
+  margin-top: 16px; padding: 20px; border: 1px solid #e6d5ae;
+  border-radius: 16px; background: linear-gradient(115deg, #fff6df, #fffdfa);
+  overflow-wrap: anywhere;
+}
+.birthday[hidden] { display: none; }
+.birthday-icon { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 14px; background: #f5e5bb; font-size: 1.65rem; }
+.birthday-eyebrow { margin: 0 0 5px; font-size: .68rem; color: #72561b; }
+.birthday h2 { margin: 0 0 10px; font-size: 1.15rem; color: var(--blue); }
+.birthday ul { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0; }
+.birthday li { padding: 3px 10px; border-radius: 20px; background: #fff; border: 1px solid #eadbb7; font-weight: 600; font-size: .85rem; }
+.birthday-wish { margin: 10px 0 0; font-size: .75rem; color: var(--muted); }
 .notice h2 { font-size: 1rem; }
 .notice p { white-space: normal; }
 .section-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin: 24px 0 14px; }

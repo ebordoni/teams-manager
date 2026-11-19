@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0] — 2026-11-19
+
+### Added
+
+- Player profile photos with preview, replacement and removal. Automatic center crop and resizing to at most 512 px / 80 KB, server validation and metadata stripping; JPG, PNG and WebP sources up to 8 MB / 20 MP.
+- Player photos on the shared Formations and Match Plan pitch, retaining jersey numbers or initials for profiles without a photo.
+- Optional birth dates and a dashboard card for today's birthdays, refreshed when the date changes in Europe/Rome.
+- Responsive birthday greetings on the Cloudflare board after the next appointment. Per-player opt-in with an explicitly chosen public name; photos, birth years and ages stay private. Midnight synchronization and expiration handling for pages left open.
+
+### Changed
+
+- JSON backups preserve photos, birth dates and birthday preferences, accept older exports and support imports up to 25 MB. Existing databases migrate automatically while retaining their records.
+- Extended API and browser coverage for photo uploads, format and size limits, birthday validation, public content privacy and backup round trips.
+
 ## [1.2.0] — 2026-11-16
 
 ### Changed
